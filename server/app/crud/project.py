@@ -32,5 +32,7 @@ def create_project(db:Session, project:ProjectCreate,  user:int):
 
 
 def get_project(db:Session, user:int):
-    user = get_user_by_id(db, user)    
+    user = get_user_by_id(db, user)  
+    print(user.projects)  
+    print("dfdf")
     return user.projects 
