@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 from schemas.project import ProjectCreate, Project
-from schemas.users import UserBase
 from sqlalchemy.orm import Session
 from db.session import get_db
 from crud.project import create_project, get_project as get_projects
