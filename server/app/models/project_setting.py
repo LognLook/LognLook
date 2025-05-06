@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, JSON, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.db.session import Base
+from server.app.infra.database.session import Base
 
 
 class ProjectSetting(Base):
