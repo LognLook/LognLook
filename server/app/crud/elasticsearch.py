@@ -1,5 +1,5 @@
 from app.infra.database.elaticsearch import ElasticsearchClient
-
+from sqlalchemy.orm import Session
 
 class ESRepository:
     def __init__(self, es_client: ElasticsearchClient):
@@ -13,3 +13,4 @@ class ESRepository:
 
     def search_logs(self, index: str, query: dict):
         pass
+

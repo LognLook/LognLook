@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
 
 class Settings(BaseSettings):
     # OpenAI 설정
@@ -10,15 +11,15 @@ class Settings(BaseSettings):
     ELASTIC_PASSWORD: str
     
     # 데이터베이스 설정
-    # DB_HOST: str
-    # DB_PORT: str
-    # DB_NAME: str
-    # DB_USER: str
-    # DB_PASSWORD: str
-    # DATABASE_URL: str
+    MYSQL_USER: str
+    MYSQL_PASSWORD: str
+    MYSQL_HOST: str
+    MYSQL_PORT: str
+    MYSQL_SCHEMA: str
     
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
+@lru_cache # 싱글턴
 def get_settings() -> Settings:
     """설정 객체 반환"""
     return Settings() 

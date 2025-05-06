@@ -9,5 +9,5 @@ class User(UserBase):
     model_config = { # SQLAlchemy 객체를 Pydantic 모델로 자동 변환해주는 설정
         "from_attributes": True
     } 
-class UserCreate(User):
+class UserCreate(UserBase):
     pass
