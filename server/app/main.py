@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-from db.session import engine, Base
-from api.routers import users, project
+from app.db.session import engine, Base
+from app.api.routers import users, project
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()

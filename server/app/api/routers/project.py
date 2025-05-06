@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from schemas.project import ProjectCreate, Project
+from app.schemas.project import ProjectCreate, Project
 from sqlalchemy.orm import Session
-from db.session import get_db
-from crud.project import create_project, get_project as get_projects
-from crud.user import get_user_by_email
+from app.db.session import get_db
+from app.crud.project import create_project, get_project as get_projects
+from app.crud.user import get_user_by_email
 
 
 

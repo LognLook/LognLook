@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from models.project import Project
-from models.user_project import UserProject
-from schemas.project import ProjectCreate
-from crud.user import get_user_by_id
+from app.models.project import Project
+from app.models.user_project import UserProject
+from app.schemas.project import ProjectCreate
+from app.crud.user import get_user_by_id
 
 
 def create_project(db:Session, project:ProjectCreate,  user:int):
