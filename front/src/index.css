@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #F0F4F8;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* 기존 스타일 제거 */
