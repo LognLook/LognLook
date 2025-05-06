@@ -1,3 +1,46 @@
-# Ignore Python cache files
+# Jupyter Notebook specific files
+.ipynb_checkpoints/
+*.ipynb
+
+# Python specific files
 __pycache__/
+*.py[cod]
+*.pyo
 *.pyc
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+*.so
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.virtualenv/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.out
+*.pid
+*.swp
+*.swo
+*.bak
+*.orig
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE specific files
+.vscode/
+.idea/
+*.iml
+
+# environment variables
+.env

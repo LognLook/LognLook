@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
-from db.session import Base
+from app.infra.database.session import Base
 
 
 class TroubleLog(Base):

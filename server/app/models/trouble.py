@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from db.session import Base
+from app.infra.database.session import Base
 
 
 class Trouble(Base):
