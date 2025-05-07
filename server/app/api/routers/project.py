@@ -1,13 +1,16 @@
-from fastapi import APIRouter, Depends
+import json
+from fastapi import APIRouter, Depends, HTTPException
 from app.schemas.project import (
     ProjectCreate,
     Project,
     ProjectKeywordsUpdate,
     ProjectKeywordsBase,
 )
+from sqlalchemy.orm import Session
+from app.infra.database.session import get_db
+
 from app.core.config.dependencies import get_project_service
 from app.services.project import ProjectService
-
 
 router = APIRouter()
 
