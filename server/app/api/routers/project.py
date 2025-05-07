@@ -12,6 +12,7 @@ from app.services.project import ProjectService
 router = APIRouter()
 
 
+
 @router.post("/project", response_model=Project)
 def create_projects(
     project_dto: ProjectCreate, service: ProjectService = Depends(get_project_service)
