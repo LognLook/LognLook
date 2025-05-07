@@ -10,8 +10,8 @@ class User(Base):
     email: str = Column(String(50), nullable=False)
     create_at: DateTime = Column(DateTime, default=datetime.now)
 
-    user_projects = relationship("UserProject", back_populates="user")
-    troubles = relationship("Trouble", back_populates="creator")
+    user_projects = relationship("UserProject", back_populates="user", lazy="joined")
+    troubles = relationship("Trouble", back_populates="creator", lazy="joined")
 
     # 읽기 전용 다대다 관계
     projects = relationship(
