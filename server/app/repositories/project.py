@@ -16,23 +16,16 @@ def create_project(db: Session, project: ProjectCreate, user: int) -> Project:
     db.refresh(db_project)
 
     # ProjectSetting 생성
-    exists_1 = db.query(ProjectSetting).filter_by(project_id=db_project.id).first()
-    if not exists_1:
+    if not db.query(ProjectSetting).filter_by(project_id=db_project.id).first():
         setting = ProjectSetting(project_id=db_project.id)
         db.add(setting)
         db.commit()
-        db.refresh(setting)
 
     # UserProject 연결
-    exists_2 = (
-        db.query(UserProject).filter_by(user_id=user, project_id=db_project.id).first()
-    )
-    if not exists_2:
+    if not db.query(UserProject).filter_by(user_id=user, project_id=db_project.id).first():
         user_project = UserProject(user_id=user, project_id=db_project.id)
         db.add(user_project)
         db.commit()
-        db.refresh(user_project)
-        return user_project
 
     return db_project
 

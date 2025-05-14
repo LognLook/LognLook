@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.schemas.project import (
     ProjectCreate,
     Project,
@@ -12,7 +12,7 @@ from app.services.project import ProjectService
 router = APIRouter()
 
 
-@router.post("/project")
+@router.post("/project", response_model=Project)
 def create_projects(
     project_dto: ProjectCreate, service: ProjectService = Depends(get_project_service)
 ):
@@ -43,8 +43,4 @@ def update_project_keyword(
     updated_project = service.update_project_keywords(
         project_id=project_id, keywords_update=keywords_update
     )
-
-    if not updated_project:
-        raise HTTPException(status_code=400, detail="Failed to update project keywords")
-
-    return keywords_update
+    return updated_project
