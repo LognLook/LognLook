@@ -7,11 +7,13 @@ from app.infra.database.session import Base
 class ProjectSetting(Base):
     __tablename__ = "project_settings"
 
-    id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("project.id"), nullable=False, unique=True)
-    logstash_config = Column(JSON, nullable=True)
-    log_keywords = Column(JSON, nullable=True)
-    updated_at = Column(
+    id: int | None = Column(Integer, primary_key=True, index=True)
+    project_id: int = Column(
+        Integer, ForeignKey("project.id"), nullable=False, unique=True
+    )
+    logstash_config: JSON | None = Column(JSON, nullable=False, default=list)
+    log_keywords: JSON | None = Column(JSON, nullable=False, default=list)
+    updated_at: DateTime = Column(
         DateTime, default=datetime.now, onupdate=datetime.now, nullable=False
     )
 

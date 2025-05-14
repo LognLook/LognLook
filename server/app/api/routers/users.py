@@ -1,16 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
-from app.schemas.users import UserCreate
-from sqlalchemy.orm import Session
-from app.infra.database.session import get_db
-from app.crud.user import get_user_by_email, create_user
+from fastapi import APIRouter, Depends
 
+from app.schemas.user import UserCreate
+from app.services.user import UserService
+from app.core.config.dependencies import get_user_service
 
 router = APIRouter()
 
 
 @router.post("/user")
-def create_users(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return create_user(db=db, user=user)
+def create_users(user: UserCreate, service: UserService = Depends(get_user_service)):
+    return service.create_user(user)
