@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 
 from app.repositories import project as ProjectRepository
 from app.repositories import user as UserRepository
-from app.schemas.project import ProjectCreate, ProjectKeywordsUpdate
+from app.schemas.project import ProjectCreate, ProjectKeywordsUpdate, Project
 
 
 class ProjectService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_project(self, project_dto: ProjectCreate) -> dict:
+    def create_project(self, project_dto: ProjectCreate) -> Project:
         """프로젝트 생성 서비스"""
         db_user = UserRepository.get_user_by_email(
             db=self.db, email=project_dto.user_email
