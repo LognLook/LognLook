@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.repositories import elasticsearch as ElasticsearchRepository
 from app.repositories import project as ProjectRepository
 from app.repositories import user as UserRepository
+from app.schemas.project import ProjectCreate, ProjectKeywordsUpdate
 from app.schemas.project import ProjectBase, ProjectKeywordsUpdate, Project
 
 

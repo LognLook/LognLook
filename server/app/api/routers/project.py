@@ -7,8 +7,9 @@ from app.schemas.project import (
     ProjectKeywordsUpdate,
     ProjectKeywordsBase,
 )
-from sqlalchemy.orm import Session
-from app.infra.database.session import get_db
+
+from app.core.config.dependencies import get_project_service
+from app.services.project import ProjectService
 
 from app.core.config.dependencies import get_project_service
 from app.services.project import ProjectService
