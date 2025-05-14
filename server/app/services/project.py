@@ -4,15 +4,14 @@ from sqlalchemy.orm import Session
 from app.repositories import elasticsearch as ElasticsearchRepository
 from app.repositories import project as ProjectRepository
 from app.repositories import user as UserRepository
-from app.schemas.project import ProjectCreate, ProjectKeywordsUpdate
-from app.schemas.project import ProjectBase, ProjectKeywordsUpdate, Project
+from app.schemas.project import ProjectCreate, ProjectKeywordsUpdate, Project
 
 
 class ProjectService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_project(self, project_dto: ProjectBase, user_id: int) -> Project:
+    def create_project(self, project_dto: ProjectCreate) -> Project:
         """프로젝트 생성 서비스"""
         db_user = UserRepository.get_user_by_id(db=self.db, user_id=user_id)
         if not db_user:

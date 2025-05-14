@@ -1,6 +1,4 @@
-from fastapi import APIRouter, Depends, Header
-import json
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.schemas.project import (
     ProjectBase,
     Project,
