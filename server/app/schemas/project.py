@@ -1,6 +1,5 @@
-import json
 from pydantic import BaseModel, EmailStr
-from typing import List, Optional
+from typing import List
 
 
 # Project
