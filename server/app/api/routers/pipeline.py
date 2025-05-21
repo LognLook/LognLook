@@ -1,17 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
 import logging
-from app.crud.pipeline import process_log
-
+from app.core.config.dependencies import get_pipeline_service
+from app.services.pipeline import PipelineService
 
 router = APIRouter()
 
 logger = logging.getLogger("logstash")
 
 @router.post("/log")
-def collect_log(data: dict):
+def collect_log(
+    data: dict, service: PipelineService = Depends(get_pipeline_service)
+):
     try:
         # Log the incoming data
-        result = process_log(data)
+        result = service.process_log(data)
         logger.info("Successfully processed log data")
         return result
     except Exception as e:
