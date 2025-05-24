@@ -41,7 +41,7 @@ class ElasticsearchClient:
         """ Elasticsearch 검색 실행 공통 함수 """
         return self.es.search(index=index, body=body)["hits"]["hits"]
 
-    def generate_filter(term=None, range=None) -> dict:
+    def generate_filter(self, term=None, range=None) -> dict:
         """필터 조건을 생성하는 함수"""
         filter = {
             "bool": {
@@ -50,17 +50,15 @@ class ElasticsearchClient:
         }
         if term is not None:
             term_filter = {
-                "term": {
-                    term
-                }
+                "term": {}
             }
+            term_filter["term"] = term
             filter["bool"]["must"].append(term_filter)
         if range is not None:
             range_filter = {
-                "range": {
-                    range
-                }
+                "range": {}
             }
+            range_filter["range"] = range
             filter["bool"]["must"].append(range_filter)
         return filter
 
