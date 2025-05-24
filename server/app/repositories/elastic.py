@@ -2,9 +2,11 @@ from fastapi import HTTPException
 from app.infra.database.elaticsearch import ElasticsearchClient
 from app.core.config.elastic_config import ELASTIC_MAPPINGS
 
+
+es = ElasticsearchClient()
+
 def save_log(index_name: str, log_data: dict):
     """로그를 저장하는 함수"""
-    es = ElasticsearchClient()
     es.save_document(
         index=index_name,
         document=log_data
@@ -12,7 +14,6 @@ def save_log(index_name: str, log_data: dict):
 
 def retrieve_log(index_name: str, query: str, category: str = None, start_time: str = None, end_time: str = None):
     """로그를 검색하는 함수"""
-    es = ElasticsearchClient()
     if category:
         category_filter = {
             "category": category
