@@ -1,8 +1,12 @@
-from app.core.config.settings import get_settings
+from fastapi import HTTPException
 from elasticsearch import Elasticsearch
+
 from typing import List, Dict, Any
-from app.core.llm.base import LLMFactory
 from collections import defaultdict
+
+from app.core.config.settings import get_settings
+from app.core.llm.base import LLMFactory
+
 
 settings = get_settings()
 
@@ -20,18 +24,45 @@ class ElasticsearchClient:
         )
         self.embedding_model = LLMFactory.create_embedding_model()
 
+    def _create_index(self, index: str) -> None:
+        """ 인덱스 생성 """
+        if self.es.indices.exists(index=index):
+            raise HTTPException(
+                status_code=500,
+                detail=f"Index {index} already exists."
+            )
+        self.es.indices.create(index=index)
+        
     def _generate_embeddings(self, text: str) -> List[float]:
         """ 텍스트를 벡터로 변환 """
         return self.embedding_model.embed_query(text)
-
-    def _execute_search(self, index: str, query: Dict[str, Any], fields: List[str] = None) -> List[Dict[str, Any]]:
+    
+    def _execute_search(self, index: str, body: Dict[str, Any]) -> List[Dict[str, Any]]:
         """ Elasticsearch 검색 실행 공통 함수 """
-        body = query
-        if fields:
-            body["fields"] = fields
+        return self.es.search(index=index, body=body)["hits"]["hits"]
 
-        result = self.es.search(index=index, body=body)["hits"]["hits"]
-        return result
+    def generate_filter(term=None, range=None) -> dict:
+        """필터 조건을 생성하는 함수"""
+        filter = {
+            "bool": {
+                "must": []
+            }
+        }
+        if term is not None:
+            term_filter = {
+                "term": {
+                    term
+                }
+            }
+            filter["bool"]["must"].append(term_filter)
+        if range is not None:
+            range_filter = {
+                "range": {
+                    range
+                }
+            }
+            filter["bool"]["must"].append(range_filter)
+        return filter
 
     def search_by_terms(self, index: str, term_field: str, term_values: List[Any]) -> List[Dict[str, Any]]:
         """ terms 기반 검색 공통 함수 """
@@ -43,7 +74,7 @@ class ElasticsearchClient:
         query_body = {"query": {"match": {field: query}}}
         return self._execute_search(index, query_body)[:k]
 
-    def search_by_vector(self, index: str, query: str, vector_field: str = "embedding", k: int = 5, num_candidates: int = 100) -> List[Dict[str, Any]]:
+    def search_by_vector(self, index: str, query: str, vector_field: str = "embedding", filter: Dict[str, Any] = None, k: int = 5, num_candidates: int = 100) -> List[Dict[str, Any]]:
         """ 벡터 검색 (KNN) """
         query_vector = self._generate_embeddings(query)
         query_body = {
@@ -52,8 +83,10 @@ class ElasticsearchClient:
                 "query_vector": query_vector,
                 "k": k,
                 "num_candidates": num_candidates,
-            }
+            },
         }
+        if filter:
+            query_body["knn"]["filter"] = filter
         return self._execute_search(index, query_body)
     
     def search_by_hybrid(self, index: str, query: str, k: int = 5) -> List[Dict[str, Any]]:
