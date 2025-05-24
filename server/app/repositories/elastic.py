@@ -5,7 +5,10 @@ from app.core.config.elastic_config import ELASTIC_MAPPINGS
 def save_log(index_name: str, log_data: dict):
     """로그를 저장하는 함수"""
     es = ElasticsearchClient()
-    es.index(index=index_name, body=log_data)
+    es.save_document(
+        index=index_name,
+        document=log_data
+    )
 
 def retrieve_log(index_name: str, query: str, category: str = None, start_time: str = None, end_time: str = None):
     """로그를 검색하는 함수"""

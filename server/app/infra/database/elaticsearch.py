@@ -23,15 +23,6 @@ class ElasticsearchClient:
             basic_auth=(self.username, self.password),
         )
         self.embedding_model = LLMFactory.create_embedding_model()
-
-    def _create_index(self, index: str) -> None:
-        """ 인덱스 생성 """
-        if self.es.indices.exists(index=index):
-            raise HTTPException(
-                status_code=500,
-                detail=f"Index {index} already exists."
-            )
-        self.es.indices.create(index=index)
         
     def _generate_embeddings(self, text: str) -> List[float]:
         """ 텍스트를 벡터로 변환 """
@@ -40,6 +31,12 @@ class ElasticsearchClient:
     def _execute_search(self, index: str, body: Dict[str, Any]) -> List[Dict[str, Any]]:
         """ Elasticsearch 검색 실행 공통 함수 """
         return self.es.search(index=index, body=body)["hits"]["hits"]
+    
+    def save_document(self, index: str, document: Dict[str, Any]) -> None:
+        """ 문서를 Elasticsearch에 저장 """
+        if not self.es.indices.exists(index=index):
+            self.es.indices.create(index=index)
+        self.es.index(index=index, body=document)
 
     def generate_filter(self, term=None, range=None) -> dict:
         """필터 조건을 생성하는 함수"""
