@@ -12,7 +12,7 @@ def save_log(index_name: str, log_data: dict):
         document=log_data
     )
 
-def retrieve_log(index_name: str, query: str, category: str = None, start_time: str = None, end_time: str = None):
+def retrieve_log(index_name: str, query: str, category: str = None, start_time: str = None, end_time: str = None, k: int = 10):
     """로그를 검색하는 함수"""
     if category:
         category_filter = {
@@ -28,7 +28,8 @@ def retrieve_log(index_name: str, query: str, category: str = None, start_time: 
     search_by_hybrid = es.search_by_vector(
         index=index_name,
         query=query,
-        filter=es.generate_filter(category_filter, time_filter)
+        filters=es.generate_filter(category_filter, time_filter),
+        k=k
     )
     if not search_by_hybrid:
         raise HTTPException(

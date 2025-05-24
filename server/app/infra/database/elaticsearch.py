@@ -69,7 +69,7 @@ class ElasticsearchClient:
         query_body = {"query": {"match": {field: query}}}
         return self._execute_search(index, query_body)[:k]
 
-    def search_by_vector(self, index: str, query: str, vector_field: str = "embedding", filter: Dict[str, Any] = None, k: int = 5, num_candidates: int = 100) -> List[Dict[str, Any]]:
+    def search_by_vector(self, index: str, query: str, vector_field: str = "embedding", filters: Dict[str, Any] = None, k: int = 5, num_candidates: int = 100) -> List[Dict[str, Any]]:
         """ 벡터 검색 (KNN) """
         query_vector = self._generate_embeddings(query)
         query_body = {
