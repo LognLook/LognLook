@@ -16,12 +16,13 @@ class FromDB:
     def __init__(self):
         self.category_list = ["유저 입력 에러", "로그인 에러"]
         # enum으로 정의된 카테고리 리스트
-        self.language = Language.ENGLISH
-        self.index = "test-index"
+        self.language = Language.KOREAN
+        self.index = "test-index-new"
 
 class PipelineService:
     def __init__(self, db: Session):
         self.db = db
+        self.es = ElasticsearchClient()
 
     def process_log(self, log_data: dict):
         '''
@@ -43,11 +44,10 @@ class PipelineService:
         log_data["embedding"] = embedding
         
         # elasticsearch에 저장
-        es_client = ElasticsearchClient()
         body = log_data
         index = from_db.index
-        es_client.es.index(index=index, body=body)
-        
+        self.es.save_document(index=index, document=body)
+
         return log_data
     
     def gen_ai_msg(self, log_msg: str, category_list: list, language: Language):
