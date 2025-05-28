@@ -1,24 +1,46 @@
-# Logs
+# 환경 변수 파일 - 보안상 Git에 올리지 않음
+.env
+.env.*
+*.local
+
+# 로그 파일들 - 디버깅 후 불필요
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+# 빌드 결과물 - 매번 자동 생성됨
 dist
 dist-ssr
-*.local
+build
 
-# Editor directories and files
-.vscode/*
+# 패키지 종속성 - npm/yarn/pnpm install로 복원 가능
+node_modules/
+
+# Vite 캐시 - 운영체제나 환경에 따라 달라짐
+.vite/
+.vite/deps/
+.cache/
+.next/
+out/
+.husky/_/
+
+# IDE 및 에디터 설정 파일 - 개인 설정이므로 제외
+.vscode/
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# macOS 시스템 파일 - 불필요한 파일
+.DS_Store
+
+# 기타 임시 파일
+*.tmp
+*.bak
+*.old
