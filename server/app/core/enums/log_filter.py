@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class LogLeverFilter(str, Enum):
+class LogLevelFilter(str, Enum):
     """로그 필터 타입을 정의하는 enum"""
 
     ERROR = "error"  # 에러 로그
