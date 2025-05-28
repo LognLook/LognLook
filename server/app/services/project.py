@@ -21,6 +21,9 @@ class ProjectService:
         return ProjectRepository.create_project(
             db=self.db, project=project_dto, user=db_user.id
         )
+    def get_project_by_id(self, project_id: int) -> Project:
+        """프로젝트 조회 서비스"""
+        return ProjectRepository.get_project_by_id(self.db, project_id=project_id)
 
     def get_projects_by_user(self, user_email: str) -> list:
         """사용자의 프로젝트 목록 조회 서비스"""
