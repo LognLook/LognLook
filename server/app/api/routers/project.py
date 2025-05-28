@@ -9,11 +9,7 @@ from app.schemas.project import (
 from app.core.config.dependencies import get_project_service
 from app.services.project import ProjectService
 
-from app.core.config.dependencies import get_project_service
-from app.services.project import ProjectService
-
 router = APIRouter()
-
 
 
 @router.post("/project", response_model=Project)

@@ -6,7 +6,6 @@ from app.core.enums.log_filter import LogLevelFilter, LogTimeFilter
 from app.core.config.dependencies import get_log_service
 from app.services.log import LogService
 
-
 router = APIRouter()
 
 
@@ -19,7 +18,6 @@ def get_log(
     service: LogService = Depends(get_log_service),
 ):
     return service.get_logs(user_email, project_id, log_time)
-
 
 
 @router.get("/log/date-range")
