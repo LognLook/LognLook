@@ -1,44 +1,46 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface DashboardLayoutProps {
-  children: React.ReactNode;
+  children: (props: { isSidebarOpen: boolean }) => React.ReactNode;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
   return (
-    <div className="flex min-h-screen bg-[#0F2230] overflow-hidden">
+    <div className="flex min-h-screen bg-[#F0F4F8] overflow-hidden">
       {/* 왼쪽 사이드바 */}
-      <aside className="w-[279px] border-r border-gray-700 fixed h-screen overflow-y-auto bg-[#0F2230] z-10">
-        <div className="px-4 pt-5">
-          <div className="bg-[#F0F4F8] rounded-[20px] px-5 py-7">
+      <aside className={`${isSidebarOpen ? 'w-[279px]' : 'w-[91px]'} transition-all duration-300 border-r border-gray-700 fixed h-screen overflow-y-auto bg-[#0F2230] z-10`}>
+        <div className={`px-4 pt-5 ${!isSidebarOpen && 'px-2'}`}>
+          <div className={`bg-[#F0F4F8] rounded-[20px] px-5 py-7 ${!isSidebarOpen && 'px-2'}`}>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-6 h-6 bg-gray-300 rounded"></div>
-              <h1 className="text-[18px] font-bold text-[#FE5823] font-pretendard">LognLook</h1>
+              <h1 className={`text-[18px] font-bold text-[#FE5823] font-pretendard transition-opacity duration-300 ${!isSidebarOpen && 'opacity-0 absolute'}`}>LognLook</h1>
             </div>
             <nav>
               <ul className="space-y-2">
                 <li>
-                  <button className="w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#DBEEFC] hover:font-bold bg-[#DBEEFC] font-bold text-[13px] font-pretendard flex items-center">
+                  <button className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#F1FFFC] hover:border hover:border-[#6E9990] hover:font-bold bg-[#F1FFFC] border border-[#6E9990] font-bold text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center'}`}>
                     <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0 mx-1"></div>
-                    Dashboard
+                    <span className={`transition-opacity duration-300 ${!isSidebarOpen && 'opacity-0 absolute w-0 overflow-hidden'}`}>Dashboard</span>
                   </button>
                 </li>
                 <li>
-                  <button className="w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#DBEEFC] hover:font-bold font-medium text-[13px] font-pretendard flex items-center">
+                  <button className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#F1FFFC] hover:border hover:border-[#6E9990] hover:font-bold font-medium text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center'}`}>
                     <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0 mx-1"></div>
-                    Trouble Shooting
+                    <span className={`transition-opacity duration-300 ${!isSidebarOpen && 'opacity-0 absolute w-0 overflow-hidden'}`}>Trouble Shooting</span>
                   </button>
                 </li>
                 <li>
-                  <button className="w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#DBEEFC] hover:font-bold font-medium text-[13px] font-pretendard flex items-center">
+                  <button className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#F1FFFC] hover:border hover:border-[#6E9990] hover:font-bold font-medium text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center'}`}>
                     <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0 mx-1"></div>
-                    Search
+                    <span className={`transition-opacity duration-300 ${!isSidebarOpen && 'opacity-0 absolute w-0 overflow-hidden'}`}>Search</span>
                   </button>
                 </li>
                 <li>
-                  <button className="w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#DBEEFC] hover:font-bold font-medium text-[13px] font-pretendard flex items-center">
+                  <button className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#F1FFFC] hover:border hover:border-[#6E9990] hover:font-bold font-medium text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center'}`}>
                     <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0 mx-1"></div>
-                    Project Setting
+                    <span className={`transition-opacity duration-300 ${!isSidebarOpen && 'opacity-0 absolute w-0 overflow-hidden'}`}>Project Setting</span>
                   </button>
                 </li>
               </ul>
@@ -47,9 +49,29 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         </div>
       </aside>
 
+      {/* 토글 버튼 */}
+      <button
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="fixed left-4 top-4 z-20 bg-[#F0F4F8] p-2 rounded-full hover:bg-[#F1FFFC] transition-colors"
+      >
+        <svg
+          className={`w-6 h-6 transform transition-transform ${isSidebarOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+          />
+        </svg>
+      </button>
+
       {/* 메인 콘텐츠 */}
-      <main className="ml-[279px] flex-1 bg-[#F0F4F8] min-h-screen overflow-x-hidden">
-        {children}
+      <main className={`${isSidebarOpen ? 'ml-[279px]' : 'ml-[91px]'} transition-all duration-300 flex-1 bg-[#F0F4F8] min-h-screen w-[calc(100%-${isSidebarOpen ? '279px' : '91px'})] p-10`}>
+        {children({ isSidebarOpen })}
       </main>
     </div>
   );
