@@ -38,26 +38,27 @@ class ElasticsearchClient:
             self.es.indices.create(index=index)
         self.es.index(index=index, body=document)
 
-    def generate_filter(self, term=None, range=None) -> dict:
+    def generate_filter(self, term_filter=None, range_filter=None) -> dict:
         """필터 조건을 생성하는 함수"""
-        filter = {
+        filter_conditions = {
             "bool": {
                 "must": []
             }
         }
-        if term is not None:
-            term_filter = {
-                "term": {}
+        
+        if term_filter is not None:
+            term_condition = {
+                "term": term_filter
             }
-            term_filter["term"] = term
-            filter["bool"]["must"].append(term_filter)
-        if range is not None:
-            range_filter = {
-                "range": {}
+            filter_conditions["bool"]["must"].append(term_condition)
+            
+        if range_filter is not None:
+            range_condition = {
+                "range": range_filter
             }
-            range_filter["range"] = range
-            filter["bool"]["must"].append(range_filter)
-        return filter
+            filter_conditions["bool"]["must"].append(range_condition)
+            
+        return filter_conditions
 
     def search_by_terms(self, index: str, term_field: str, term_values: List[Any]) -> List[Dict[str, Any]]:
         """ terms 기반 검색 공통 함수 """
@@ -69,7 +70,7 @@ class ElasticsearchClient:
         query_body = {"query": {"match": {field: query}}}
         return self._execute_search(index, query_body)[:k]
 
-    def search_by_vector(self, index: str, query: str, vector_field: str = "embedding", filters: Dict[str, Any] = None, k: int = 5, num_candidates: int = 100) -> List[Dict[str, Any]]:
+    def search_by_vector(self, index: str, query: str, vector_field: str = "vector", filters: Dict[str, Any] = None, k: int = 5, num_candidates: int = 100) -> List[Dict[str, Any]]:
         """ 벡터 검색 (KNN) """
         query_vector = self._generate_embeddings(query)
         query_body = {
@@ -80,8 +81,8 @@ class ElasticsearchClient:
                 "num_candidates": num_candidates,
             },
         }
-        if filter:
-            query_body["knn"]["filter"] = filter
+        if filters:
+            query_body["knn"]["filter"] = filters
         return self._execute_search(index, query_body)
     
     def search_by_hybrid(self, index: str, query: str, k: int = 5) -> List[Dict[str, Any]]:

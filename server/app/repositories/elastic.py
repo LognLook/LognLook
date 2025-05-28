@@ -14,10 +14,12 @@ def save_log(index_name: str, log_data: dict):
 
 def retrieve_log(index_name: str, query: str, category: str = None, start_time: str = None, end_time: str = None, k: int = 10):
     """로그를 검색하는 함수"""
+    category_filter = None
     if category:
         category_filter = {
             "category": category
         }
+    time_filter = None
     if start_time and end_time:
         time_filter = {
             "@timestamp": {
@@ -28,7 +30,7 @@ def retrieve_log(index_name: str, query: str, category: str = None, start_time: 
     search_by_hybrid = es.search_by_vector(
         index=index_name,
         query=query,
-        filters=es.generate_filter(category_filter, time_filter),
+        filters=es.generate_filter(term_filter=category_filter, range_filter=time_filter),
         k=k
     )
     if not search_by_hybrid:

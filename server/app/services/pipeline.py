@@ -38,10 +38,10 @@ class PipelineService:
         #     comment="유저가 비밀번호를 잘못 입력했습니다.",
         #     category="유저 입력 에러"
         # )
-        embedding = self.embed_comment(ai_msg.comment)
+        vector = self.embed_comment(ai_msg.comment)
         log_data["comment"] = ai_msg.comment
         log_data["category"] = ai_msg.category
-        log_data["embedding"] = embedding
+        log_data["vector"] = vector
         
         # elasticsearch에 저장
         body = log_data
@@ -69,5 +69,5 @@ class PipelineService:
         코멘트를 임베딩하는 함수
         '''
         embedding_model = LLMFactory.create_embedding_model()
-        embedding = embedding_model.embed_query(comment)
-        return embedding
+        vector = embedding_model.embed_query(comment)
+        return vector
