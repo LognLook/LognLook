@@ -6,6 +6,7 @@ from app.core.enums.log_filter import LogLevelFilter, LogTimeFilter
 from app.core.config.dependencies import get_log_service
 from app.services.log import LogService
 
+
 router = APIRouter()
 
 
