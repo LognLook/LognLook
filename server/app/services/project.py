@@ -22,7 +22,6 @@ class ProjectService:
         )
         ElasticsearchRepository.create_project_index(index_name=db_project.index)
 
-        print("===")
         return db_project
 
     def get_project_by_id(self, project_id: int) -> Project:
