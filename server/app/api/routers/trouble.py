@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends
 from app.schemas.trouble import (
     TroubleCreate, 
     Trouble, 
@@ -6,34 +6,60 @@ from app.schemas.trouble import (
     TroubleListQuery, 
     TroubleListResponse
 )
-from sqlalchemy.orm import Session
-from app.infra.database.session import get_db
-from typing import Optional
+from app.services.trouble import TroubleService
+from app.core.config.dependencies import get_trouble_service, get_current_user_id
 
 router = APIRouter()
 
 
 @router.post("/trouble", response_model=Trouble)
-def create_trouble(trouble: TroubleCreate, db: Session = Depends(get_db)):
-    # TODO: 현재 사용자 정보를 가져와서 created_by 설정
-    pass
+def create_trouble(
+    create_trouble_dto: TroubleCreate, 
+    service: TroubleService = Depends(get_trouble_service),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """새로운 trouble을 생성합니다."""
+    return service.create_trouble(create_trouble_dto, current_user_id)
+
 
 @router.get("/trouble/{trouble_id}", response_model=Trouble)
-def get_trouble(trouble_id: int, db: Session = Depends(get_db)):
-    # TODO: trouble 조회 로직 구현
-    pass
+def get_trouble(
+    trouble_id: int, 
+    service: TroubleService = Depends(get_trouble_service),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """특정 trouble을 조회합니다."""
+    return service.get_trouble_by_id(trouble_id, current_user_id)
+
 
 @router.put("/trouble/{trouble_id}", response_model=Trouble)
-def update_trouble(trouble_id: int, trouble_update: TroubleUpdate, db: Session = Depends(get_db)):
-    # TODO: trouble 업데이트 로직 구현
-    pass
+def update_trouble(
+    trouble_id: int, 
+    trouble_update_dto: TroubleUpdate, 
+    service: TroubleService = Depends(get_trouble_service),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """기존 trouble을 업데이트합니다."""
+    return service.update_trouble(trouble_id, trouble_update_dto, current_user_id)
+
 
 @router.delete("/trouble/{trouble_id}")
-def delete_trouble(trouble_id: int, db: Session = Depends(get_db)):
-    # TODO: trouble 삭제 로직 구현
-    pass
+def delete_trouble(
+    trouble_id: int, 
+    service: TroubleService = Depends(get_trouble_service),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """trouble을 삭제합니다."""
+    service.delete_trouble(trouble_id, current_user_id)
+    return {"message": "Trouble deleted successfully"}
+
 
 @router.get("/project/{project_id}/troubles", response_model=TroubleListResponse)
-def get_project_troubles(query: TroubleListQuery, db: Session = Depends(get_db)):
-    # TODO: 프로젝트별 trouble 목록 조회 로직 구현 (페이지네이션 포함)
-    pass
+def get_project_troubles(
+    project_id: int,
+    query_params: TroubleListQuery = Depends(),
+    service: TroubleService = Depends(get_trouble_service),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """프로젝트의 trouble 목록을 조회합니다."""
+    return service.get_project_troubles(project_id, query_params, current_user_id)
