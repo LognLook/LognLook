@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from elasticsearch import Elasticsearch
 
 from typing import List, Dict, Any
@@ -59,6 +58,18 @@ class ElasticsearchClient:
             filter_conditions["bool"]["must"].append(range_condition)
             
         return filter_conditions
+    
+    def create_index(self, index: str, mappings: Dict[str, Any]) -> None:
+        """ 인덱스를 생성하는 함수 """
+        if not self.es.indices.exists(index=index):
+            self.es.indices.create(index=index, body=mappings)
+        else:
+            raise ValueError(f"Index {index} already exists")
+
+    def search_by_id(self, index: str, ids: List[str]) -> List[Any]:
+        """ id로 검색하는 함수 """
+        query = {"query": {"ids": {"values": ids}}}
+        return self._execute_search(index, query)
 
     def search_by_terms(self, index: str, term_field: str, term_values: List[Any]) -> List[Dict[str, Any]]:
         """ terms 기반 검색 공통 함수 """
