@@ -13,6 +13,8 @@ class Trouble(Base):
     report_name = Column(String(50), nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     is_shared = Column(Boolean, default=False, nullable=False)
+    user_query = Column(String, nullable=False)
+    content = Column(String, nullable=False)
 
     # Relationships
     project = relationship("Project", back_populates="troubles")
