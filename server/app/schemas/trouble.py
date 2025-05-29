@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -21,17 +21,7 @@ class TroubleCreate(TroubleBase):
                 "report_name": "로그인 실패 분석",
                 "is_shared": False,
                 "user_query": "왜 사용자들이 로그인에 계속 실패하고 있나요?",
-                "related_logs": [
-                    {
-                        "timestamp": "2024-01-01T10:30:00Z",
-                        "message": "Authentication failed for user john@example.com",
-                        "category": "로그인 에러",
-                        "comment": "사용자가 잘못된 비밀번호를 입력했습니다.",
-                        "host": {"name": "web-server-01"},
-                        "log_file_path": "/var/log/auth.log",
-                        "tags": ["auth", "error"]
-                    }
-                ]
+                "related_logs": ["log_id_1", "log_id_2", "log_id_3"]
             }
         }
     }
@@ -48,6 +38,8 @@ class Trouble(TroubleBase):
     id: int
     created_by: int
     created_at: datetime
+    user_query: str
+    content: str
     
     model_config = {
         "from_attributes": True,    # SQLAlchemy 객체 → Pydantic 모델 자동 변환
@@ -58,12 +50,72 @@ class Trouble(TroubleBase):
                 "created_by": 1,
                 "report_name": "로그인 오류 분석",
                 "created_at": "2024-01-01T10:00:00Z",
-                "is_shared": False
+                "is_shared": False,
+                "user_query": "왜 사용자들이 로그인에 계속 실패하고 있나요?",
+                "content": "분석 결과, 비밀번호 검증 로직에서 문제가 발생하고 있습니다."
             }
         }
     }
 
 
-class TroubleWithDetails(Trouble):
-    """관계 데이터까지 포함한 상세 Trouble 스키마"""
-    # 필요시 project, creator 정보도 포함 가능
+class TroubleSummary(BaseModel):
+    """목록 조회용 요약 스키마 - 필수 정보만 포함"""
+    id: int
+    report_name: str
+    created_at: datetime
+    is_shared: bool
+    creator_email: Optional[str] = Field(None, description="생성자 이메일")
+    logs_count: Optional[int] = Field(None, description="연관된 로그 개수")
+    
+    model_config = {
+        "from_attributes": True,
+        "json_schema_extra": {
+            "example": {
+                "id": 1,
+                "report_name": "로그인 오류 분석",
+                "created_at": "2024-01-01T10:00:00Z",
+                "is_shared": False,
+                "creator_email": "user@example.com",
+                "logs_count": 5
+            }
+        }
+    }
+
+
+class TroubleListQuery(BaseModel):
+    """목록 조회용 쿼리 파라미터"""
+    page: int = Field(1, ge=1, description="페이지 번호")
+    size: int = Field(10, ge=1, le=100, description="페이지 크기")
+    search: Optional[str] = Field(None, description="검색어 (report_name, user_query 대상)")
+    is_shared: Optional[bool] = Field(None, description="공유 여부 필터")
+    created_by: Optional[int] = Field(None, description="생성자 ID 필터")
+
+
+class TroubleListResponse(BaseModel):
+    """페이지네이션된 목록 응답"""
+    items: List[TroubleSummary]
+    total: int = Field(..., description="전체 아이템 수")
+    page: int = Field(..., description="현재 페이지")
+    size: int = Field(..., description="페이지 크기")
+    pages: int = Field(..., description="전체 페이지 수")
+    
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "items": [
+                    {
+                        "id": 1,
+                        "report_name": "로그인 오류 분석",
+                        "created_at": "2024-01-01T10:00:00Z",
+                        "is_shared": False,
+                        "creator_email": "user@example.com",
+                        "logs_count": 5
+                    }
+                ],
+                "total": 25,
+                "page": 1,
+                "size": 10,
+                "pages": 3
+            }
+        }
+    }

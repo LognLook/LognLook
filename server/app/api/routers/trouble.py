@@ -1,7 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
-from app.schemas.trouble import TroubleCreate, Trouble, TroubleUpdate
+from fastapi import APIRouter, Depends, HTTPException, Query
+from app.schemas.trouble import (
+    TroubleCreate, 
+    Trouble, 
+    TroubleUpdate, 
+    TroubleListQuery, 
+    TroubleListResponse
+)
 from sqlalchemy.orm import Session
 from app.infra.database.session import get_db
+from typing import Optional
 
 router = APIRouter()
 
@@ -26,7 +33,7 @@ def delete_trouble(trouble_id: int, db: Session = Depends(get_db)):
     # TODO: trouble 삭제 로직 구현
     pass
 
-@router.get("/project/{project_id}/troubles", response_model=list[Trouble])
-def get_project_troubles(project_id: int, db: Session = Depends(get_db)):
-    # TODO: 프로젝트별 trouble 목록 조회 로직 구현
+@router.get("/project/{project_id}/troubles", response_model=TroubleListResponse)
+def get_project_troubles(query: TroubleListQuery, db: Session = Depends(get_db)):
+    # TODO: 프로젝트별 trouble 목록 조회 로직 구현 (페이지네이션 포함)
     pass
