@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 
 es = ElasticsearchClient()
 
-def create_index(index_name: str, mappings: dict = ELASTIC_MAPPINGS) -> None:
+def create_project_index(index_name: str, mappings: dict = ELASTIC_MAPPINGS) -> None:
     """인덱스를 생성하는 함수"""
     try:
         es.create_index(index_name, mappings)
