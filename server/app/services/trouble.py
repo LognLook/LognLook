@@ -6,7 +6,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.messages import HumanMessage
 
 from app.core.llm.base import LLMFactory
-from app.core.llm.prompts import TROUBLE_CONTENT_PROMPT, TroubleContent
+from app.core.llm.prompts import TROUBLESHOOTING_TEMPLATE, TroubleContent
 from app.repositories.project import get_project_by_id
 from app.repositories.elastic import get_logs_by_ids
 from app.repositories import trouble as trouble_repo
@@ -240,7 +240,7 @@ class TroubleService:
             AI가 생성한 트러블슈팅 분석 내용
         """
         prompt = PromptTemplate(
-            template=TROUBLE_CONTENT_PROMPT,
+            template=TROUBLESHOOTING_TEMPLATE,
             input_variables=["user_query", "log_contents"]
         )
         

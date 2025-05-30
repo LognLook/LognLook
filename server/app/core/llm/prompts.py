@@ -20,13 +20,13 @@ If the log message does not belong to any category, please choose "others" or "ê
 <log_message>{log_message}</log_message>
 """
 
-TROUBLE_CONTENT_PROMPT = """
-You are a trouble content generator.
-Generate the content for the trouble.
+TROUBLESHOOTING_TEMPLATE = """
+You are a troubleshooting content generator.
+Generate the content for the troubleshooting and make a title for the content.
 The content should be in the following format:
 1. What happened
 2. Why it happened
-3. How it happened
+3. How to fix it
 <user_query>{user_query}</user_query>
 <log_contents>{log_contents}</log_contents>
 """
@@ -45,11 +45,11 @@ class AIMessage(BaseModel):
 
 class TroubleContent(BaseModel):
     """
-    Generated content for the trouble
+    Generated title and content for the troubleshooting
     """
     title: str = Field(
-        description="Title of the trouble",
+        description="Title of the troubleshooting",
     )
     content: str = Field(
-        description="Generated content for the trouble",
+        description="Generated content for the troubleshooting",
     )
