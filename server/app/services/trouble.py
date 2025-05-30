@@ -156,7 +156,19 @@ class TroubleService:
         Raises:
             HTTPException: trouble이 존재하지 않거나 삭제 권한이 없는 경우
         """
-        pass
+        # 1. trouble 존재 여부 확인
+        trouble = trouble_repo.get_trouble_by_id(self.db, trouble_id)
+        if not trouble:
+            raise HTTPException(status_code=404, detail="요청한 trouble을 찾을 수 없습니다")
+        
+        # 2. 삭제 권한 확인 (생성자만 삭제 가능)
+        if trouble.created_by != user_id:
+            raise HTTPException(status_code=403, detail="이 trouble을 삭제할 권한이 없습니다. 생성자만 삭제할 수 있습니다")
+        
+        # 3. trouble 삭제 (연관된 trouble_logs도 cascade로 함께 삭제됨)
+        trouble_repo.delete_trouble(self.db, trouble)
+        
+        # 삭제 완료 (반환값 없음)
     
     def get_project_troubles(
         self, 
