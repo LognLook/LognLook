@@ -5,11 +5,24 @@ from app.models.project_setting import ProjectSetting
 from app.models.user_project import UserProject
 from app.schemas.project import ProjectCreate
 from app.repositories.user import get_user_by_id
+from fastapi import HTTPException
+import uuid
+
+
+def _create_unique_elastic_name(db: Session, max_retries=5):
+    for _ in range(max_retries):
+        index = uuid.uuid4().hex[:8]
+        if not db.query(Project).filter_by(index=index).first():
+            return index
+    raise HTTPException(status_code=500, detail="이름 중복이 너무 많습니다.")
 
 
 def create_project(db: Session, project: ProjectCreate, user: int) -> Project:
     db_project = Project(
-        name=project.name, description=project.description, create_by=user
+        name=project.name,
+        description=project.description,
+        create_by=user,
+        index=_create_unique_elastic_name(db),
     )
     db.add(db_project)
     db.commit()
@@ -22,7 +35,11 @@ def create_project(db: Session, project: ProjectCreate, user: int) -> Project:
         db.commit()
 
     # UserProject 연결
-    if not db.query(UserProject).filter_by(user_id=user, project_id=db_project.id).first():
+    if (
+        not db.query(UserProject)
+        .filter_by(user_id=user, project_id=db_project.id)
+        .first()
+    ):
         user_project = UserProject(user_id=user, project_id=db_project.id)
         db.add(user_project)
         db.commit()

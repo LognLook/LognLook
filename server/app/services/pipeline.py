@@ -71,3 +71,4 @@ class PipelineService:
         embedding_model = LLMFactory.create_embedding_model()
         vector = embedding_model.embed_query(comment)
         return vector
+    

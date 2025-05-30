@@ -4,6 +4,7 @@ from app.infra.database.session import get_db
 from app.services.project import ProjectService
 from app.services.user import UserService
 from app.services.pipeline import PipelineService
+from app.services.log import LogService
 
 
 def get_user_service(
@@ -17,7 +18,14 @@ def get_project_service(
 ) -> ProjectService:
     return ProjectService(db)
 
+
 def get_pipeline_service(
     db: Session = Depends(get_db),
 ) -> PipelineService:
     return PipelineService(db)
+
+
+def get_log_service(
+    db: Session = Depends(get_db),
+) -> LogService:
+    return LogService(db)
