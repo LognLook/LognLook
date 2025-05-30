@@ -1,7 +1,9 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from typing import Optional, List
-
+from app.repositories.elastic import retrieve_log
+from app.core.llm.base import LLMFactory
+from app.repositories.project import get_project_by_id
 from app.schemas.trouble import (
     TroubleCreate, 
     TroubleUpdate, 
@@ -11,13 +13,14 @@ from app.schemas.trouble import (
 )
 from app.models.trouble import Trouble
 from app.models.trouble_log import TroubleLog
-
+from langchain_core.prompts import PromptTemplate
+from app.core.llm.prompts import TROUBLE_CONTENT_PROMPT
 
 class TroubleService:
     """Trouble 관련 비즈니스 로직을 처리하는 서비스 클래스"""
-    
     def __init__(self, db: Session):
         self.db = db
+        self.llm = LLMFactory.create_mini_chat_model()
     
     def create_trouble(
         self, 
@@ -37,8 +40,27 @@ class TroubleService:
         Raises:
             HTTPException: 프로젝트가 존재하지 않거나 권한이 없는 경우
         """
-        pass
-    
+        project = get_project_by_id(self.db, create_trouble_dto.project_id)
+        project_index = "index_name" # TODO: 프로젝트 인덱스 사용
+        log_ids = create_trouble_dto.related_logs
+        log_contents = retrieve_log( 
+            index_name=project_index,
+            log_ids=log_ids
+        )
+        content = self._gen_ai_content(create_trouble_dto.user_query, log_contents)
+        trouble = Trouble(
+            project_id=create_trouble_dto.project_id,
+            created_by=created_by,
+            report_name=create_trouble_dto.report_name,
+            is_shared=create_trouble_dto.is_shared,
+            user_query=create_trouble_dto.user_query,
+            content=content
+        )
+        self.db.add(trouble)
+        self.db.commit()
+        self.db.refresh(trouble)
+        return trouble
+
     def get_trouble_by_id(self, trouble_id: int, user_id: int) -> Trouble:
         """
         ID로 trouble을 조회합니다.
@@ -165,3 +187,16 @@ class TroubleService:
             SQLAlchemy 쿼리 객체
         """
         pass
+
+    def _gen_ai_content(self, user_query: str) -> str:
+        """
+        AI로 트러블슈팅 내용을 생성합니다.
+        """
+        prompt = PromptTemplate(
+            template=TROUBLE_CONTENT_PROMPT,
+            input_variables=["user_query", "log_contents"]
+        )
+        log_contents = "log_contents" # TODO: 로그 검색 결과 사용
+        formatted_prompt = prompt.format(user_query=user_query, log_contents=log_contents)
+        return self.llm.invoke(formatted_prompt)
+        

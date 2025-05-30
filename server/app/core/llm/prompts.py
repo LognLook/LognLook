@@ -20,6 +20,17 @@ If the log message does not belong to any category, please choose "others" or "�
 <log_message>{log_message}</log_message>
 """
 
+TROUBLE_CONTENT_PROMPT = """
+You are a trouble content generator.
+Generate the content for the trouble.
+The content should be in the following format:
+1. What happened
+2. Why it happened
+3. How it happened
+<user_query>{user_query}</user_query>
+<log_contents>{log_contents}</log_contents>
+"""
+
 # 프롬프트용 데이터 모델
 class AIMessage(BaseModel):
     """
