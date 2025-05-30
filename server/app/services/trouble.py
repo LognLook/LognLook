@@ -56,12 +56,9 @@ class TroubleService:
         
         # 2. 로그 데이터 조회 및 AI 분석
         try:
-            # TODO: 프로젝트별 실제 인덱스명 사용
-            project_index = "index_name"  # 임시 인덱스명
-            
             # 연관된 로그들의 실제 내용 가져오기
             log_contents = get_logs_by_ids(
-                index_name=project_index,
+                index_name=project.index,
                 ids=create_trouble_dto.related_logs
             )
             
@@ -114,11 +111,11 @@ class TroubleService:
         # 1. trouble 존재 여부 확인
         trouble = trouble_repo.get_trouble_by_id(self.db, trouble_id)
         if not trouble:
-            raise HTTPException(status_code=404, detail="요청한 trouble을 찾을 수 없습니다")
+            raise HTTPException(status_code=404, detail="요청한 트러블슈팅을 찾을 수 없습니다")
         
         # 2. 접근 권한 확인 (생성자이거나 공유된 trouble만 조회 가능)
         if not self._check_trouble_access(trouble, user_id):
-            raise HTTPException(status_code=403, detail="이 trouble에 접근할 권한이 없습니다")
+            raise HTTPException(status_code=403, detail="이 트러블슈팅에 접근할 권한이 없습니다")
         
         # 3. trouble 반환
         return trouble
