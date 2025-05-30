@@ -31,11 +31,18 @@ def get_trouble_by_id(db: Session, trouble_id: int) -> Optional[Trouble]:
     return db.query(Trouble).filter(Trouble.id == trouble_id).first()
 
 
-def update_trouble(db: Session, trouble: Trouble, update_data: dict) -> Trouble:
+def update_trouble(db: Session, trouble: Trouble, update_data: TroubleUpdate) -> Trouble:
     """기존 trouble을 업데이트합니다."""
-    for key, value in update_data.items():
-        if hasattr(trouble, key) and value is not None:
-            setattr(trouble, key, value)
+    # content는 필수 필드이므로 무조건 업데이트
+    if update_data.content is not None:
+        trouble.content = update_data.content
+    
+    # Optional 필드들은 None이 아닌 경우만 업데이트
+    if update_data.report_name is not None:
+        trouble.report_name = update_data.report_name
+    
+    if update_data.is_shared is not None:
+        trouble.is_shared = update_data.is_shared
     
     db.commit()
     db.refresh(trouble)

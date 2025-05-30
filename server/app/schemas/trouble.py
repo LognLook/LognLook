@@ -29,7 +29,7 @@ class TroubleUpdate(BaseModel):
     """Trouble 업데이트용 스키마 - 선택적 필드들"""
     report_name: Optional[str] = None
     is_shared: Optional[bool] = None
-    content: str
+    content: Optional[str] = None
 
 
 class Trouble(TroubleBase):

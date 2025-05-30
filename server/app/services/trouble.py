@@ -140,7 +140,23 @@ class TroubleService:
         Raises:
             HTTPException: trouble이 존재하지 않거나 수정 권한이 없는 경우
         """
-        pass
+        # 1. trouble 존재 여부 확인
+        trouble = trouble_repo.get_trouble_by_id(self.db, trouble_id)
+        if not trouble:
+            raise HTTPException(status_code=404, detail="요청한 트러블슈팅을 찾을 수 없습니다")
+        
+        # 2. 수정 권한 확인 (생성자만 수정 가능)
+        if trouble.created_by != user_id:
+            raise HTTPException(status_code=403, detail="이 트러블슈팅을 수정할 권한이 없습니다. 생성자만 수정할 수 있습니다")
+        
+        # 3. trouble 업데이트
+        updated_trouble = trouble_repo.update_trouble(
+            self.db, 
+            trouble, 
+            trouble_update_dto
+        )
+        
+        return updated_trouble
     
     def delete_trouble(self, trouble_id: int, user_id: int) -> None:
         """
@@ -156,11 +172,11 @@ class TroubleService:
         # 1. trouble 존재 여부 확인
         trouble = trouble_repo.get_trouble_by_id(self.db, trouble_id)
         if not trouble:
-            raise HTTPException(status_code=404, detail="요청한 trouble을 찾을 수 없습니다")
+            raise HTTPException(status_code=404, detail="요청한 트러블슈팅을 찾을 수 없습니다")
         
         # 2. 삭제 권한 확인 (생성자만 삭제 가능)
         if trouble.created_by != user_id:
-            raise HTTPException(status_code=403, detail="이 trouble을 삭제할 권한이 없습니다. 생성자만 삭제할 수 있습니다")
+            raise HTTPException(status_code=403, detail="이 트러블슈팅을 삭제할 권한이 없습니다. 생성자만 삭제할 수 있습니다")
         
         # 3. trouble 삭제 (연관된 trouble_logs도 cascade로 함께 삭제됨)
         trouble_repo.delete_trouble(self.db, trouble)
