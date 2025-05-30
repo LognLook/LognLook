@@ -111,7 +111,17 @@ class TroubleService:
         Raises:
             HTTPException: trouble이 존재하지 않거나 접근 권한이 없는 경우
         """
-        pass
+        # 1. trouble 존재 여부 확인
+        trouble = trouble_repo.get_trouble_by_id(self.db, trouble_id)
+        if not trouble:
+            raise HTTPException(status_code=404, detail="요청한 trouble을 찾을 수 없습니다")
+        
+        # 2. 접근 권한 확인 (생성자이거나 공유된 trouble만 조회 가능)
+        if not self._check_trouble_access(trouble, user_id):
+            raise HTTPException(status_code=403, detail="이 trouble에 접근할 권한이 없습니다")
+        
+        # 3. trouble 반환
+        return trouble
     
     def update_trouble(
         self, 
@@ -205,7 +215,16 @@ class TroubleService:
         Returns:
             접근 권한 여부
         """
-        pass
+        # 생성자인 경우 접근 허용
+        if trouble.created_by == user_id:
+            return True
+        
+        # 공유된 trouble인 경우 접근 허용
+        if trouble.is_shared:
+            return True
+        
+        # 위 조건에 해당하지 않으면 접근 거부
+        return False
     
     def _build_trouble_query_filters(
         self, 
