@@ -8,7 +8,7 @@ class TroubleLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     trouble_id = Column(Integer, ForeignKey("troubles.id"), nullable=False)
-    log_id = Column(String, nullable=False)  # Elasticsearch 로그 ID
+    log_id = Column(String(100), nullable=False)  # Elasticsearch 로그 ID
 
     # Relationships
     trouble = relationship("Trouble", back_populates="logs")
