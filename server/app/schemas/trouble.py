@@ -5,7 +5,6 @@ from datetime import datetime
 
 class TroubleBase(BaseModel):
     project_id: int
-    report_name: str
     is_shared: bool = False
 
 
@@ -18,7 +17,6 @@ class TroubleCreate(TroubleBase):
         "json_schema_extra": {
             "example": {
                 "project_id": 1,
-                "report_name": "로그인 실패 분석",
                 "is_shared": False,
                 "user_query": "왜 사용자들이 로그인에 계속 실패하고 있나요?",
                 "related_logs": ["log_id_1", "log_id_2", "log_id_3"]
@@ -31,6 +29,7 @@ class TroubleUpdate(BaseModel):
     """Trouble 업데이트용 스키마 - 선택적 필드들"""
     report_name: Optional[str] = None
     is_shared: Optional[bool] = None
+    content: str
 
 
 class Trouble(TroubleBase):
@@ -38,6 +37,8 @@ class Trouble(TroubleBase):
     id: int
     created_by: int
     created_at: datetime
+    report_name: str
+    is_shared: bool
     user_query: str
     content: str
     
@@ -48,8 +49,8 @@ class Trouble(TroubleBase):
                 "id": 1,
                 "project_id": 1,
                 "created_by": 1,
-                "report_name": "로그인 오류 분석",
                 "created_at": "2024-01-01T10:00:00Z",
+                "report_name": "로그인 오류 분석",
                 "is_shared": False,
                 "user_query": "왜 사용자들이 로그인에 계속 실패하고 있나요?",
                 "content": "분석 결과, 비밀번호 검증 로직에서 문제가 발생하고 있습니다."
