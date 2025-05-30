@@ -179,17 +179,7 @@ class TroubleService:
             HTTPException: 프로젝트가 존재하지 않거나 접근 권한이 없는 경우
         """
         pass
-    
-    def _save_trouble_logs(self, trouble_id: int, log_ids: List[str]) -> None:
-        """
-        trouble과 연관된 로그 ID들을 저장합니다.
-        
-        Args:
-            trouble_id: trouble ID
-            log_ids: 연관된 로그 ID 리스트
-        """
-        pass
-    
+       
     def _check_project_access(self, project_id: int, user_id: int) -> bool:
         """
         사용자가 해당 프로젝트에 접근 권한이 있는지 확인합니다.
