@@ -181,8 +181,6 @@ class TroubleService:
         # 3. trouble 삭제 (연관된 trouble_logs도 cascade로 함께 삭제됨)
         trouble_repo.delete_trouble(self.db, trouble)
         
-        # 삭제 완료 (반환값 없음)
-    
     def get_project_troubles(
         self, 
         project_id: int, 
@@ -203,21 +201,50 @@ class TroubleService:
         Raises:
             HTTPException: 프로젝트가 존재하지 않거나 접근 권한이 없는 경우
         """
-        pass
+        # 1. 프로젝트 존재 여부 확인
+        project = get_project_by_id(self.db, project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다")
+        
+        # 2. 페이지네이션된 trouble 목록 조회
+        troubles, total = trouble_repo.get_project_troubles_paginated(
+            self.db, 
+            project_id, 
+            query_params, 
+            user_id
+        )
+        
+        # 3. 응답 데이터 구성
+        # trouble 목록을 TroubleSummary로 변환 (필요한 경우 추가 정보 포함)
+        trouble_summaries = []
+        for trouble in troubles:
+            # 생성자 이메일 조회 (선택적)
+            creator_email = trouble_repo.get_creator_email(self.db, trouble.id)
+            
+            # 연관된 로그 개수 조회 (선택적)
+            logs_count = len(trouble.trouble_logs) if hasattr(trouble, 'trouble_logs') else 0
+            
+            summary = TroubleSummary(
+                id=trouble.id,
+                report_name=trouble.report_name,
+                created_at=trouble.created_at,
+                is_shared=trouble.is_shared,
+                creator_email=creator_email,
+                logs_count=logs_count
+            )
+            trouble_summaries.append(summary)
+        
+        # 4. 총 페이지 수 계산
+        total_pages = (total + query_params.size - 1) // query_params.size
+        
+        return TroubleListResponse(
+            items=trouble_summaries,
+            total=total,
+            page=query_params.page,
+            size=query_params.size,
+            pages=total_pages
+        )
        
-    def _check_project_access(self, project_id: int, user_id: int) -> bool:
-        """
-        사용자가 해당 프로젝트에 접근 권한이 있는지 확인합니다.
-        
-        Args:
-            project_id: 프로젝트 ID
-            user_id: 사용자 ID
-        
-        Returns:
-            접근 권한 여부
-        """
-        pass
-    
     def _check_trouble_access(self, trouble: Trouble, user_id: int) -> bool:
         """
         사용자가 해당 trouble에 접근 권한이 있는지 확인합니다.
@@ -241,23 +268,6 @@ class TroubleService:
         # 위 조건에 해당하지 않으면 접근 거부
         return False
     
-    def _build_trouble_query_filters(
-        self, 
-        query_params: TroubleListQuery, 
-        project_id: int
-    ):
-        """
-        trouble 목록 조회용 필터 쿼리를 구성합니다.
-        
-        Args:
-            query_params: 쿼리 파라미터
-            project_id: 프로젝트 ID
-        
-        Returns:
-            SQLAlchemy 쿼리 객체
-        """
-        pass
-
     def _gen_ai_content(self, user_query: str, log_contents: List[str]) -> TroubleContent:
         """
         AI로 트러블슈팅 내용을 생성합니다.
