@@ -22,8 +22,6 @@ class ProjectService:
         db_project = ProjectRepository.create_project(
             db=self.db, project=project_dto, user=db_user.id
         )
-        print("===")
-        print(db_project.index)
         ElasticsearchRepository.create_project_index(index_name=db_project.index)
 
         print("===")
