@@ -1,9 +1,14 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from typing import Optional, List
-from app.repositories.elastic import retrieve_log
+
+from langchain_core.prompts import PromptTemplate
+from langchain_core.messages import HumanMessage
+
 from app.core.llm.base import LLMFactory
+from app.core.llm.prompts import TROUBLE_CONTENT_PROMPT, TroubleContent
 from app.repositories.project import get_project_by_id
+from app.repositories.elastic import get_logs_by_ids
 from app.schemas.trouble import (
     TroubleCreate, 
     TroubleUpdate, 
@@ -13,8 +18,7 @@ from app.schemas.trouble import (
 )
 from app.models.trouble import Trouble
 from app.models.trouble_log import TroubleLog
-from langchain_core.prompts import PromptTemplate
-from app.core.llm.prompts import TROUBLE_CONTENT_PROMPT
+
 
 class TroubleService:
     """Trouble 관련 비즈니스 로직을 처리하는 서비스 클래스"""
@@ -43,10 +47,10 @@ class TroubleService:
         project = get_project_by_id(self.db, create_trouble_dto.project_id)
         project_index = "index_name" # TODO: 프로젝트 인덱스 사용
         log_ids = create_trouble_dto.related_logs
-        log_contents = retrieve_log( 
+        log_contents = get_logs_by_ids(
             index_name=project_index,
-            log_ids=log_ids
-        )
+            ids=log_ids
+        ) # TODO: 로그 검색 결과 정리 필요 (utils 함수 구현)
         content = self._gen_ai_content(create_trouble_dto.user_query, log_contents)
         trouble = Trouble(
             project_id=create_trouble_dto.project_id,
@@ -188,7 +192,7 @@ class TroubleService:
         """
         pass
 
-    def _gen_ai_content(self, user_query: str) -> str:
+    def _gen_ai_content(self, user_query: str, log_contents: List[str]) -> str:
         """
         AI로 트러블슈팅 내용을 생성합니다.
         """
@@ -196,7 +200,10 @@ class TroubleService:
             template=TROUBLE_CONTENT_PROMPT,
             input_variables=["user_query", "log_contents"]
         )
-        log_contents = "log_contents" # TODO: 로그 검색 결과 사용
-        formatted_prompt = prompt.format(user_query=user_query, log_contents=log_contents)
-        return self.llm.invoke(formatted_prompt)
-        
+        log_contents_str = "\n".join(
+            f"<log_content>\n{log_content}\n</log_content>\n" 
+            for log_content in log_contents
+        )
+        formatted_prompt = prompt.format(user_query=user_query, log_contents=log_contents_str)
+        chain = self.llm.with_structured_output(TroubleContent)
+        return chain.invoke([HumanMessage(content=formatted_prompt)])

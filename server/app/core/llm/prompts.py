@@ -42,3 +42,14 @@ class AIMessage(BaseModel):
     category: str = Field(
         description="User defined category of the log message",
     )
+
+class TroubleContent(BaseModel):
+    """
+    Generated content for the trouble
+    """
+    title: str = Field(
+        description="Title of the trouble",
+    )
+    content: str = Field(
+        description="Generated content for the trouble",
+    )
