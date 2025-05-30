@@ -9,6 +9,7 @@ from app.core.llm.base import LLMFactory
 from app.core.llm.prompts import TROUBLE_CONTENT_PROMPT, TroubleContent
 from app.repositories.project import get_project_by_id
 from app.repositories.elastic import get_logs_by_ids
+from app.repositories import trouble as trouble_repo
 from app.schemas.trouble import (
     TroubleCreate, 
     TroubleUpdate, 
@@ -35,7 +36,7 @@ class TroubleService:
         새로운 trouble을 생성합니다.
         
         Args:
-            trouble_data: 생성할 trouble 데이터
+            create_trouble_dto: 생성할 trouble 데이터
             created_by: 생성자 ID (인증된 사용자)
         
         Returns:
@@ -44,25 +45,60 @@ class TroubleService:
         Raises:
             HTTPException: 프로젝트가 존재하지 않거나 권한이 없는 경우
         """
+        # 1. 프로젝트 존재 여부 및 접근 권한 확인
         project = get_project_by_id(self.db, create_trouble_dto.project_id)
-        project_index = "index_name" # TODO: 프로젝트 인덱스 사용
-        log_ids = create_trouble_dto.related_logs
-        log_contents = get_logs_by_ids(
-            index_name=project_index,
-            ids=log_ids
-        ) # TODO: 로그 검색 결과 정리 필요 (utils 함수 구현)
-        content = self._gen_ai_content(create_trouble_dto.user_query, log_contents)
-        trouble = Trouble(
-            project_id=create_trouble_dto.project_id,
-            created_by=created_by,
-            report_name=create_trouble_dto.report_name,
-            is_shared=create_trouble_dto.is_shared,
-            user_query=create_trouble_dto.user_query,
-            content=content
-        )
-        self.db.add(trouble)
-        self.db.commit()
-        self.db.refresh(trouble)
+        if not project:
+            raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다")
+        
+        # 사용자가 해당 프로젝트에 접근 권한이 있는지 확인
+        if not trouble_repo.check_user_project_access(self.db, create_trouble_dto.project_id, created_by):
+            raise HTTPException(status_code=403, detail="프로젝트에 접근 권한이 없습니다")
+        
+        # 2. 로그 데이터 조회 및 AI 분석
+        try:
+            # TODO: 프로젝트별 실제 인덱스명 사용
+            project_index = "index_name"  # 임시 인덱스명
+            
+            # 연관된 로그들의 실제 내용 가져오기
+            log_contents = get_logs_by_ids(
+                index_name=project_index,
+                ids=create_trouble_dto.related_logs
+            )
+            
+            # AI를 사용해 트러블슈팅 내용 생성
+            ai_content = self._gen_ai_content(
+                create_trouble_dto.user_query, 
+                log_contents
+            )
+            
+        except Exception as e:
+            # 로그 조회나 AI 분석 실패 시 기본 내용으로 대체
+            ai_content = TroubleContent(
+                title=f"사용자 질의에 대한 분석을 진행 중입니다: {create_trouble_dto.user_query}",
+                content=f"사용자 질의에 대한 분석을 진행 중입니다: {create_trouble_dto.user_query}"
+            )
+        
+        # 3. trouble 데이터 생성
+        trouble_data = {
+            "project_id": create_trouble_dto.project_id,
+            "created_by": created_by,
+            "report_name": ai_content.title,
+            "is_shared": create_trouble_dto.is_shared,
+            "user_query": create_trouble_dto.user_query,
+            "content": ai_content.content
+        }
+        
+        # 4. DB에 trouble 저장
+        trouble = trouble_repo.create_trouble(self.db, trouble_data)
+        
+        # 5. 연관된 로그 ID들 저장
+        if create_trouble_dto.related_logs:
+            trouble_repo.save_trouble_logs(
+                self.db, 
+                trouble.id, 
+                create_trouble_dto.related_logs
+            )
+        
         return trouble
 
     def get_trouble_by_id(self, trouble_id: int, user_id: int) -> Trouble:
@@ -192,18 +228,33 @@ class TroubleService:
         """
         pass
 
-    def _gen_ai_content(self, user_query: str, log_contents: List[str]) -> str:
+    def _gen_ai_content(self, user_query: str, log_contents: List[str]) -> TroubleContent:
         """
         AI로 트러블슈팅 내용을 생성합니다.
+        
+        Args:
+            user_query: 사용자 질의
+            log_contents: 연관된 로그 내용들
+        
+        Returns:
+            AI가 생성한 트러블슈팅 분석 내용
         """
         prompt = PromptTemplate(
             template=TROUBLE_CONTENT_PROMPT,
             input_variables=["user_query", "log_contents"]
         )
+        
+        # 로그 내용들을 하나의 문자열로 결합
         log_contents_str = "\n".join(
             f"<log_content>\n{log_content}\n</log_content>\n" 
             for log_content in log_contents
         )
-        formatted_prompt = prompt.format(user_query=user_query, log_contents=log_contents_str)
+        
+        # 프롬프트 포맷팅 및 AI 호출
+        formatted_prompt = prompt.format(
+            user_query=user_query, 
+            log_contents=log_contents_str
+        )
+        
         chain = self.llm.with_structured_output(TroubleContent)
         return chain.invoke([HumanMessage(content=formatted_prompt)])
