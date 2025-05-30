@@ -8,7 +8,7 @@ from langchain_core.messages import HumanMessage
 from app.core.llm.base import LLMFactory
 from app.core.llm.prompts import TROUBLESHOOTING_TEMPLATE, TroubleContent
 from app.repositories.project import get_project_by_id
-from app.repositories.elastic import get_logs_by_ids
+from app.repositories.elasticsearch import get_logs_by_ids
 from app.repositories import trouble as trouble_repo
 from app.schemas.trouble import (
     TroubleCreate, 
@@ -78,20 +78,16 @@ class TroubleService:
                 content=f"사용자 질의에 대한 분석을 진행 중입니다: {create_trouble_dto.user_query}"
             )
         
-        # 3. trouble 데이터 생성
-        trouble_data = {
-            "project_id": create_trouble_dto.project_id,
-            "created_by": created_by,
-            "report_name": ai_content.title,
-            "is_shared": create_trouble_dto.is_shared,
-            "user_query": create_trouble_dto.user_query,
-            "content": ai_content.content
-        }
+        # 3. DB에 trouble 저장
+        trouble = trouble_repo.create_trouble(
+            self.db, 
+            create_trouble_dto, 
+            created_by, 
+            ai_content.title, 
+            ai_content.content
+        )
         
-        # 4. DB에 trouble 저장
-        trouble = trouble_repo.create_trouble(self.db, trouble_data)
-        
-        # 5. 연관된 로그 ID들 저장
+        # 4. 연관된 로그 ID들 저장
         if create_trouble_dto.related_logs:
             trouble_repo.save_trouble_logs(
                 self.db, 

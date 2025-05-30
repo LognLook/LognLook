@@ -10,9 +10,16 @@ from app.models.user import User
 from app.schemas.trouble import TroubleCreate, TroubleUpdate, TroubleListQuery
 
 
-def create_trouble(db: Session, trouble_data: dict) -> Trouble:
+def create_trouble(db: Session, trouble: TroubleCreate, created_by: int, report_name: str, content: str) -> Trouble:
     """새로운 trouble을 생성합니다."""
-    db_trouble = Trouble(**trouble_data)
+    db_trouble = Trouble(
+        project_id=trouble.project_id,
+        created_by=created_by,
+        report_name=report_name,
+        content=content,
+        is_shared=trouble.is_shared,
+        user_query=trouble.user_query
+    )
     db.add(db_trouble)
     db.commit()
     db.refresh(db_trouble)
