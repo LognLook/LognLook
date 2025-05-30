@@ -62,7 +62,7 @@ class ElasticsearchClient:
     def create_index(self, index: str, mappings: Dict[str, Any]) -> None:
         """ 인덱스를 생성하는 함수 """
         if not self.es.indices.exists(index=index):
-            self.es.indices.create(index=index, body=mappings)
+            self.es.indices.create(index=index, mappings=mappings)
         else:
             raise ValueError(f"Index {index} already exists")
 
