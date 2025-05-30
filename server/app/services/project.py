@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.repositories import elasticsearch as ElasticsearchRepository
 from app.repositories import project as ProjectRepository
 from app.repositories import user as UserRepository
 from app.schemas.project import ProjectCreate, ProjectKeywordsUpdate, Project
@@ -18,9 +19,17 @@ class ProjectService:
         if not db_user:
             raise HTTPException(status_code=400, detail="Can't find user")
 
-        return ProjectRepository.create_project(
+        db_project = ProjectRepository.create_project(
             db=self.db, project=project_dto, user=db_user.id
         )
+        ElasticsearchRepository.create_project_index(index_name=db_project.index)
+
+        print("===")
+        return db_project
+
+    def get_project_by_id(self, project_id: int) -> Project:
+        """프로젝트 조회 서비스"""
+        return ProjectRepository.get_project_by_id(self.db, project_id=project_id)
 
     def get_projects_by_user(self, user_email: str) -> list:
         """사용자의 프로젝트 목록 조회 서비스"""
