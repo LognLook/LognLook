@@ -20,6 +20,17 @@ If the log message does not belong to any category, please choose "others" or "�
 <log_message>{log_message}</log_message>
 """
 
+TROUBLESHOOTING_TEMPLATE = """
+You are a troubleshooting content generator.
+Generate the content for the troubleshooting and make a title for the content.
+The content should be in the following format:
+1. What happened
+2. Why it happened
+3. How to fix it
+<user_query>{user_query}</user_query>
+<log_contents>{log_contents}</log_contents>
+"""
+
 # 프롬프트용 데이터 모델
 class AIMessage(BaseModel):
     """
@@ -30,4 +41,15 @@ class AIMessage(BaseModel):
     )
     category: str = Field(
         description="User defined category of the log message",
+    )
+
+class TroubleContent(BaseModel):
+    """
+    Generated title and content for the troubleshooting
+    """
+    title: str = Field(
+        description="Title of the troubleshooting",
+    )
+    content: str = Field(
+        description="Generated content for the troubleshooting",
     )

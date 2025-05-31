@@ -53,8 +53,7 @@ def retrieve_log(
         raise HTTPException(status_code=404, detail="No logs found.")
     return search_by_hybrid
 
-
-def get_logs_by_id(index_name: str, ids: List[str]) -> List[Dict[str, Any]]:
+def get_logs_by_ids(index_name: str, ids: List[str]) -> List[Dict[str, Any]]:
     """id로 로그를 검색하는 함수"""
     try:
         results = es.search_by_id(index=index_name, ids=ids)
