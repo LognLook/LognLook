@@ -3,6 +3,8 @@ CREATE TABLE Trouble (
     trouble_id INT AUTO_INCREMENT PRIMARY KEY,
     project_id INT NOT NULL,
     trouble_name VARCHAR(50), -- 리포트 제목
+    user_query TEXT, -- 사용자 쿼리
+    content TEXT, -- 리포트 내용
     is_shared BOOLEAN NOT NULL DEFAULT FALSE, -- 리포트 공유 여부
     description TEXT, -- 리포트 내용
     created_by INT NOT NULL, -- 리포트 작성자

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import List
 
 
@@ -6,10 +6,6 @@ from typing import List
 class ProjectBase(BaseModel):
     name: str
     description: str
-
-
-class ProjectCreate(ProjectBase):
-    user_email: EmailStr
 
 
 class Project(ProjectBase):

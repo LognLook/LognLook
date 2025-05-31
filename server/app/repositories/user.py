@@ -15,6 +15,6 @@ def get_user_by_email(db: Session, email: str):
     db_user = db.query(User).filter(User.email == email).first()
     return db_user
 
-def get_user_by_id(db: Session, id: int):
-    db_user = db.query(User).filter(User.id == id).first()
+def get_user_by_id(db: Session, user_id: int):
+    db_user = db.query(User).filter(User.id == user_id).first()
     return db_user
