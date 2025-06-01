@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.core.utils.time_utils import get_start_time
-from app.core.utils.log_utils import process_logs, remove_vector_from_logs
+from app.core.utils.log_utils import extract_logs, remove_vector_from_logs
 from app.services.project import ProjectService
 from app.repositories import user as UserRepository
 from app.repositories import elasticsearch as ElasticsearchRepository
@@ -27,7 +27,7 @@ class LogService:
             end_time=end_time,
         )
 
-        return process_logs(logs)
+        return extract_logs(logs)
 
     def get_logs_by_date_range(
         self,
