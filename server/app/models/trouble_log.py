@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, String
+from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from app.infra.database.session import Base
 
@@ -8,7 +8,6 @@ class TroubleLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     trouble_id = Column(Integer, ForeignKey("troubles.id"), nullable=False)
-    log_id = Column(String(100), nullable=False)  # Elasticsearch 로그 ID
 
     # Relationships
     trouble = relationship("Trouble", back_populates="logs")
