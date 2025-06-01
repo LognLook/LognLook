@@ -48,7 +48,7 @@ def create_project(db: Session, project: ProjectCreate, user: int) -> Project:
 
 
 def get_project_by_user(db: Session, user_id: int) -> list[Project]:
-    db_user = get_user_by_id(db, id=user_id)
+    db_user = get_user_by_id(db, user_id)
     return db_user.projects
 
 
