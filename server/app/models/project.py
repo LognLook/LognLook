@@ -18,9 +18,14 @@ class Project(Base):
         back_populates="project",
         cascade="all, delete-orphan",
         lazy="joined",
+        passive_deletes=True,
     )
     troubles = relationship(
-        "Trouble", back_populates="project", cascade="all, delete-orphan", lazy="joined"
+        "Trouble",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        lazy="joined",
+        passive_deletes=True,
     )
     setting = relationship(
         "ProjectSetting",
@@ -28,12 +33,14 @@ class Project(Base):
         uselist=False,
         cascade="all, delete-orphan",
         lazy="joined",
+        passive_deletes=True,
     )
     notifications = relationship(
         "Notification",
         back_populates="project",
         cascade="all, delete-orphan",
         lazy="joined",
+        passive_deletes=True,
     )
 
     # 읽기 전용 다대다 관계

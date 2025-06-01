@@ -7,10 +7,10 @@ router = APIRouter()
 
 logger = logging.getLogger("logstash")
 
+
 @router.post("/log")
-def collect_log(
-    data: dict, service: PipelineService = Depends(get_pipeline_service)
-):
+def collect_log(data: dict, service: PipelineService = Depends(get_pipeline_service)):
+    # TODO: project_id 추가 , api 키 요청
     try:
         # Log the incoming data
         result = service.process_log(data)
