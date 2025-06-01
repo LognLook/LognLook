@@ -81,6 +81,14 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
     }));
   };
 
+  const handleTroubleShooting = () => {
+    if (selectedLogs.size > 0) {
+      const selectedLogItems = Array.from(selectedLogs).map(index => displayLogs[index]);
+      setSelectedLog(selectedLogItems[0]); // 첫 번째 로그를 기본 선택
+      setIsModalOpen(true);
+    }
+  };
+
   // 1440px 기준 사이드바 상태에 따른 너비 계산 (vw 단위 사용)
   const getWidthClass = () => {
     if (isSidebarOpen) {
@@ -117,7 +125,7 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
           </div>
           <button 
             className="w-[8.33vw] h-[2.8vh] bg-[#496660] text-white rounded-[4px] text-[clamp(12px,0.83vw,14px)] font-medium hover:bg-[#EFFBF9] transition-colors flex items-center justify-center"
-            onClick={() => console.log('Troubleshooting clicked')}
+            onClick={handleTroubleShooting}
           >
             Trouble Shooting
           </button>
@@ -174,7 +182,7 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
                   <div className="w-[99px] flex items-center justify-center checkbox-column">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded-[3px] border-[#E5E5EC] focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#1E435F]"
                       checked={selectedLogs.has(index)}
                       onChange={(e) => handleCheckboxChange(index, e)}
                       onClick={(e) => e.stopPropagation()}
@@ -194,7 +202,10 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
 
       {selectedLog && (
         <LogDetailModal
-          log={selectedLog}
+          logs={selectedLogs.size > 0 
+            ? Array.from(selectedLogs).map(index => displayLogs[index])
+            : [selectedLog]
+          }
           isOpen={isModalOpen}
           onClose={handleCloseModal}
         />

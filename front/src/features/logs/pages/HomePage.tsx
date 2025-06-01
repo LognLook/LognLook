@@ -6,10 +6,18 @@ import LogGraph from "../components/LogGraph/LogGraph";
 import LogDistribution from "../components/LogDistribution/LogDistribution";
 import RecentLogs from "../components/RecentLogs";
 import SearchBar from "../components/SearchBar";
-import { DUMMY_LOGS } from "../data/dummyLogs";
+import { useQuery } from "@tanstack/react-query";
+import { getLogs } from "../api/logApi";
 
 const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
+
+  // API로부터 로그 데이터 가져오기
+  const { data: logs } = useQuery({
+    queryKey: ['logs'],
+    queryFn: getLogs,
+    retry: false,
+  });
 
   return (
     <DashboardLayout>
@@ -44,8 +52,8 @@ const HomePage: React.FC = () => {
 
           {/* 로그 그래프와 파이 차트 */}
           <section className="flex gap-8 mt-1">
-            <LogGraph logs={DUMMY_LOGS} />
-            <LogDistribution logs={DUMMY_LOGS} />
+            <LogGraph projectId={1} userId={1} />
+            <LogDistribution logs={logs} />
           </section>
 
           {/* 로그 리스트 */}
