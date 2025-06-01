@@ -14,13 +14,23 @@ const HomePage: React.FC = () => {
   return (
     <DashboardLayout>
       {({ isSidebarOpen }) => (
-        <div className="flex flex-col">
-          {/* 서치바 */}
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search anything"
-          />
+        <div className={`flex flex-col ${isSidebarOpen ? 'w-[79.03vw]' : 'w-[87.64vw]'}`}>
+          {/* 서치바와 프로필 */}
+          <div className="flex items-center justify-between w-full">
+            <div className="flex-1">
+              <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search anything"
+              />
+            </div>
+            <div className="flex items-center gap-3 mr-[82px] lg:mr-[58px]">
+              <div className="w-[40px] h-[40px] rounded-full bg-[#496660] flex items-center justify-center text-white font-medium">
+                JS
+              </div>
+              <span className="text-[14px] font-medium text-gray-700">John Smith</span>
+            </div>
+          </div>
 
           {/* Welcome과 팀보드 영역 */}
           <div className="flex gap-8 items-stretch w-full mt-8">
@@ -39,10 +49,9 @@ const HomePage: React.FC = () => {
           </section>
 
           {/* 로그 리스트 */}
-          <section className="mt-5">
+          <section className="mt-7">
             <RecentLogs isSidebarOpen={isSidebarOpen} />
           </section>
-          
         </div>
       )}
     </DashboardLayout>

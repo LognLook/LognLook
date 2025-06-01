@@ -1,4 +1,4 @@
-import { LogItem, DisplayLogItem } from '../@types/logs';
+import { LogItem, DisplayLogItem } from '../types/logs';
 
 /**
  * Extracts the log level (INFO, ERROR, WARN, DEBUG) from a log message
