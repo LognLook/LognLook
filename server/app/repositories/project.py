@@ -9,9 +9,9 @@ from fastapi import HTTPException
 import uuid
 
 
-def _create_unique_elastic_name(db: Session, max_retries=5):
+def _create_uuid(db: Session, max_retries=5):
     for _ in range(max_retries):
-        index = uuid.uuid4().hex[:8]
+        index = uuid.uuid4().hex
         if not db.query(Project).filter_by(index=index).first():
             return index
     raise HTTPException(status_code=500, detail="이름 중복이 너무 많습니다.")
@@ -22,7 +22,8 @@ def create_project(db: Session, project: ProjectCreate, user: int) -> Project:
         name=project.name,
         description=project.description,
         create_by=user,
-        index=_create_unique_elastic_name(db),
+        index=_create_uuid(db),
+        api_key=_create_uuid(db),
     )
     db.add(db_project)
     db.commit()

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 import logging
+from uuid import UUID
 from app.core.config.dependencies import get_pipeline_service
 from app.services.pipeline import PipelineService
 
@@ -9,11 +10,14 @@ logger = logging.getLogger("logstash")
 
 
 @router.post("/log")
-def collect_log(data: dict, service: PipelineService = Depends(get_pipeline_service)):
-    # TODO: project_id 추가 , api 키 요청
+def collect_log(
+    data: dict,
+    service: PipelineService = Depends(get_pipeline_service),
+    api_key: str = Header(..., description="elasticsearch index 연결용 API 키"),
+):
     try:
         # Log the incoming data
-        result = service.process_log(data)
+        result = service.process_log(data, api_key)
         logger.info("Successfully processed log data")
         return result
     except Exception as e:
