@@ -43,9 +43,9 @@ const HomePage: React.FC = () => {
             </div>
             <div className="flex items-center gap-3 mr-[82px] lg:mr-[58px]">
               <div className="w-[40px] h-[40px] rounded-full bg-[#496660] flex items-center justify-center text-white font-medium">
-                JS
+                SY
               </div>
-              <span className="text-[14px] font-medium text-gray-700">John Smith</span>
+              <span className="text-[14px] font-medium text-gray-700">Seyoung</span>
             </div>
           </div>
 

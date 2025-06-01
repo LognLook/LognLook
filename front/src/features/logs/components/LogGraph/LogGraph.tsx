@@ -152,7 +152,7 @@ const LogGraph: React.FC<LogGraphProps> = ({
       <h2 className="text-[clamp(17px,1.18vw,20px)] font-semibold font-pretendard text-[#000000]">
         Log Graph
       </h2>
-      <div className={`bg-white pt-2 pl-2 pr-2 pb-0 rounded-lg ${getGraphWidthClass()} h-[32vh]`}>
+      <div className={`bg-white pt-4 pl-4 pr-4 pb-0 rounded-lg ${getGraphWidthClass()} h-[32vh]`}>
         <div className="flex justify-between items-center mb-4">
           <TimePeriodSelector
             selectedPeriod={selectedPeriod}
@@ -174,7 +174,7 @@ const LogGraph: React.FC<LogGraphProps> = ({
           </div>
         </div>
         
-        <div className="flex">
+        <div className="flex pt-3 pb-2">
           <LogChart
             data={graphData}
             visibleLevels={visibleLevels}
