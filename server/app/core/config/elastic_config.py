@@ -295,6 +295,18 @@ ELASTIC_MAPPINGS = {
           }
         }
       },
+        "message_timestamp": {
+        "type": "date"
+      },
+      "log_level": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
       "vector": {
         "type": "dense_vector",
         "dims": 1536,
