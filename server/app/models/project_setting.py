@@ -9,7 +9,7 @@ class ProjectSetting(Base):
 
     id: int | None = Column(Integer, primary_key=True, index=True)
     project_id: int = Column(
-        Integer, ForeignKey("project.id"), nullable=False, unique=True
+        Integer, ForeignKey("project.id"), nullable=False, unique=True, cascade="all, delete-orphan"
     )
     logstash_config: JSON | None = Column(JSON, nullable=False, default=list)
     log_keywords: JSON | None = Column(JSON, nullable=False, default=list)

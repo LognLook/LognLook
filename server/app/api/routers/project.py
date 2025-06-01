@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header
 from app.schemas.project import (
     ProjectBase,
     Project,
+    ProjectCreate,
     ProjectKeywordsUpdate,
     ProjectKeywordsBase,
 )
@@ -14,14 +15,17 @@ router = APIRouter()
 
 @router.post("/project", response_model=Project)
 def create_projects(
-    project_dto: ProjectCreate, service: ProjectService = Depends(get_project_service)
+    project_dto: ProjectCreate, 
+    service: ProjectService = Depends(get_project_service),
+    x_user_id: int = Header(..., description="클라이언트에서 전달받은 사용자 ID")
 ):
     return service.create_project(project_dto=project_dto, user_id=x_user_id)
 
 
 @router.get("/project", response_model=list[Project])
 def get_project(
-    user_email: str, service: ProjectService = Depends(get_project_service)
+    service: ProjectService = Depends(get_project_service),
+    x_user_id: int = Header(..., description="클라이언트에서 전달받은 사용자 ID")
 ):
     return service.get_projects_by_user(user_id=x_user_id)
 

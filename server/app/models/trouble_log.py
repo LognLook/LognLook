@@ -7,7 +7,7 @@ class TroubleLog(Base):
     __tablename__ = "trouble_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    trouble_id = Column(Integer, ForeignKey("troubles.id"), nullable=False)
+    trouble_id = Column(Integer, ForeignKey("troubles.id"), nullable=False, cascade="all, delete-orphan")
     log_id = Column(String(100), nullable=False)  # Elasticsearch 로그 ID
 
     # Relationships

@@ -11,7 +11,7 @@ class ProjectService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_project(self, project_dto: ProjectCreate) -> Project:
+    def create_project(self, project_dto: ProjectCreate, user_id: int) -> Project:
         """프로젝트 생성 서비스"""
         db_user = UserRepository.get_user_by_id(db=self.db, user_id=user_id)
         if not db_user:
