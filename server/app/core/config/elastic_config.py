@@ -177,6 +177,6 @@ ELASTIC_MAPPINGS = {
             "dims": 1536,
             "index": True,
             "similarity": "cosine",
-        },
+        }
     }
 }
