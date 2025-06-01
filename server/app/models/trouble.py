@@ -8,8 +8,12 @@ class Trouble(Base):
     __tablename__ = "troubles"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    project_id = Column(
+        Integer, ForeignKey("project.id", ondelete="CASCADE"), nullable=False
+    )
+    created_by = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     report_name = Column(String(50), nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     is_shared = Column(Boolean, default=False, nullable=False)
@@ -17,8 +21,8 @@ class Trouble(Base):
     content = Column(String(10000), nullable=False)
 
     # Relationships
-    project = relationship("Project", back_populates="troubles")
-    creator = relationship("User", back_populates="troubles")
+    project = relationship("Project", back_populates="troubles", passive_deletes=True)
+    creator = relationship("User", back_populates="troubles", passive_deletes=True)
     logs = relationship(
         "TroubleLog",
         back_populates="trouble",

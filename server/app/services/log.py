@@ -63,6 +63,9 @@ class LogService:
 
         # 각 로그에서 메시지의 타임스탬프와 로그 레벨 추출
         processed_logs = []
+        if not isinstance(logs, list):
+            return []
+
         for log in logs:
             new_log = {}
             if "message" in log:

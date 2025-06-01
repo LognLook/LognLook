@@ -6,10 +6,17 @@ from sqlalchemy.orm import relationship
 
 class UserProject(Base):
     __tablename__ = "user_project"
-    user_id: int | None = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    project_id: int | None = Column(Integer, ForeignKey("project.id"), primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    project_id = Column(
+        Integer, ForeignKey("project.id", ondelete="CASCADE"), nullable=False
+    )
     role: str | None = Column(String(20))
     email_notification: bool = Column(Boolean, nullable=False, default=True)
 
-    user = relationship("User", back_populates="user_projects")
-    project = relationship("Project", back_populates="user_projects")
+    user = relationship("User", back_populates="user_projects", passive_deletes=True)
+    project = relationship(
+        "Project", back_populates="user_projects", passive_deletes=True
+    )
