@@ -26,7 +26,6 @@ class PipelineService:
         """
         # 데이터베이스에서 유저 설정 카테고리, 언어, 인덱스 정보를 가져옴
         log_message = log_data.get("message", "")
-
         project = self.db.query(Project).filter(Project.api_key == api_key).first()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
@@ -58,7 +57,6 @@ class PipelineService:
         로그 메세지에 대한 코멘트를 생성하는 함수
         """
         comment_model = LLMFactory.create_mini_chat_model()
-
         prompt = PromptTemplate(
             template=LOG_COMMENT_TEMPLATE,
             input_variables=["log_message", "category_list", "language"],
@@ -66,7 +64,7 @@ class PipelineService:
         if category_list == []:
             formatted_prompt = prompt.format(
                 log_message=log_msg,
-                category_list="",
+                category_list=None,
                 language=language.value,
             )
         else:
