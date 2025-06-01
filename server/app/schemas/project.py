@@ -14,6 +14,7 @@ class ProjectCreate(ProjectBase):
 
 class Project(ProjectBase):
     id: int
+    api_key: str
     model_config = {  # SQLAlchemy 객체를 Pydantic 모델로 자동 변환해주는 설정
         "from_attributes": True
     }

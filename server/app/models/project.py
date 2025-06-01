@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy import UUID, Column, Integer, String, DateTime
+from app.core.enums.language import Language
 from app.infra.database.session import Base
 from sqlalchemy.orm import relationship
 
@@ -10,6 +11,9 @@ class Project(Base):
     name: str = Column(String(20), nullable=False)
     description: str = Column(String(50))
     index: UUID = Column(String(36), nullable=False)
+    api_key: UUID = Column(String(36), nullable=False)
+    language: str = Column(String(20), nullable=False, default=Language.KOREAN)
+
     create_by: int = Column(Integer)
     create_at: DateTime = Column(DateTime, default=datetime.now)
 
