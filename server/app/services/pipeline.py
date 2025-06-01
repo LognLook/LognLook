@@ -32,7 +32,7 @@ class PipelineService:
 
         category_list = project.setting.log_keywords
         language = project.language
-        ai_msg = self.gen_ai_msg(log_message, category_list, language)
+        ai_msg = self._gen_ai_msg(log_message, category_list, language)
         # ai_msg = AIMessage(
         #     comment="유저가 비밀번호를 잘못 입력했습니다.",
         #     category="유저 입력 에러"

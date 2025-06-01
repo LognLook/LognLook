@@ -1,23 +1,33 @@
 import re
 from typing import Optional, List, Dict, Any
+from datetime import datetime
 
 
 def extract_timestamp_from_message(message: str) -> Optional[str]:
     """
-    로그 메시지에서 타임스탬프를 추출합니다.
+    로그 메시지에서 타임스탬프를 추출하고 ISO 형식으로 변환합니다.
 
     Args:
         message (str): 로그 메시지
 
     Returns:
-        Optional[str]: 추출된 타임스탬프 (YYYY-MM-DD HH:MM:SS 형식) 또는 None
+        Optional[str]: ISO 형식으로 변환된 타임스탬프 (YYYY-MM-DDTHH:MM:SS.SSSSSS) 또는 None
     """
-    # 정규표현식 패턴: YYYY-MM-DD HH:MM:SS 형식
-    pattern = r"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}"
+    # 정규표현식 패턴: YYYY-MM-DD HH:MM:SS.SSS 형식
+    pattern = r"\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}(?:\.\d{3})?"
     match = re.search(pattern, message)
 
     if match:
-        return match.group()
+        ts = match.group()
+        try:
+            # datetime 객체로 파싱
+            dt = datetime.strptime(
+                ts, "%Y-%m-%d %H:%M:%S.%f" if "." in ts else "%Y-%m-%d %H:%M:%S"
+            )
+            # ISO 포맷 문자열로 변환
+            return dt.isoformat()
+        except ValueError:
+            return None
     return None
 
 
