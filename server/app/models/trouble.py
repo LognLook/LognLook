@@ -19,4 +19,4 @@ class Trouble(Base):
     # Relationships
     project = relationship("Project", back_populates="troubles")
     creator = relationship("User", back_populates="troubles")
-    logs = relationship("TroubleLog", back_populates="trouble", lazy="joined")
+    logs = relationship("TroubleLog", back_populates="trouble", lazy="joined", cascade="all, delete-orphan")
