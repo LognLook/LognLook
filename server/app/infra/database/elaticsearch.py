@@ -70,6 +70,11 @@ class ElasticsearchClient:
         """ id로 검색하는 함수 """
         query = {"query": {"ids": {"values": ids}}}
         return self._execute_search(index, query)
+    
+    def search_by_datetime(self, index: str, start_time: str, end_time: str) -> List[Any]:
+        """ 시간 범위로 검색하는 함수 """
+        query = {"query": {"range": {"@timestamp": {"gte": start_time, "lte": end_time}}}}
+        return self._execute_search(index, query)
 
     def search_by_terms(self, index: str, term_field: str, term_values: List[Any]) -> List[Dict[str, Any]]:
         """ terms 기반 검색 공통 함수 """

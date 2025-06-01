@@ -20,11 +20,9 @@ def create_project_index(index_name: str, mappings: dict = ELASTIC_MAPPINGS) -> 
             status_code=500, detail=f"Failed to create index {index_name}: {str(e)}"
         )
 
-
 def save_log(index_name: str, log_data: dict):
     """로그를 저장하는 함수"""
     es.save_document(index=index_name, document=log_data)
-
 
 def retrieve_log(
     index_name: str,
@@ -69,6 +67,14 @@ def get_logs_by_ids(index_name: str, ids: List[str]) -> List[Dict[str, Any]]:
             status_code=500, detail=f"Failed to retrieve logs by ID: {str(e)}"
         )
 
-
 def get_logs_by_datetime(index_name: str, start_time: str, end_time: str):
-    pass
+    """시간 범위로 로그를 검색하는 함수"""
+    try:
+        results = es.search_by_datetime(index=index_name, start_time=start_time, end_time=end_time)
+        if not results:
+            raise HTTPException(status_code=404, detail="No logs found with the provided datetime range.")
+        return results
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve logs by datetime: {str(e)}")
