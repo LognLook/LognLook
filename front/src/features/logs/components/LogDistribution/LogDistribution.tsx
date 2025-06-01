@@ -10,19 +10,8 @@ interface PieChartData {
 }
 
 interface ApiLogEntry {
-  '@timestamp': string;
-  container: {
-    id: string;
-  };
-  event: {
-    original: string;
-  };
-  message: string;
-  host: {
-    hostname: string;
-    ip: string[];
-    mac: string[];
-  };
+  extracted_timestamp: string;
+  log_level: LogLevel;
 }
 
 interface LogDistributionProps {
@@ -57,13 +46,9 @@ const LogDistribution: React.FC<LogDistributionProps> = ({ logs: propLogs }) => 
 
     // 각 레벨별 합계 계산
     const levelCounts = logs.reduce((acc: Record<LogLevel, number>, log: ApiLogEntry) => {
-      // message 필드에서 로그 레벨 추출
-      const levelMatch = log.message.match(/\[.*?\]\s+(\w+)\s+/);
-      if (levelMatch) {
-        const level = levelMatch[1].toUpperCase() as LogLevel;
-        if (['INFO', 'WARN', 'ERROR'].includes(level)) {
-          acc[level] = (acc[level] || 0) + 1;
-        }
+      // 새로운 데이터 구조에서 log_level 직접 사용
+      if (log.log_level && ['INFO', 'WARN', 'ERROR'].includes(log.log_level)) {
+        acc[log.log_level] = (acc[log.log_level] || 0) + 1;
       }
       return acc;
     }, {} as Record<LogLevel, number>);

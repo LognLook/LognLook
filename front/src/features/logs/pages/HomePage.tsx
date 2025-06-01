@@ -8,21 +8,11 @@ import RecentLogs from "../components/RecentLogs";
 import SearchBar from "../components/SearchBar";
 import { useQuery } from "@tanstack/react-query";
 import { getLogs } from "../api/logApi";
+import { LogLevel } from "../types/logTypes";
 
 interface ApiLogEntry {
-  '@timestamp': string;
-  container: {
-    id: string;
-  };
-  event: {
-    original: string;
-  };
-  message: string;
-  host: {
-    hostname: string;
-    ip: string[];
-    mac: string[];
-  };
+  extracted_timestamp: string;
+  log_level: LogLevel;
 }
 
 const HomePage: React.FC = () => {

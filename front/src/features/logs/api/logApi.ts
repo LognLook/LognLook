@@ -1,4 +1,4 @@
-import { LogEntry, LogLevel, LogGraphResponse } from '../types/logTypes';
+import { LogLevel, LogGraphResponse } from '../types/logTypes';
 import api from '../../../api/axios';
 import axios from 'axios';
 
@@ -12,7 +12,13 @@ interface FetchLogsParams {
   limit?: number;         
 }
 
-export const fetchLogs = async (params: FetchLogsParams): Promise<LogEntry[]> => {
+// API 응답용 인터페이스 (실제 백엔드 데이터 구조)
+interface ApiLogEntry {
+  extracted_timestamp: string;
+  log_level: LogLevel;
+}
+
+export const fetchLogs = async (params: FetchLogsParams): Promise<ApiLogEntry[]> => {
   try {
     console.log('Fetching logs with params:', params);
     const { projectId, userId, ...queryParams } = params;
@@ -68,7 +74,7 @@ export const fetchLogGraphData = async (params: FetchLogsParams): Promise<LogGra
   }
 };
 
-export const getLogs = async (): Promise<LogEntry[]> => {
+export const getLogs = async (): Promise<ApiLogEntry[]> => {
   console.log('getLogs called');
   return fetchLogs({ projectId: 1, userId: 1 });
 };

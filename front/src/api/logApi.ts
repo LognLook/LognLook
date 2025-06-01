@@ -3,8 +3,8 @@ import { LogGraphResponse } from '../types/logs';
 import { AxiosError } from 'axios';
 
 interface LogEntry {
-  '@timestamp': string;
-  message: string;
+  extracted_timestamp: string;
+  log_level: 'ERROR' | 'WARN' | 'INFO';  // LogLevel 타입과 같은 값들
 }
 
 const logApi = {
@@ -39,21 +39,21 @@ const logApi = {
       
       const logs: LogEntry[] = response.data;
       
-      // 로그 레벨별 카운트 계산
+      // 로그 레벨별 카운트 계산 - 새로운 데이터 구조 사용
       const total = {
-        error: logs.filter(log => log.message.includes('] ERROR ')).length,
-        warn: logs.filter(log => log.message.includes('] WARN ')).length,
-        info: logs.filter(log => log.message.includes('] INFO ')).length
+        error: logs.filter(log => log.log_level === 'ERROR').length,
+        warn: logs.filter(log => log.log_level === 'WARN').length,
+        info: logs.filter(log => log.log_level === 'INFO').length
       };
 
       // 시간별 데이터 그룹화
       const timeMap = new Map<string, { error: number; warn: number; info: number }>();
       
       logs.forEach(log => {
-        // 타임스탬프에서 날짜 부분만 추출 (마이크로초 제거)
-        const timestamp = log['@timestamp'].split('.')[0];
+        // extracted_timestamp에서 날짜 부분만 추출
+        const timestamp = log.extracted_timestamp;
         const date = logTime === 'day' 
-          ? timestamp.split(':')[0] + ':00'  // 시간 단위로 그룹화 (HH:00)
+          ? timestamp.split(' ')[1].split(':')[0] + ':00'  // 시간 단위로 그룹화 (HH:00)
           : timestamp.split(' ')[0];         // 일 단위로 그룹화 (YYYY-MM-DD)
 
         if (!timeMap.has(date)) {
@@ -61,12 +61,12 @@ const logApi = {
         }
         const counts = timeMap.get(date)!;
         
-        // 로그 레벨 카운팅 수정 - 서버의 로그 형식에 맞게 수정
-        if (log.message.includes('] ERROR ')) {
+        // 로그 레벨 카운팅 - 새로운 데이터 구조 사용
+        if (log.log_level === 'ERROR') {
           counts.error++;
-        } else if (log.message.includes('] WARN ')) {
+        } else if (log.log_level === 'WARN') {
           counts.warn++;
-        } else if (log.message.includes('] INFO ')) {
+        } else if (log.log_level === 'INFO') {
           counts.info++;
         }
       });
