@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.core.utils.time_utils import get_start_time
-from app.core.utils.log_utils import process_logs, remove_embedding_from_logs
+from app.core.utils.log_utils import process_logs, remove_vector_from_logs
 from app.services.project import ProjectService
 from app.repositories import user as UserRepository
 from app.repositories import elasticsearch as ElasticsearchRepository
@@ -48,9 +48,9 @@ class LogService:
     def get_log_detail(self, project_id: int, log_ids: List[int]) -> list:
         db_project = ProjectService.get_project_by_id(self, project_id=project_id)
 
-        log_details = ElasticsearchRepository.get_logs_by_id(
+        log_details = ElasticsearchRepository.get_logs_by_ids(
             index_name=db_project.index,
             ids=log_ids,
         )
 
-        return remove_embedding_from_logs(log_details)
+        return remove_vector_from_logs(log_details)

@@ -42,7 +42,7 @@ def get_logs_by_date_range(
 @router.get("/log/detail", response_model=List[dict])
 def get_log_detail(
     project_id: int = Query(..., description="프로젝트 ID"),
-    log_ids: Optional[List[int]] = Query(..., description="로그 ID 리스트"),
+    log_ids: Optional[List[str]] = Query(..., description="로그 ID 리스트"),
     service: LogService = Depends(get_log_service),
 ):
     return service.get_log_detail(project_id, log_ids)

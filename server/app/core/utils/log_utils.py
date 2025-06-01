@@ -76,18 +76,18 @@ def process_logs(logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return processed_logs
 
 
-def remove_embedding_from_logs(logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def remove_vector_from_logs(logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    로그 목록에서 embedding 필드를 제거합니다.
+    로그 목록에서 vector 필드를 제거합니다.
 
     Args:
         logs (List[Dict[str, Any]]): 처리할 로그 목록
 
     Returns:
-        List[Dict[str, Any]]: embedding이 제거된 로그 목록
+        List[Dict[str, Any]]: vector이 제거된 로그 목록
     """
     if isinstance(logs, list):
         for log in logs:
-            if isinstance(log, dict) and "embedding" in log:
-                del log["embedding"]
+            if isinstance(log, dict) and "vector" in log["_source"]:
+                del log["_source"]["vector"]
     return logs
