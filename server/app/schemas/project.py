@@ -8,6 +8,10 @@ class ProjectBase(BaseModel):
     description: str
 
 
+class ProjectCreate(ProjectBase):
+    pass
+
+
 class Project(ProjectBase):
     id: int
     model_config = {  # SQLAlchemy 객체를 Pydantic 모델로 자동 변환해주는 설정
