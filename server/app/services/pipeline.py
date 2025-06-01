@@ -10,6 +10,8 @@ from app.core.config.settings import get_settings
 from app.infra.database.elaticsearch import ElasticsearchClient
 from app.core.llm.prompts import LOG_COMMENT_TEMPLATE, AIMessage
 
+from app.core.utils import log_utils as LogUtils
+
 
 class FromDB:
     """데이터베이스에서 가져올 데이터 정의 클래스"""
@@ -33,15 +35,17 @@ class PipelineService:
         # 데이터베이스에서 유저 설정 카테고리, 언어, 인덱스 정보를 가져옴
         from_db = FromDB() 
         log_message = log_data.get("message", "")
-        ai_msg = self.gen_ai_msg(log_message, from_db.category_list, from_db.language)
+        ai_msg = self._gen_ai_msg(log_message, from_db.category_list, from_db.language)
         # ai_msg = AIMessage(
         #     comment="유저가 비밀번호를 잘못 입력했습니다.",
         #     category="유저 입력 에러"
         # )
-        vector = self.embed_comment(ai_msg.comment)
+        vector = self._embed_comment(ai_msg.comment)
         log_data["comment"] = ai_msg.comment
         log_data["category"] = ai_msg.category
         log_data["vector"] = vector
+        log_data["message_timestamp"] = LogUtils.extract_timestamp_from_message(log_message)
+        log_data["log_level"] = LogUtils.extract_log_level(log_message)
         
         # elasticsearch에 저장
         body = log_data
@@ -50,7 +54,7 @@ class PipelineService:
 
         return log_data
     
-    def gen_ai_msg(self, log_msg: str, category_list: list, language: Language):
+    def _gen_ai_msg(self, log_msg: str, category_list: list, language: Language):
         '''
         로그 메세지에 대한 코멘트를 생성하는 함수
         '''
@@ -64,7 +68,7 @@ class PipelineService:
         chain = comment_model.with_structured_output(AIMessage)
         return chain.invoke([HumanMessage(content=formatted_prompt)])
 
-    def embed_comment(self, comment: str):
+    def _embed_comment(self, comment: str):
         '''
         코멘트를 임베딩하는 함수
         '''
