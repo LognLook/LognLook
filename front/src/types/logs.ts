@@ -9,6 +9,15 @@ export interface LogData {
   info: number;
 }
 
+export interface LogGraphResponse {
+  data: LogData[];
+  total: {
+    error: number;
+    warn: number;
+    info: number;
+  };
+}
+
 export interface ChartLogData {
   time: string;
   INFO: number;

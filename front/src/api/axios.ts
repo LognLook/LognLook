@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000',  // 로컬 호스트 FastAPI 서버
+  baseURL: 'http://127.0.0.1:8000/api',  // /api 프리픽스 추가
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',

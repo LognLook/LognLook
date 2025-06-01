@@ -9,13 +9,32 @@ import SearchBar from "../components/SearchBar";
 import { useQuery } from "@tanstack/react-query";
 import { getLogs } from "../api/logApi";
 
+interface ApiLogEntry {
+  '@timestamp': string;
+  container: {
+    id: string;
+  };
+  event: {
+    original: string;
+  };
+  message: string;
+  host: {
+    hostname: string;
+    ip: string[];
+    mac: string[];
+  };
+}
+
 const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   // API로부터 로그 데이터 가져오기
-  const { data: logs } = useQuery({
+  const { data: logs } = useQuery<ApiLogEntry[]>({
     queryKey: ['logs'],
-    queryFn: getLogs,
+    queryFn: async () => {
+      const response = await getLogs();
+      return response as unknown as ApiLogEntry[];
+    },
     retry: false,
   });
 
@@ -52,7 +71,7 @@ const HomePage: React.FC = () => {
 
           {/* 로그 그래프와 파이 차트 */}
           <section className="flex gap-8 mt-1">
-            <LogGraph projectId={1} userId={1} />
+            <LogGraph projectId={1} />
             <LogDistribution logs={logs} />
           </section>
 
