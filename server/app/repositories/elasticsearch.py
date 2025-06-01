@@ -70,5 +70,6 @@ def get_logs_by_ids(index_name: str, ids: List[str]) -> List[Dict[str, Any]]:
         )
 
 
+
 def get_logs_by_datetime(index_name: str, start_time: str, end_time: str):
     pass
