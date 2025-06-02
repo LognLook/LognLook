@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from app.infra.database.elaticsearch import ElasticsearchClient
 from app.core.config.elastic_config import ELASTIC_MAPPINGS
 from typing import List, Dict, Any
-
+from app.core.enums.log_filter import LogLevelFilter
 
 es = ElasticsearchClient()
 
@@ -24,11 +24,11 @@ def save_log(index_name: str, log_data: dict):
     """로그를 저장하는 함수"""
     es.save_document(index=index_name, document=log_data)
 
-def retrieve_log(
+def retrieve_logs(
     index_name: str,
     query: str,
     keyword: str = None,
-    log_level: str = None,
+    log_level: LogLevelFilter = None,
     start_time: str = None,
     end_time: str = None,
     k: int = 10,
@@ -39,7 +39,7 @@ def retrieve_log(
         keyword_filter = {"keyword": keyword}
     log_level_filter = None
     if log_level:
-        log_level_filter = {"log_level": log_level}
+        log_level_filter = {"log_level": log_level.value}
     term_filter = [keyword_filter, log_level_filter]
     
     time_filter = None

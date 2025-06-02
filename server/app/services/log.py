@@ -7,6 +7,7 @@ from app.core.utils.log_utils import extract_logs, remove_vector_from_logs
 from app.services.project import ProjectService
 from app.repositories import user as UserRepository
 from app.repositories import elasticsearch as ElasticsearchRepository
+from app.core.enums.log_filter import LogLevelFilter
 
 
 class LogService:
@@ -59,3 +60,18 @@ class LogService:
         )
 
         return remove_vector_from_logs(log_details)
+
+    def get_retrieve_logs(self, project_id: int, query: str, keyword: str = None, log_level: LogLevelFilter = None, start_time: str = None, end_time: str = None, k: int = 10) -> list:
+        db_project = ProjectService.get_project_by_id(self, project_id=project_id)
+
+        logs = ElasticsearchRepository.retrieve_logs(
+            index_name=db_project.index,
+            query=query,
+            keyword=keyword,
+            log_level=log_level,
+            start_time=start_time,
+            end_time=end_time,
+            k=k,
+        )
+        
+        return extract_logs(logs)
