@@ -37,7 +37,7 @@ class ElasticsearchClient:
             self.es.indices.create(index=index)
         self.es.index(index=index, body=document)
 
-    def generate_filter(self, term_filter=None, range_filter=None) -> dict:
+    def generate_filter(self, term_filter: List[Dict] = None, range_filter: Dict[str, Any] = None) -> dict:
         """필터 조건을 생성하는 함수"""
         filter_conditions = {
             "bool": {
@@ -45,11 +45,12 @@ class ElasticsearchClient:
             }
         }
         
-        if term_filter is not None:
-            term_condition = {
-                "term": term_filter
-            }
-            filter_conditions["bool"]["must"].append(term_condition)
+        for term in term_filter:
+            if term is not None:
+                term_condition = {
+                    "term": term
+                }
+                filter_conditions["bool"]["must"].append(term_condition)
             
         if range_filter is not None:
             range_condition = {
