@@ -48,9 +48,9 @@ def extract_log_level(message: str) -> Optional[str]:
     return None
 
 
-def extract_logs(logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def extract_basic_logs(logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    로그 목록을 처리하여 타임스탬프와 로그 레벨을 추출합니다.
+    로그 목록을 처리하여 기본 정보(타임스탬프, 로그 레벨, 키워드)를 추출합니다.
 
     Args:
         logs (List[Dict[str, Any]]): 처리할 로그 목록
@@ -72,6 +72,39 @@ def extract_logs(logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             new_log["log_level"] = log["_source"]["log_level"]
         if "keyword" in log["_source"]:
             new_log["keyword"] = log["_source"]["keyword"]
+        processed_logs.append(new_log)
+
+    return processed_logs
+
+
+def extract_full_logs(logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    로그 목록을 처리하여 모든 정보(타임스탬프, 로그 레벨, 메시지, 호스트 이름 등)를 추출합니다.
+
+    Args:
+        logs (List[Dict[str, Any]]): 처리할 로그 목록
+
+    Returns:
+        List[Dict[str, Any]]: 처리된 로그 목록
+    """
+    if not isinstance(logs, list):
+        return []
+
+    processed_logs = []
+    for log in logs:
+        new_log = {}
+        if "_id" in log:
+            new_log["id"] = log["_id"]
+        if "message_timestamp" in log["_source"]:
+            new_log["message_timestamp"] = log["_source"]["message_timestamp"]
+        if "log_level" in log["_source"]:
+            new_log["log_level"] = log["_source"]["log_level"]
+        if "keyword" in log["_source"]:
+            new_log["keyword"] = log["_source"]["keyword"]
+        if "message" in log["_source"]:
+            new_log["message"] = log["_source"]["message"]
+        if "host" in log["_source"] and "name" in log["_source"]["host"]:
+            new_log["host_name"] = log["_source"]["host"]["name"]
         processed_logs.append(new_log)
 
     return processed_logs
