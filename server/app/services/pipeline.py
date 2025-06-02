@@ -40,7 +40,7 @@ class PipelineService:
         # )
         vector = self._embed_comment(ai_msg.comment)
         log_data["comment"] = ai_msg.comment
-        log_data["category"] = ai_msg.category
+        log_data["keyword"] = ai_msg.keyword
         log_data["vector"] = vector
         log_data["message_timestamp"] = LogUtils.extract_timestamp_from_message(
             log_message
