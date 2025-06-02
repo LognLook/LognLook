@@ -163,7 +163,7 @@ ELASTIC_MAPPINGS = {
             "type": "text",
             "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
         },
-        "category": {
+        "keyword": {
             "type": "text",
             "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
         },

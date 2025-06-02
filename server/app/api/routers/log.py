@@ -32,6 +32,28 @@ def get_recent_logs(
         project_id=project_id,
         count=count,
     )
+    
+
+@router.get("/log/search")
+def get_logs_by_search(
+    project_id: int,
+    query: str,
+    keyword: str = None,
+    log_level: LogLevelFilter = None,
+    start_time: str = None,
+    end_time: str = None,
+    k: int = 10,
+    service: LogService = Depends(get_log_service)
+):
+    return service.get_retrieve_logs(
+        project_id=project_id,
+        query=query,
+        keyword=keyword,
+        log_level=log_level,
+        start_time=start_time,
+        end_time=end_time,
+        k=k,
+    )
 
 
 @router.get("/log/detail", response_model=List[dict])
