@@ -70,7 +70,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       </button>
 
       {/* 메인 콘텐츠 */}
-      <main className={`${isSidebarOpen ? 'ml-[279px]' : 'ml-[91px]'} transition-all duration-300 flex-1 bg-[#F0F4F8] min-h-screen w-[calc(100%-${isSidebarOpen ? '279px' : '91px'})] p-10`}>
+      <main className={`${isSidebarOpen ? 'ml-[279px] w-[calc(100%-279px)]' : 'ml-[91px] w-[calc(100%-91px)]'} transition-all duration-300 flex-1 bg-[#F0F4F8] min-h-screen p-10`}>
         {children({ isSidebarOpen })}
       </main>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from "react";
-import { DisplayLogItem } from "../../../@types/logs";
-import { LogEntry, CHART_COLORS } from "../types/logTypes";
+import { DisplayLogItem, LogEntry, CHART_COLORS, LogLevel } from "../../../types/logs";
 import { DUMMY_LOGS } from "../data/dummyLogs";
+import LogDetailModal from "./LogDetailModal";
 
 interface RecentLogsProps {
   logs?: LogEntry[];
@@ -15,6 +15,14 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
   const [selectedLogs, setSelectedLogs] = useState<Set<number>>(new Set());
   const [displayCount, setDisplayCount] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<DisplayLogItem | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [visibleLevels, setVisibleLevels] = useState<Record<LogLevel, boolean>>({
+    INFO: true,
+    WARN: true,
+    ERROR: true
+  });
+
   const observer = useRef<IntersectionObserver | null>(null);
   const lastLogElementRef = useCallback((node: HTMLDivElement) => {
     if (isLoading) return;
@@ -42,11 +50,17 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
       comment: log.comment,
       host: log.host.name
     }))
+    .filter(log => visibleLevels[log.level as LogLevel])
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   const handleLogClick = (index: number) => {
-    // TODO: Implement log detail view navigation
-    console.log('Navigate to log detail:', displayLogs[index]);
+    setSelectedLog(displayLogs[index]);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedLog(null);
   };
 
   const handleCheckboxChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,6 +74,21 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
     setSelectedLogs(newSelectedLogs);
   };
 
+  const handleLevelToggle = (level: LogLevel) => {
+    setVisibleLevels(prev => ({
+      ...prev,
+      [level]: !prev[level]
+    }));
+  };
+
+  const handleTroubleShooting = () => {
+    if (selectedLogs.size > 0) {
+      const selectedLogItems = Array.from(selectedLogs).map(index => displayLogs[index]);
+      setSelectedLog(selectedLogItems[0]); // 첫 번째 로그를 기본 선택
+      setIsModalOpen(true);
+    }
+  };
+
   // 1440px 기준 사이드바 상태에 따른 너비 계산 (vw 단위 사용)
   const getWidthClass = () => {
     if (isSidebarOpen) {
@@ -69,31 +98,50 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
     }
   };
 
-  // 사이드바 상태에 따른 Logs 칼럼 너비 계산
-  const getLogsColumnWidth = () => {
-    if (isSidebarOpen) {
-      return 'w-[calc(74.93vw-48px-32px-56px-24px-32px-40px)]'; // 전체 너비 - (패딩 + 각 칼럼 너비)
-    } else {
-      return 'w-[calc(87.64vw-48px-32px-56px-24px-32px-40px)]'; // 전체 너비 - (패딩 + 각 칼럼 너비)
-    }
-  };
-
   return (
     <div className={`${getWidthClass()} flex flex-col gap-3`}>
-      <h2 className="text-[clamp(17px,1.18vw,20px)] font-semibold font-pretendard text-[#000000]">
-        Recent Logs
-      </h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-[clamp(17px,1.18vw,20px)] font-semibold font-pretendard text-[#000000]">
+          Recent Logs
+        </h2>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {Object.entries(visibleLevels).map(([level, isVisible]) => (
+              <div key={level} className="flex items-center gap-2">
+                <div 
+                  style={{ backgroundColor: isVisible ? CHART_COLORS[level as LogLevel] : '#e5e7eb' }}
+                  className="w-4 h-4 rounded-[3px] cursor-pointer flex items-center justify-center"
+                  onClick={() => handleLevelToggle(level as LogLevel)}
+                >
+                  {isVisible && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M1 3.5L3.5 6L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span className="text-[#505050] font-medium font-pretendard text-[clamp(11px,0.83vw,12px)]">{level}</span>
+              </div>
+            ))}
+          </div>
+          <button 
+            className="w-[8.33vw] h-[2.8vh] bg-[#496660] text-white rounded-[4px] text-[clamp(12px,0.83vw,14px)] font-medium hover:bg-[#EFFBF9] transition-colors flex items-center justify-center"
+            onClick={handleTroubleShooting}
+          >
+            Trouble Shooting
+          </button>
+        </div>
+      </div>
       
       <div className="bg-white p-4 rounded-lg">
         <div className="overflow-hidden">
           {/* Header Row */}
-          <div className="bg-[#F1F1F5] px-5 h-[4.69vh] flex items-center text-sm font-medium text-gray-600 rounded-lg">
-            <div className={`${getLogsColumnWidth()} pl-4 text-left`}>Logs</div>
-            <div className="w-32 pl-4 text-center">Host</div>
-            <div className="w-56 pl-4 text-center">Time</div>
-            <div className="w-24 pl-4 text-center">Type</div>
-            <div className="w-32 pl-4 text-center">Category</div>
-            <div className="w-10"></div> {/* Checkbox column */}
+          <div className="bg-[#F1F1F5] px-5 h-[5.2vh] flex items-center text-[clamp(11px,0.83vw,12px)] font-[600] font-pretendard text-[#505050] rounded-[10px] leading-[1.2]">
+            <div className="flex-1 pl-4 text-left">Logs</div>
+            <div className="w-[157px] pl-4 text-center">Host name</div>
+            <div className="w-[175px] pl-4 text-center">Time</div>
+            <div className="w-[97px] pl-4 text-center">Type</div>
+            <div className="w-[99px] pl-4 text-center">Feature</div>
+            <div className="w-[99px] flex items-center justify-center">Checkbox</div>
           </div>
 
           {/* Logs List */}
@@ -105,18 +153,22 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
                 <div 
                   key={index} 
                   ref={index === displayLogs.length - 1 ? lastLogElementRef : null}
-                  className="px-5 h-[4.69vh] hover:bg-gray-50 cursor-pointer flex items-center"
-                  onClick={() => handleLogClick(index)}
+                  className="px-5 h-[5.2vh] hover:bg-[#EFFBF9] cursor-pointer flex items-center transition-colors"
+                  onClick={(e) => {
+                    if (!(e.target as HTMLElement).closest('.checkbox-column')) {
+                      handleLogClick(index);
+                    }
+                  }}
                 >
-                  <div className={`${getLogsColumnWidth()} pr-4 pl-4 flex flex-col justify-center`}>
+                  <div className="flex-1 pr-4 pl-4 flex flex-col justify-center">
                     <div className="text-xs text-gray-900 truncate max-w-[calc(100%-8px)]">{log.title}</div>
                     {log.comment && (
                       <div className="text-[10px] text-gray-500 mt-0.5 truncate max-w-[calc(100%-8px)]">{log.comment}</div>
                     )}
                   </div>
-                  <div className="w-32 text-xs text-gray-600 truncate pl-4 flex items-center justify-center">{log.host}</div>
-                  <div className="w-56 text-xs text-gray-600 pl-4 flex items-center justify-center">{log.timestamp}</div>
-                  <div className="w-24 pl-4 flex items-center justify-center">
+                  <div className="w-[157px] text-xs text-gray-600 truncate pl-4 flex items-center justify-center">{log.host}</div>
+                  <div className="w-[175px] text-xs text-gray-600 pl-4 flex items-center justify-center">{log.timestamp}</div>
+                  <div className="w-[97px] pl-4 flex items-center justify-center">
                     <span 
                       className="px-1.5 py-0.5 rounded-full text-xs font-medium text-white"
                       style={{ 
@@ -126,11 +178,11 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
                       {log.level}
                     </span>
                   </div>
-                  <div className="w-32 text-xs text-gray-600 truncate pl-4 flex items-center justify-center">{log.category}</div>
-                  <div className="w-10 flex items-center justify-center">
+                  <div className="w-[99px] text-xs text-gray-600 truncate pl-4 flex items-center justify-center">{log.category}</div>
+                  <div className="w-[99px] flex items-center justify-center checkbox-column">
                     <input
                       type="checkbox"
-                      className="h-3 w-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded-[3px] border-[#E5E5EC] focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#1E435F]"
                       checked={selectedLogs.has(index)}
                       onChange={(e) => handleCheckboxChange(index, e)}
                       onClick={(e) => e.stopPropagation()}
@@ -147,6 +199,17 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
           </div>
         </div>
       </div>
+
+      {selectedLog && (
+        <LogDetailModal
+          logs={selectedLogs.size > 0 
+            ? Array.from(selectedLogs).map(index => displayLogs[index])
+            : [selectedLog]
+          }
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 };
