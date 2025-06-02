@@ -1,5 +1,5 @@
 import React from "react";
-import { LogSection } from "../../../@types/logs";
+import { LogSection } from "../../../types/logs";
 // Commented out imports that are needed for log parsing but not currently used
 // import { LogItem } from "../../../@types/logs";
 // import { parseLogItem } from "../../../utils/logParser";

@@ -3,8 +3,7 @@
 .env.*
 *.local
 
-# 로그 파일들 - 디버깅 후 불필요
-logs
+# 로그 파일들 - 디버깅 후 불필요 (but not source code directories named 'logs')
 *.log
 npm-debug.log*
 yarn-debug.log*

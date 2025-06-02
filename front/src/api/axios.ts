@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-
 const api = axios.create({
-  baseURL,
+  baseURL: 'http://127.0.0.1:8000/api',  // /api 프리픽스 추가
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
