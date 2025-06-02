@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.core.utils.time_utils import get_start_time, get_log_time_by_count
-from app.core.utils.log_utils import extract_logs, remove_vector_from_logs
+from app.core.utils.log_utils import extract_basic_logs, extract_full_logs, remove_vector_from_logs
 from app.services.project import ProjectService
 from app.repositories import user as UserRepository
 from app.repositories import elasticsearch as ElasticsearchRepository
@@ -28,7 +28,7 @@ class LogService:
             end_time=end_time,
         )
 
-        return extract_logs(logs)
+        return extract_basic_logs(logs)
 
     def get_recent_logs(
         self,
@@ -49,7 +49,7 @@ class LogService:
             end_time=end_time,
         )
 
-        return extract_logs(logs)
+        return extract_full_logs(logs)
 
     def get_log_detail(self, project_id: int, log_ids: List[int]) -> list:
         db_project = ProjectService.get_project_by_id(self, project_id=project_id)
@@ -74,4 +74,4 @@ class LogService:
             k=k,
         )
         
-        return extract_logs(logs)
+        return extract_basic_logs(logs)
