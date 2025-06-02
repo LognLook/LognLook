@@ -72,8 +72,8 @@ def get_logs_by_datetime(index_name: str, start_time: str, end_time: str):
     try:
         time_filter = {"message_timestamp": {"gte": start_time, "lte": end_time}}
         results = es.search_by_datetime(index=index_name, time_filter=time_filter)
-        if not results:
-            raise HTTPException(status_code=404, detail="No logs found with the provided datetime range.")
+        # if not results:
+            # raise HTTPException(status_code=404, detail="No logs found with the provided datetime range.")
         return results
     except HTTPException:
         raise

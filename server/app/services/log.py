@@ -42,7 +42,6 @@ class LogService:
         db_project = project_service.get_project_by_id(project_id=project_id)
 
         start_time, end_time = get_log_time_by_count(count)
-        print(start_time, end_time)
         logs = ElasticsearchRepository.get_logs_by_datetime(
             index_name=db_project.index,
             start_time=start_time,
