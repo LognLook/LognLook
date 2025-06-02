@@ -64,10 +64,14 @@ def extract_logs(logs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     processed_logs = []
     for log in logs:
         new_log = {}
+        if "_id" in log:
+            new_log["id"] = log["_id"]
         if "message_timestamp" in log["_source"]:
             new_log["message_timestamp"] = log["_source"]["message_timestamp"]
         if "log_level" in log["_source"]:
             new_log["log_level"] = log["_source"]["log_level"]
+        if "keyword" in log["_source"]:
+            new_log["keyword"] = log["_source"]["keyword"]
         processed_logs.append(new_log)
 
     return processed_logs
