@@ -39,8 +39,8 @@ class AIMessage(BaseModel):
     comment: str = Field(
         description="Simple explanation of the log message",
     )
-    category: str = Field(
-        description="User defined category of the log message",
+    keyword: str = Field(
+        description="User defined keyword of the log message",
     )
 
 class TroubleContent(BaseModel):
