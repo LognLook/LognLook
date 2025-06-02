@@ -19,6 +19,7 @@ from app.schemas.trouble import (
 )
 from app.models.trouble import Trouble
 from app.models.trouble_log import TroubleLog
+from app.core.utils.log_utils import remove_vector_from_logs
 
 
 class TroubleService:
@@ -61,7 +62,7 @@ class TroubleService:
                 index_name=project.index,
                 ids=create_trouble_dto.related_logs
             )
-            
+            log_contents = remove_vector_from_logs(log_contents)
             # AI를 사용해 트러블슈팅 내용 생성
             ai_content = self._gen_ai_content(
                 create_trouble_dto.user_query, 
