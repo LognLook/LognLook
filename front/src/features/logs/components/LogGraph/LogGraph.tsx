@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { LogLevel, TimePeriod, LogGraphData } from '../../types/logTypes';
+import { LogLevel, TimePeriod } from '../../types/logTypes';
 import { TimePeriodSelector } from './TimePeriodSelector';
 import { LogLevelFilter } from './LogLevelFilter';
 import { LogChart } from './LogChart';
-import logApi from '../../../../api/logApi';
-
-interface ApiLogData {
-  time: string;
-  info: number;
-  warn: number;
-  error: number;
-}
+import logApi from '../../api/logApi';
 
 interface LogGraphProps {
   projectId: number;
   timePeriod?: TimePeriod;
   onToggleLevel?: (level: LogLevel) => void;
+}
+
+interface LogGraphData {
+  time: string;
+  INFO: number;
+  WARN: number;
+  ERROR: number;
 }
 
 const LogGraph: React.FC<LogGraphProps> = ({ 
@@ -38,25 +38,10 @@ const LogGraph: React.FC<LogGraphProps> = ({
     const loadGraphData = async () => {
       try {
         setIsLoading(true);
-        console.log('Fetching graph data for projectId:', projectId, 'period:', selectedPeriod);
         const response = await logApi.fetchLogGraphData(projectId, selectedPeriod);
-        console.log('Raw API Response:', response);
-        console.log('API Response Data:', JSON.stringify(response.data, null, 2));
         
-        // Transform the API response data into LogGraphData format
-        const transformedData = response.data.map((log: ApiLogData) => {
-          const transformed = {
-            time: log.time,
-            INFO: log.info || 0,
-            WARN: log.warn || 0,
-            ERROR: log.error || 0
-          };
-          console.log('Transformed log entry:', transformed);
-          return transformed;
-        });
-        
-        console.log('Final Transformed Data:', JSON.stringify(transformedData, null, 2));
-        setGraphData(transformedData);
+        // API 응답 데이터는 이미 올바른 형식이므로 직접 사용
+        setGraphData(response.data);
         setError(null);
       } catch (err) {
         console.error('Error in loadGraphData:', err);
@@ -79,7 +64,6 @@ const LogGraph: React.FC<LogGraphProps> = ({
     const checkSidebarState = () => {
       const sidebarElement = document.querySelector('aside');
       const isSidebarVisible = sidebarElement?.classList.contains('w-[279px]') || false;
-      console.log('Sidebar state:', { isSidebarVisible, sidebarElement });
       setIsSidebarOpen(isSidebarVisible);
     };
 
@@ -141,7 +125,7 @@ const LogGraph: React.FC<LogGraphProps> = ({
           Log Graph
         </h2>
         <div className={`bg-white p-4 rounded-lg ${getGraphWidthClass()} h-[32vh] flex items-center justify-center`}>
-          <p className="text-gray-500">현재 로그 데이터가 없습니다. API 연결은 정상입니다.</p>
+          <p className="text-gray-500">No more logs to load. API connection is normal.</p>
         </div>
       </div>
     );
