@@ -20,22 +20,17 @@ def get_log(
     return service.get_logs(x_user_id, project_id, log_time)
 
 
-@router.get("/log/date-range")
-def get_logs_by_date_range(
+@router.get("/log/recent")
+def get_recent_logs(
     project_id: int,
-    start_date: datetime = Query(..., description="시작 날짜 (YYYY-MM-DD 형식)"),
-    end_date: datetime = Query(..., description="종료 날짜 (YYYY-MM-DD 형식)"),
-    log_level: Optional[LogLevelFilter] = None,
-    log_time: Optional[LogTimeFilter] = None,
-    service: LogService = Depends(get_log_service),
     x_user_id: int = Header(..., description="클라이언트에서 전달받은 사용자 ID"),
+    count: int = Query(..., description="무한 스크롤 조회 횟수, 1부터 시작"),
+    service: LogService = Depends(get_log_service),
 ):
-    return service.get_logs_by_date_range(
+    return service.get_recent_logs(
         user_id=x_user_id,
         project_id=project_id,
-        start_date=start_date,
-        end_date=end_date,
-        log_level=log_level,
+        count=count,
     )
 
 
