@@ -4,7 +4,8 @@ from app.schemas.trouble import (
     Trouble, 
     TroubleUpdate, 
     TroubleListQuery, 
-    TroubleListResponse
+    TroubleListResponse,
+    TroubleWithLogs
 )
 from app.services.trouble import TroubleService
 from app.core.config.dependencies import get_trouble_service
@@ -22,7 +23,7 @@ def create_trouble(
     return service.create_trouble(create_trouble_dto, x_user_id)
 
 
-@router.get("/trouble/{trouble_id}", response_model=Trouble)
+@router.get("/trouble/{trouble_id}", response_model=TroubleWithLogs)
 def get_trouble(
     trouble_id: int, 
     service: TroubleService = Depends(get_trouble_service),
