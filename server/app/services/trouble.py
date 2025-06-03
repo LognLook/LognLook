@@ -67,7 +67,7 @@ class TroubleService:
             log_contents = remove_vector_from_logs(log_contents)
             # AI를 사용해 트러블슈팅 내용 생성
             ai_content = self._gen_ai_content(
-                create_trouble_dto.user_query, log_contents
+                create_trouble_dto.user_query, log_contents, project.language.value
             )
 
         except Exception as e:
@@ -282,7 +282,7 @@ class TroubleService:
         return False
 
     def _gen_ai_content(
-        self, user_query: str, log_contents: List[str]
+        self, user_query: str, log_contents: List[str], language: str
     ) -> TroubleContent:
         """
         AI로 트러블슈팅 내용을 생성합니다.
@@ -296,7 +296,7 @@ class TroubleService:
         """
         prompt = PromptTemplate(
             template=TROUBLESHOOTING_TEMPLATE,
-            input_variables=["user_query", "log_contents"],
+            input_variables=["user_query", "log_contents", "language"],
         )
 
         # 로그 내용들을 하나의 문자열로 결합
@@ -307,7 +307,7 @@ class TroubleService:
 
         # 프롬프트 포맷팅 및 AI 호출
         formatted_prompt = prompt.format(
-            user_query=user_query, log_contents=log_contents_str
+            user_query=user_query, log_contents=log_contents_str, language=language
         )
 
         chain = self.llm.with_structured_output(TroubleContent)
