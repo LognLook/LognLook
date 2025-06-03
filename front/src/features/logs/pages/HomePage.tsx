@@ -41,7 +41,7 @@ const HomePage: React.FC<HomePageProps> = ({ isSidebarOpen }) => {
       </div>
 
       {/* 로그 그래프와 파이 차트 */}
-      <section className="flex gap-8 mt-8">
+      <section className="flex gap-8 mt-3">
         <LogGraph projectId={1} />
         <LogDistribution logs={logs} />
       </section>

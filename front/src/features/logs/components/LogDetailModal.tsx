@@ -32,6 +32,20 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
   const [troubleShootingTitle, setTroubleShootingTitle] = useState('Trouble Shooting');
   const [troubleSent, setTroubleSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [copyNotification, setCopyNotification] = useState('');
+
+  // 복사 기능과 알림
+  const handleCopy = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyNotification(`${label} copied!`);
+      setTimeout(() => setCopyNotification(''), 2000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      setCopyNotification('Copy failed');
+      setTimeout(() => setCopyNotification(''), 2000);
+    }
+  };
 
   // 모달이 열릴 때 모든 로그 자동 선택
   useEffect(() => {
@@ -274,60 +288,94 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                                 .map((item: ExtendedApiLogDetailEntry, detailIndex: number) => (
                                 <div key={detailIndex} className="space-y-5">
                                   {/* Message Section - Main highlight card */}
-                                  <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl p-5 border border-gray-200 shadow-sm">
+                                  <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                                     <div className="flex items-center gap-2 mb-3">
-                                      <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-blue-600">
+                                      <div className="w-6 h-6 bg-[#1E435F] rounded-lg flex items-center justify-center">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-[#B8FFF1]">
                                           <path d="M8 12h8M8 8h8M8 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                                         </svg>
                                       </div>
-                                      <h3 className="text-[13px] font-semibold text-gray-900">Log Message</h3>
+                                      <h3 className="text-[13px] font-semibold text-[#1E435F]">Log Message</h3>
                                     </div>
-                                    <div className="text-[12px] text-gray-800 leading-relaxed font-mono bg-white rounded-lg p-4 border">
+                                    <div className="text-[12px] text-[#1E435F] leading-relaxed font-mono bg-[#F0F4F8] rounded-lg p-4 border border-[#E1E8ED]">
                                       {item._source?.message || item._source?.event?.original || log.title}
                                     </div>
                                   </div>
 
+                                  {/* Additional Fields Card - Moved to top */}
+                                  {(item._source?.comment || item._source?.tags || item._source?.fields) && (
+                                    <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                                      <div className="flex items-center gap-2 mb-4">
+                                        <div className="w-6 h-6 bg-[#93CCC1] rounded-lg flex items-center justify-center">
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-white">
+                                            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                          </svg>
+                                        </div>
+                                        <h3 className="text-[13px] font-semibold text-[#1E435F]">Additional Information</h3>
+                                      </div>
+                                      <div className="space-y-4">
+                                        {item._source?.comment && (
+                                          <div>
+                                            <span className="text-[12px] font-medium text-[#496660]">Description:</span>
+                                            <div className="mt-2 text-[11px] text-[#1E435F] bg-[#F0F4F8] p-3 rounded-lg">{item._source.comment}</div>
+                                          </div>
+                                        )}
+                                        {item._source?.tags && (
+                                          <div className="flex items-start gap-2">
+                                            <span className="text-[12px] font-medium text-[#496660] whitespace-nowrap">Tags:</span>
+                                            <div className="flex flex-wrap gap-1">
+                                              {item._source.tags.map((tag: string, tagIndex: number) => (
+                                                <span key={tagIndex} className="px-2 py-1 bg-[#93CCC1] text-white text-[10px] rounded-full">
+                                                  {tag}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
                                   {/* Basic Information Card */}
                                   <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                                     <div className="flex items-center gap-2 mb-4">
-                                      <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-green-600">
+                                      <div className="w-6 h-6 bg-[#496660] rounded-lg flex items-center justify-center">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-white">
                                           <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
                                       </div>
-                                      <h3 className="text-[13px] font-semibold text-gray-900">Basic Information</h3>
+                                      <h3 className="text-[13px] font-semibold text-[#1E435F]">Basic Information</h3>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div className="space-y-3">
                                         <div className="flex items-center gap-3">
-                                          <span className="text-[11px] font-medium text-gray-500 w-16">Level:</span>
+                                          <span className="text-[11px] font-medium text-[#496660] w-16">Level:</span>
                                           <span className={`px-2 py-1 rounded-full text-[10px] font-medium text-white ${
-                                            item._source?.log_level === 'INFO' ? 'bg-blue-500' :
-                                            item._source?.log_level === 'WARN' ? 'bg-yellow-500' :
-                                            item._source?.log_level === 'ERROR' ? 'bg-red-500' : 'bg-gray-500'
+                                            item._source?.log_level === 'INFO' ? 'bg-[#496660]' :
+                                            item._source?.log_level === 'WARN' ? 'bg-[#93CCC1]' :
+                                            item._source?.log_level === 'ERROR' ? 'bg-[#FE9B7B]' : 'bg-gray-500'
                                           }`}>
                                             {item._source?.log_level || 'N/A'}
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                          <span className="text-[11px] font-medium text-gray-500 w-16">Keyword:</span>
-                                          <span className="text-[11px] text-gray-800 bg-gray-100 px-2 py-1 rounded-md">
+                                          <span className="text-[11px] font-medium text-[#496660] w-16">Keyword:</span>
+                                          <span className="text-[11px] text-[#1E435F] bg-[#F0F4F8] px-2 py-1 rounded-md">
                                             {item._source?.keyword || 'N/A'}
                                           </span>
                                         </div>
                                       </div>
                                       <div className="space-y-3">
                                         <div className="flex items-start gap-3">
-                                          <span className="text-[11px] font-medium text-gray-500 w-16 mt-1">Time:</span>
-                                          <span className="text-[11px] text-gray-800 font-mono">
+                                          <span className="text-[11px] font-medium text-[#496660] w-16 mt-1">Time:</span>
+                                          <span className="text-[11px] text-[#1E435F] font-mono">
                                             {item._source?.message_timestamp || item._source?.['@timestamp'] || 'N/A'}
                                           </span>
                                         </div>
                                         {item._source?.event?.created && (
                                           <div className="flex items-start gap-3">
-                                            <span className="text-[11px] font-medium text-gray-500 w-16 mt-1">Created:</span>
-                                            <span className="text-[11px] text-gray-800 font-mono">
+                                            <span className="text-[11px] font-medium text-[#496660] w-16 mt-1">Created:</span>
+                                            <span className="text-[11px] text-[#1E435F] font-mono">
                                               {item._source.event.created}
                                             </span>
                                           </div>
@@ -339,53 +387,81 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                                   {/* System Information Card */}
                                   <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                                     <div className="flex items-center gap-2 mb-4">
-                                      <div className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-purple-600">
+                                      <div className="w-6 h-6 bg-[#93CCC1] rounded-lg flex items-center justify-center">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-white">
                                           <path d="M9 12l2 2 4-4M21 12c0 4.418-4.03 8-9 8s-9-3.582-9-8 4.03-8 9-8 9 3.582 9 8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
                                       </div>
-                                      <h3 className="text-[13px] font-semibold text-gray-900">System Information</h3>
+                                      <h3 className="text-[13px] font-semibold text-[#1E435F]">System Information</h3>
                                     </div>
                                     <div className="grid grid-cols-1 gap-4">
                                       {/* Host Information */}
                                       {item._source?.host && (
-                                        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                                          <h4 className="text-[12px] font-medium text-gray-700 border-b border-gray-200 pb-2">Host Details</h4>
+                                        <div className="bg-[#F0F4F8] rounded-lg p-4 space-y-3">
+                                          <h4 className="text-[12px] font-medium text-[#1E435F] border-b border-[#E1E8ED] pb-2">Host Details</h4>
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
                                             {item._source.host.name && (
                                               <div>
-                                                <span className="font-medium text-gray-600">Name:</span>
-                                                <span className="ml-2 text-gray-800">{item._source.host.name}</span>
+                                                <span className="font-medium text-[#496660]">Name:</span>
+                                                <span className="ml-2 text-[#1E435F]">{item._source.host.name}</span>
                                               </div>
                                             )}
                                             {item._source.host.hostname && (
                                               <div>
-                                                <span className="font-medium text-gray-600">Hostname:</span>
-                                                <span className="ml-2 text-gray-800">{item._source.host.hostname}</span>
+                                                <span className="font-medium text-[#496660]">Hostname:</span>
+                                                <span className="ml-2 text-[#1E435F]">{item._source.host.hostname}</span>
                                               </div>
                                             )}
                                             {item._source.host.architecture && (
                                               <div>
-                                                <span className="font-medium text-gray-600">Architecture:</span>
-                                                <span className="ml-2 text-gray-800">{item._source.host.architecture}</span>
+                                                <span className="font-medium text-[#496660]">Architecture:</span>
+                                                <span className="ml-2 text-[#1E435F]">{item._source.host.architecture}</span>
                                               </div>
                                             )}
                                             {item._source.host.ip && (
-                                              <div>
-                                                <span className="font-medium text-gray-600">IP:</span>
-                                                <span className="ml-2 text-gray-800 font-mono">{item._source.host.ip}</span>
+                                              <div className="flex items-center gap-3">
+                                                <span className="font-medium text-[#496660] flex-shrink-0">IP:</span>
+                                                <div className="flex-1 min-w-0 relative group">
+                                                  <span 
+                                                    className="text-[#1E435F] font-mono cursor-pointer hover:bg-gray-100 px-1 rounded block truncate"
+                                                    onClick={() => {
+                                                      const ipValue = Array.isArray(item._source?.host?.ip) ? item._source.host.ip.join(', ') : item._source?.host?.ip;
+                                                      if (ipValue) handleCopy(ipValue, 'IP Address');
+                                                    }}
+                                                  >
+                                                    {Array.isArray(item._source?.host?.ip) ? item._source.host.ip.join(', ') : item._source?.host?.ip}
+                                                  </span>
+                                                  {/* Tooltip */}
+                                                  <div className="absolute left-0 top-full mt-1 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                                                    {Array.isArray(item._source?.host?.ip) ? item._source.host.ip.join(', ') : item._source?.host?.ip}
+                                                  </div>
+                                                </div>
                                               </div>
                                             )}
                                             {item._source.host.mac && (
-                                              <div>
-                                                <span className="font-medium text-gray-600">MAC:</span>
-                                                <span className="ml-2 text-gray-800 font-mono">{item._source.host.mac}</span>
+                                              <div className="flex items-center gap-3">
+                                                <span className="font-medium text-[#496660] flex-shrink-0">MAC:</span>
+                                                <div className="flex-1 min-w-0 relative group">
+                                                  <span 
+                                                    className="text-[#1E435F] font-mono cursor-pointer hover:bg-gray-100 px-1 rounded block truncate"
+                                                    onClick={() => {
+                                                      const macValue = Array.isArray(item._source?.host?.mac) ? item._source.host.mac.join(', ') : item._source?.host?.mac;
+                                                      if (macValue) handleCopy(macValue, 'MAC Address');
+                                                    }}
+                                                  >
+                                                    {Array.isArray(item._source?.host?.mac) ? item._source.host.mac.join(', ') : item._source?.host?.mac}
+                                                  </span>
+                                                  {/* Tooltip */}
+                                                  <div className="absolute left-0 top-full mt-1 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                                                    {Array.isArray(item._source?.host?.mac) ? item._source.host.mac.join(', ') : item._source?.host?.mac}
+                                                  </div>
+                                                </div>
                                               </div>
                                             )}
                                             {item._source.host.os && (
                                               <div className="col-span-2">
-                                                <span className="font-medium text-gray-600">OS:</span>
-                                                <span className="ml-2 text-gray-800">
+                                                <span className="font-medium text-[#496660]">OS:</span>
+                                                <span className="ml-2 text-[#1E435F]">
                                                   {item._source.host.os.name} {item._source.host.os.version} 
                                                   {item._source.host.os.platform && ` (${item._source.host.os.platform})`}
                                                   {item._source.host.os.family && ` - ${item._source.host.os.family}`}
@@ -398,37 +474,65 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
 
                                       {/* Agent Information */}
                                       {item._source?.agent && (
-                                        <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                                          <h4 className="text-[12px] font-medium text-gray-700 border-b border-gray-200 pb-2">Agent Details</h4>
+                                        <div className="bg-[#F0F4F8] rounded-lg p-4 space-y-3">
+                                          <h4 className="text-[12px] font-medium text-[#1E435F] border-b border-[#E1E8ED] pb-2">Agent Details</h4>
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
                                             {item._source.agent.type && (
                                               <div>
-                                                <span className="font-medium text-gray-600">Type:</span>
-                                                <span className="ml-2 text-gray-800">{item._source.agent.type}</span>
+                                                <span className="font-medium text-[#496660]">Type:</span>
+                                                <span className="ml-2 text-[#1E435F]">{item._source.agent.type}</span>
                                               </div>
                                             )}
                                             {item._source.agent.version && (
                                               <div>
-                                                <span className="font-medium text-gray-600">Version:</span>
-                                                <span className="ml-2 text-gray-800">{item._source.agent.version}</span>
+                                                <span className="font-medium text-[#496660]">Version:</span>
+                                                <span className="ml-2 text-[#1E435F]">{item._source.agent.version}</span>
                                               </div>
                                             )}
                                             {item._source.agent.name && (
                                               <div>
-                                                <span className="font-medium text-gray-600">Name:</span>
-                                                <span className="ml-2 text-gray-800">{item._source.agent.name}</span>
+                                                <span className="font-medium text-[#496660]">Name:</span>
+                                                <span className="ml-2 text-[#1E435F]">{item._source.agent.name}</span>
                                               </div>
                                             )}
                                             {item._source.agent.id && (
-                                              <div>
-                                                <span className="font-medium text-gray-600">ID:</span>
-                                                <span className="ml-2 text-gray-800 font-mono">{item._source.agent.id}</span>
+                                              <div className="flex items-center gap-3">
+                                                <span className="font-medium text-[#496660] flex-shrink-0">ID:</span>
+                                                <div className="flex-1 min-w-0 relative group">
+                                                  <span 
+                                                    className="text-[#1E435F] font-mono cursor-pointer hover:bg-gray-100 px-1 rounded block truncate"
+                                                    onClick={() => {
+                                                      if (item._source?.agent?.id) handleCopy(item._source.agent.id, 'Agent ID');
+                                                    }}
+                                                  >
+                                                    {item._source.agent.id}
+                                                  </span>
+                                                  {/* Tooltip */}
+                                                  <div className="absolute left-0 top-full mt-1 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                                                    {item._source.agent.id}
+                                                  </div>
+                                                </div>
                                               </div>
                                             )}
                                             {item._source.agent.ephemeral_id && (
                                               <div className="col-span-2">
-                                                <span className="font-medium text-gray-600">Ephemeral ID:</span>
-                                                <span className="ml-2 text-gray-800 font-mono text-[10px]">{item._source.agent.ephemeral_id}</span>
+                                                <div className="flex items-center gap-3">
+                                                  <span className="font-medium text-[#496660] flex-shrink-0">Ephemeral ID:</span>
+                                                  <div className="flex-1 min-w-0 relative group">
+                                                    <span 
+                                                      className="text-[#1E435F] font-mono text-[10px] cursor-pointer hover:bg-gray-100 px-1 rounded block truncate"
+                                                      onClick={() => {
+                                                        if (item._source?.agent?.ephemeral_id) handleCopy(item._source.agent.ephemeral_id, 'Ephemeral ID');
+                                                      }}
+                                                    >
+                                                      {item._source.agent.ephemeral_id}
+                                                    </span>
+                                                    {/* Tooltip */}
+                                                    <div className="absolute left-0 top-full mt-1 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                                                      {item._source.agent.ephemeral_id}
+                                                    </div>
+                                                  </div>
+                                                </div>
                                               </div>
                                             )}
                                           </div>
@@ -441,38 +545,38 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                                   {(item._source?.log || item._source?.file || item._source?.input) && (
                                     <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                                       <div className="flex items-center gap-2 mb-4">
-                                        <div className="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center">
-                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-orange-600">
+                                        <div className="w-6 h-6 bg-[#1E435F] rounded-lg flex items-center justify-center">
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-[#B8FFF1]">
                                             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                             <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                           </svg>
                                         </div>
-                                        <h3 className="text-[13px] font-semibold text-gray-900">File & Log Information</h3>
+                                        <h3 className="text-[13px] font-semibold text-[#1E435F]">File & Log Information</h3>
                                       </div>
                                       <div className="space-y-4">
                                         {/* Log Details */}
                                         {item._source?.log && (
-                                          <div className="bg-blue-50 rounded-lg p-4 space-y-3">
-                                            <h4 className="text-[12px] font-medium text-blue-800 border-b border-blue-200 pb-2">Log Details</h4>
+                                          <div className="bg-[#F0F4F8] rounded-lg p-4 space-y-3">
+                                            <h4 className="text-[12px] font-medium text-[#1E435F] border-b border-[#E1E8ED] pb-2">Log Details</h4>
                                             <div className="space-y-2 text-[11px]">
                                               {item._source.log.file?.path && (
                                                 <div>
-                                                  <span className="font-medium text-blue-700">File Path:</span>
-                                                  <div className="mt-1 text-blue-800 font-mono text-[10px] break-all bg-white p-2 rounded border border-blue-200">
+                                                  <span className="font-medium text-[#496660]">File Path:</span>
+                                                  <div className="mt-1 text-[#1E435F] font-mono text-[10px] break-all bg-white p-2 rounded border border-[#E1E8ED]">
                                                     {item._source.log.file.path}
                                                   </div>
                                                 </div>
                                               )}
                                               {item._source.log.offset && (
                                                 <div>
-                                                  <span className="font-medium text-blue-700">Offset:</span>
-                                                  <span className="ml-2 text-blue-800 font-mono">{item._source.log.offset}</span>
+                                                  <span className="font-medium text-[#496660]">Offset:</span>
+                                                  <span className="ml-2 text-[#1E435F] font-mono">{item._source.log.offset}</span>
                                                 </div>
                                               )}
                                               {item._source.log?.level && (
                                                 <div>
-                                                  <span className="font-medium text-blue-700">Log Level:</span>
-                                                  <span className="ml-2 text-blue-800">{item._source.log.level}</span>
+                                                  <span className="font-medium text-[#496660]">Log Level:</span>
+                                                  <span className="ml-2 text-[#1E435F]">{item._source.log.level}</span>
                                                 </div>
                                               )}
                                             </div>
@@ -481,13 +585,13 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
 
                                         {/* Input Information */}
                                         {item._source?.input && (
-                                          <div className="bg-green-50 rounded-lg p-4 space-y-3">
-                                            <h4 className="text-[12px] font-medium text-green-800 border-b border-green-200 pb-2">Input Information</h4>
+                                          <div className="bg-[#F0F4F8] rounded-lg p-4 space-y-3">
+                                            <h4 className="text-[12px] font-medium text-[#1E435F] border-b border-[#E1E8ED] pb-2">Input Information</h4>
                                             <div className="space-y-2 text-[11px]">
                                               {item._source.input.type && (
                                                 <div>
-                                                  <span className="font-medium text-green-700">Type:</span>
-                                                  <span className="ml-2 text-green-800">{item._source.input.type}</span>
+                                                  <span className="font-medium text-[#496660]">Type:</span>
+                                                  <span className="ml-2 text-[#1E435F]">{item._source.input.type}</span>
                                                 </div>
                                               )}
                                             </div>
@@ -501,31 +605,31 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                                   {item._source?.event && (
                                     <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                                       <div className="flex items-center gap-2 mb-4">
-                                        <div className="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-indigo-600">
+                                        <div className="w-6 h-6 bg-[#496660] rounded-lg flex items-center justify-center">
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-white">
                                             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                           </svg>
                                         </div>
-                                        <h3 className="text-[13px] font-semibold text-gray-900">Event Information</h3>
+                                        <h3 className="text-[13px] font-semibold text-[#1E435F]">Event Information</h3>
                                       </div>
-                                      <div className="bg-indigo-50 rounded-lg p-4 space-y-3">
+                                      <div className="bg-[#F0F4F8] rounded-lg p-4 space-y-3">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
                                           {item._source?.event?.dataset && (
                                             <div>
-                                              <span className="font-medium text-indigo-700">Dataset:</span>
-                                              <span className="ml-2 text-indigo-800">{item._source.event.dataset}</span>
+                                              <span className="font-medium text-[#496660]">Dataset:</span>
+                                              <span className="ml-2 text-[#1E435F]">{item._source.event.dataset}</span>
                                             </div>
                                           )}
                                           {item._source?.event?.module && (
                                             <div>
-                                              <span className="font-medium text-indigo-700">Module:</span>
-                                              <span className="ml-2 text-indigo-800">{item._source.event.module}</span>
+                                              <span className="font-medium text-[#496660]">Module:</span>
+                                              <span className="ml-2 text-[#1E435F]">{item._source.event.module}</span>
                                             </div>
                                           )}
                                           {item._source?.event?.original && (
                                             <div className="col-span-2">
-                                              <span className="font-medium text-indigo-700">Original Message:</span>
-                                              <div className="mt-1 text-indigo-800 font-mono text-[10px] bg-white p-2 rounded border border-indigo-200 break-all">
+                                              <span className="font-medium text-[#496660]">Original Message:</span>
+                                              <div className="mt-1 text-[#1E435F] font-mono text-[10px] bg-white p-2 rounded border border-[#E1E8ED] break-all">
                                                 {item._source.event.original}
                                               </div>
                                             </div>
@@ -535,73 +639,52 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                                     </div>
                                   )}
 
-                                  {/* Additional Fields Card */}
-                                  {(item._source?.comment || item._source?.tags || item._source?.fields) && (
-                                    <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-                                      <div className="flex items-center gap-2 mb-4">
-                                        <div className="w-6 h-6 bg-gray-100 rounded-lg flex items-center justify-center">
-                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gray-600">
-                                            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                          </svg>
-                                        </div>
-                                        <h3 className="text-[13px] font-semibold text-gray-900">Additional Information</h3>
-                                      </div>
-                                      <div className="space-y-4">
-                                        {item._source?.comment && (
-                                          <div>
-                                            <span className="text-[12px] font-medium text-gray-700">Description:</span>
-                                            <div className="mt-2 text-[11px] text-gray-800 bg-gray-50 p-3 rounded-lg">{item._source.comment}</div>
-                                          </div>
-                                        )}
-                                        {item._source?.tags && (
-                                          <div>
-                                            <span className="text-[12px] font-medium text-gray-700">Tags:</span>
-                                            <div className="mt-2 flex flex-wrap gap-1">
-                                              {item._source.tags.map((tag: string, tagIndex: number) => (
-                                                <span key={tagIndex} className="px-2 py-1 bg-blue-100 text-blue-800 text-[10px] rounded-full">
-                                                  {tag}
-                                                </span>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-
                                   {/* Metadata Card */}
                                   <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
                                     <div className="flex items-center gap-2 mb-4">
-                                      <div className="w-6 h-6 bg-gray-100 rounded-lg flex items-center justify-center">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gray-600">
+                                      <div className="w-6 h-6 bg-[#1E435F] rounded-lg flex items-center justify-center">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-[#B8FFF1]">
                                           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                           <path d="M22 6l-10 7L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
                                       </div>
-                                      <h3 className="text-[13px] font-semibold text-gray-900">Document Metadata</h3>
+                                      <h3 className="text-[13px] font-semibold text-[#1E435F]">Document Metadata</h3>
                                     </div>
-                                    <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                                    <div className="bg-[#F0F4F8] rounded-lg p-4 space-y-3">
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
-                                        <div>
-                                          <span className="font-medium text-gray-600">Document ID:</span>
-                                          <span className="ml-2 text-gray-800 font-mono text-[10px]">{item._id}</span>
+                                        <div className="flex items-center gap-3">
+                                          <span className="font-medium text-[#496660] flex-shrink-0">Document ID:</span>
+                                          <div className="flex-1 min-w-0 relative group">
+                                            <span 
+                                              className="text-[#1E435F] font-mono text-[10px] cursor-pointer hover:bg-gray-100 px-1 rounded block truncate"
+                                              onClick={() => {
+                                                if (item._id) handleCopy(item._id, 'Document ID');
+                                              }}
+                                            >
+                                              {item._id}
+                                            </span>
+                                            {/* Tooltip */}
+                                            <div className="absolute left-0 top-full mt-1 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                                              {item._id}
+                                            </div>
+                                          </div>
                                         </div>
                                         {item._index && (
                                           <div>
-                                            <span className="font-medium text-gray-600">Index:</span>
-                                            <span className="ml-2 text-gray-800">{item._index}</span>
+                                            <span className="font-medium text-[#496660]">Index:</span>
+                                            <span className="ml-2 text-[#1E435F]">{item._index}</span>
                                           </div>
                                         )}
                                         {item._type && (
                                           <div>
-                                            <span className="font-medium text-gray-600">Type:</span>
-                                            <span className="ml-2 text-gray-800">{item._type}</span>
+                                            <span className="font-medium text-[#496660]">Type:</span>
+                                            <span className="ml-2 text-[#1E435F]">{item._type}</span>
                                           </div>
                                         )}
                                         {item._score && (
                                           <div>
-                                            <span className="font-medium text-gray-600">Score:</span>
-                                            <span className="ml-2 text-gray-800">{item._score}</span>
+                                            <span className="font-medium text-[#496660]">Score:</span>
+                                            <span className="ml-2 text-[#1E435F]">{item._score}</span>
                                           </div>
                                         )}
                                       </div>
@@ -609,31 +692,27 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                                   </div>
 
                                   {/* Raw Data Section */}
-                                  <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-                                    <details className="group">
-                                      <summary className="flex items-center gap-2 cursor-pointer hover:text-gray-700 mb-4">
-                                        <div className="w-6 h-6 bg-slate-100 rounded-lg flex items-center justify-center">
-                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-slate-600 transition-transform duration-200 group-open:rotate-90">
-                                            <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                          </svg>
-                                        </div>
-                                        <h3 className="text-[13px] font-semibold text-gray-900">Raw JSON Data</h3>
-                                      </summary>
-                                      <div className="mt-4 p-4 bg-slate-900 rounded-lg border overflow-x-auto max-h-80 custom-scrollbar">
-                                        <pre className="text-[10px] text-slate-100 font-mono whitespace-pre-wrap">{JSON.stringify(item, null, 2)}</pre>
-                                      </div>
-                                    </details>
-                                  </div>
+                                  <details className="group">
+                                    <summary className="flex items-center gap-2 cursor-pointer hover:text-[#496660] py-2">
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-gray-500 transition-transform duration-200 group-open:rotate-90">
+                                        <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                      </svg>
+                                      <h3 className="text-[13px] font-semibold text-[#1E435F]">Raw JSON Data</h3>
+                                    </summary>
+                                    <div className="mt-4 p-4 bg-[#F0F4F8] rounded-lg overflow-x-auto max-h-80 custom-scrollbar border border-[#E1E8ED]">
+                                      <pre className="text-[10px] text-[#1E435F] font-mono whitespace-pre-wrap">{JSON.stringify(item, null, 2)}</pre>
+                                    </div>
+                                  </details>
                                 </div>
                               ))
                             ) : (
                               <div className="text-center py-12">
-                                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-gray-400">
+                                <div className="w-12 h-12 bg-[#F0F4F8] rounded-full flex items-center justify-center mx-auto mb-3">
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-[#496660]">
                                     <path d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0118 12c0-4.418-3.582-8-8-8s-8 3.582-8 8c0 1.441.383 2.792 1.054 3.963L3 20l4.3-.947z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                   </svg>
                                 </div>
-                                <p className="text-[12px] text-gray-500 font-medium">No detailed data available for this log</p>
+                                <p className="text-[12px] text-[#496660] font-medium">No detailed data available for this log</p>
                                 <p className="text-[11px] text-gray-400 mt-1">Try expanding other logs to view their details</p>
                               </div>
                             )}
@@ -789,6 +868,31 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 복사 알림 */}
+      {copyNotification && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-[#1E435F] text-white px-4 py-2 rounded-full shadow-lg z-50 text-sm opacity-0 animate-fade-in">
+          {copyNotification}
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes fade-in {
+            0% {
+              opacity: 0;
+              transform: translate(-50%, 20px);
+            }
+            100% {
+              opacity: 1;
+              transform: translate(-50%, 0);
+            }
+          }
+          .animate-fade-in {
+            animation: fade-in 0.3s ease-out forwards;
+          }
+        `
+      }} />
     </div>
   );
 };
