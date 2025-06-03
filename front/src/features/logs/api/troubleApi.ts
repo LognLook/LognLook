@@ -54,6 +54,7 @@ export const createTrouble = async (
         'accept': 'application/json',
         'Content-Type': 'application/json',
       },
+      timeout: 60000, // 트러블슈팅 전용 60초 타임아웃 (AI 처리 시간 고려)
     });
     return response.data;
   } catch (error) {
