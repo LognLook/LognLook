@@ -4,6 +4,7 @@ import { DisplayLogItem } from '../../../types/logs';
 import { ApiLogDetailEntry } from '../api/detailLogApi';
 import { createTrouble, CreateTroubleRequest } from '../api/troubleApi';
 import { ExtendedApiLogDetailEntry } from '../../../types/ExtendedApiLogDetailEntry';
+import { CreateTroubleResponse } from '../api/troubleApi';
 
 interface LogDetailModalProps {
   logs: DisplayLogItem[];
@@ -11,6 +12,7 @@ interface LogDetailModalProps {
   onClose: () => void;
   detailData?: ApiLogDetailEntry[];
   isDetailLoading?: boolean;
+  selectedTrouble?: { trouble: CreateTroubleResponse; logs: string[] } | null;
 }
 
 const LogDetailModal: React.FC<LogDetailModalProps> = ({ 
@@ -18,7 +20,8 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
   isOpen, 
   onClose, 
   detailData, 
-  isDetailLoading = false
+  isDetailLoading = false,
+  selectedTrouble
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
@@ -37,6 +40,23 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
       setSelectedLogs(allLogIndices);
     }
   }, [isOpen, logs]);
+
+  // selectedTrouble이 있을 때 채팅 기록 미리 설정
+  useEffect(() => {
+    if (selectedTrouble && isOpen) {
+      const { trouble } = selectedTrouble;
+      setChatHistory([
+        { type: 'user', message: trouble.user_query },
+        { type: 'assistant', message: trouble.content }
+      ]);
+      setTroubleShootingTitle(trouble.report_name);
+      setTroubleSent(true);
+    } else if (isOpen) {
+      setChatHistory([]);
+      setTroubleShootingTitle('Trouble Shooting');
+      setTroubleSent(false);
+    }
+  }, [selectedTrouble, isOpen]);
 
   if (!isOpen) return null;
 

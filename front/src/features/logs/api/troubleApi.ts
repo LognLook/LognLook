@@ -38,6 +38,12 @@ export interface TroubleListResponse {
   pages: number;
 }
 
+// Trouble 상세 조회 응답 타입
+export interface TroubleWithLogs {
+  trouble: CreateTroubleResponse;
+  logs: string[];
+}
+
 /**
  * Trouble을 생성합니다.
  * @param userId 사용자 ID (헤더)
@@ -54,7 +60,7 @@ export const createTrouble = async (
         'accept': 'application/json',
         'Content-Type': 'application/json',
       },
-      timeout: 60000, // 트러블슈팅 전용 60초 타임아웃 (AI 처리 시간 고려)
+      timeout: 1500000, 
     });
     return response.data;
   } catch (error) {
@@ -76,4 +82,29 @@ export const fetchTroubleList = async (
     headers: { 'x-user-id': userId }
   });
   return response.data;
+};
+
+/**
+ * Trouble 상세 정보를 조회합니다.
+ * @param troubleId trouble ID
+ * @param userId 사용자 ID (헤더)
+ */
+export const fetchTroubleById = async (
+  troubleId: number,
+  userId: number
+): Promise<TroubleWithLogs> => {
+  try {
+    const response = await api.get(`/trouble/${troubleId}`, {
+      headers: {
+        'x-user-id': userId,
+        'accept': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('API Error details:', error.response);
+    }
+    throw error;
+  }
 }; 

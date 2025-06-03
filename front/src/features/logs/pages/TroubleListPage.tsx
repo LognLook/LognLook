@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { fetchTroubleList, TroubleListItem } from '../api/troubleApi';
+import { fetchTroubleList, TroubleListItem, fetchTroubleById, TroubleWithLogs } from '../api/troubleApi';
+import { fetchLogDetail, ApiLogDetailEntry } from '../api/detailLogApi';
+import LogDetailModal from '../components/LogDetailModal';
+import { DisplayLogItem } from '../../../types/logs';
 
 interface TroubleListPageProps {
   projectId: number;
@@ -10,6 +13,11 @@ interface TroubleListPageProps {
 const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId, isSidebarOpen }) => {
   const [troubles, setTroubles] = useState<TroubleListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedTrouble, setSelectedTrouble] = useState<TroubleWithLogs | null>(null);
+  const [modalLogs, setModalLogs] = useState<DisplayLogItem[]>([]);
+  const [detailData, setDetailData] = useState<ApiLogDetailEntry[]>([]);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -23,6 +31,55 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
     };
     load();
   }, [projectId, userId]);
+
+  const handleTroubleClick = async (troubleId: number) => {
+    try {
+      setIsDetailLoading(true);
+      
+      // 1. Trouble 상세 정보 가져오기
+      const troubleDetails = await fetchTroubleById(troubleId, userId);
+      setSelectedTrouble(troubleDetails);
+      
+      // 2. 관련 로그 상세 정보 먼저 가져오기
+      let logDetails: ApiLogDetailEntry[] = [];
+      if (troubleDetails.logs.length > 0) {
+        logDetails = await fetchLogDetail({
+          projectId: projectId,
+          logIds: troubleDetails.logs
+        });
+        setDetailData(logDetails);
+      }
+      
+      // 3. 로그 상세 정보를 바탕으로 DisplayLogItem 생성
+      const displayLogs: DisplayLogItem[] = troubleDetails.logs.map((logId, index) => {
+        // 해당 로그 ID와 일치하는 상세 정보 찾기
+        const logDetail = logDetails.find(detail => detail._id === logId);
+        
+        return {
+          id: logId,
+          title: logDetail?._source?.message || logDetail?._source?.event?.original || `Log ${index + 1}`,
+          timestamp: logDetail?._source?.message_timestamp || logDetail?._source?.['@timestamp'] || new Date().toISOString(),
+          level: (logDetail?._source?.log_level as 'INFO' | 'WARN' | 'ERROR') || 'INFO',
+          category: logDetail?._source?.keyword || 'system',
+          comment: logId // 로그 ID를 comment에 저장
+        };
+      });
+      setModalLogs(displayLogs);
+      
+      setModalOpen(true);
+    } catch (error) {
+      console.error('Failed to load trouble details:', error);
+    } finally {
+      setIsDetailLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedTrouble(null);
+    setModalLogs([]);
+    setDetailData([]);
+  };
 
   if (loading) {
     return (
@@ -57,6 +114,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
                 minWidth: '220px',
                 minHeight: '140px'
               }}
+              onClick={() => handleTroubleClick(trouble.id)}
             >
               {/* 상단: ID와 공유 상태 */}
               <div className="flex items-center justify-between mb-3">
@@ -113,6 +171,17 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
             로그에서 문제를 발견하면 AI 트러블슈팅을 시작해보세요
           </div>
         </div>
+      )}
+
+      {selectedTrouble && (
+        <LogDetailModal
+          isOpen={modalOpen}
+          onClose={closeModal}
+          logs={modalLogs}
+          detailData={detailData}
+          isDetailLoading={isDetailLoading}
+          selectedTrouble={selectedTrouble}
+        />
       )}
     </div>
   );
