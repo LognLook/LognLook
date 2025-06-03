@@ -1,10 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { logApi } from '../../../api/logApi';
-import { LogGraphResponse } from '../../../types/logs';
+import logApi from '../api/logApi';
 
 const LogGraph: React.FC = () => {
-  const { data, isLoading, error } = useQuery<LogGraphResponse>({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['logGraph', 1],
     queryFn: () => logApi.fetchLogGraphData(1)
   });

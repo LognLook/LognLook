@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { DisplayLogItem } from '../../../types/logs';
 import { ApiLogDetailEntry } from '../api/detailLogApi';
 import { createTrouble, CreateTroubleRequest } from '../api/troubleApi';
@@ -49,15 +50,31 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
     
     try {
       // 체크된 로그들의 id 수집 (log.comment만 사용)
-      const related_logs = Array.from(selectedLogs).map(idx => logs[idx]?.comment || '');
+      const related_logs = Array.from(selectedLogs).map(idx => logs[idx]?.comment || '').filter(Boolean);
+      
+      console.log('🔍 Troubleshooting Debug Info:');
+      console.log('Selected logs count:', selectedLogs.size);
+      console.log('Related log IDs:', related_logs);
+      console.log('User query:', chatMessage);
+      
+      if (related_logs.length === 0) {
+        throw new Error('No valid log IDs found. Please select at least one log.');
+      }
+      
       const troubleReq: CreateTroubleRequest = {
         is_shared: false,
         project_id: 1, // 필요시 prop으로 변경
-        related_logs: related_logs.filter(Boolean),
+        related_logs: related_logs,
         user_query: chatMessage
       };
+      
+      console.log('📤 Sending trouble request:', troubleReq);
+      
       // userId는 예시로 1 사용, 필요시 prop으로 변경
       const troubleRes = await createTrouble(1, troubleReq);
+      
+      console.log('✅ Trouble response:', troubleRes);
+      
       setTroubleShootingTitle(troubleRes.report_name);
       
       // 로딩 메시지를 실제 응답으로 교체
@@ -72,13 +89,20 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
       
       setSelectedLogs(new Set());
       setTroubleSent(true);
-    } catch {
+    } catch (error) {
+      console.error('❌ Trouble creation failed:', error);
+      
+      let errorMessage = 'Failed to create trouble. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
       // 로딩 메시지를 에러 메시지로 교체
       setChatHistory(prev => {
         const newHistory = [...prev];
         const lastIndex = newHistory.length - 1;
         if (newHistory[lastIndex].message === 'LOADING_PLACEHOLDER') {
-          newHistory[lastIndex] = { type: 'assistant', message: 'Failed to create trouble. Please try again.' };
+          newHistory[lastIndex] = { type: 'assistant', message: errorMessage };
         }
         return newHistory;
       });
@@ -634,7 +658,7 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
           
           <div className="flex-1 flex flex-col bg-[#F0F4F8]">
             {/* 채팅 메시지 영역 */}
-            <div className="flex-1 overflow-auto p-6 space-y-6">
+            <div className="flex-1 overflow-auto p-6 space-y-6 min-h-0">
               {chatHistory.map((chat, index) => (
                 <div key={index} className="space-y-3">
                   {chat.type === 'user' && (
@@ -656,9 +680,11 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                           </div>
                         </div>
                       ) : (
-                        <p className="text-[14px] font-pretendard text-gray-800 leading-relaxed">
-                          {chat.message}
-                        </p>
+                        <div className="max-h-96 overflow-y-auto">
+                          <div className="text-[14px] font-pretendard text-gray-800 leading-relaxed prose prose-sm max-w-none">
+                            <ReactMarkdown>{chat.message}</ReactMarkdown>
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
@@ -669,7 +695,7 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
             {/* 하단 입력 영역 */}
             <div className="px-[30px] pb-6">
               {/* 선택된 로그 태그들 */}
-              {selectedLogs.size > 0 && (
+              {selectedLogs.size > 0 && !troubleSent && (
                 <div className="mb-4">
                   <div className="flex flex-wrap gap-2 mb-3">
                     {Array.from(selectedLogs).map((logIndex) => {
@@ -708,7 +734,7 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
               )}
               
               {/* 채팅 입력창 */}
-              {!troubleSent && (
+              {!troubleSent ? (
                 <div className="relative">
                   <textarea
                     value={chatMessage}
@@ -733,6 +759,10 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                       </svg>
                     )}
                   </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-4">
+                  <span className="text-[12px] text-gray-500 font-pretendard">Analysis completed</span>
                 </div>
               )}
             </div>
