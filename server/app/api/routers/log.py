@@ -14,10 +14,11 @@ router = APIRouter()
 def get_log(
     project_id: int,
     log_time: LogTimeFilter = LogTimeFilter.DAY,
+    size: int = Query(100, description="검색 결과 최대 개수"),
     service: LogService = Depends(get_log_service),
     x_user_id: int = Header(..., description="클라이언트에서 전달받은 사용자 ID"),
 ):
-    return service.get_logs(x_user_id, project_id, log_time)
+    return service.get_logs(x_user_id, project_id, log_time, size)
 
 
 @router.get("/log/recent")
@@ -25,12 +26,14 @@ def get_recent_logs(
     project_id: int,
     x_user_id: int = Header(..., description="클라이언트에서 전달받은 사용자 ID"),
     count: int = Query(..., description="무한 스크롤 조회 횟수, 1부터 시작"),
+    size: int = Query(100, description="검색 결과 최대 개수"),
     service: LogService = Depends(get_log_service),
 ):
     return service.get_recent_logs(
         user_id=x_user_id,
         project_id=project_id,
         count=count,
+        size=size,
     )
     
 
@@ -42,7 +45,7 @@ def get_logs_by_search(
     log_level: LogLevelFilter = None,
     start_time: str = None,
     end_time: str = None,
-    k: int = 10,
+    k: int = 50,
     service: LogService = Depends(get_log_service)
 ):
     return service.get_retrieve_logs(

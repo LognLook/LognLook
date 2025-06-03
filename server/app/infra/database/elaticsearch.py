@@ -27,8 +27,10 @@ class ElasticsearchClient:
         """ 텍스트를 벡터로 변환 """
         return self.embedding_model.embed_query(text)
     
-    def _execute_search(self, index: str, body: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _execute_search(self, index: str, body: Dict[str, Any], size: int = 100) -> List[Dict[str, Any]]:
         """ Elasticsearch 검색 실행 공통 함수 """
+        if "size" not in body:
+            body["size"] = size
         return self.es.search(index=index, body=body)["hits"]["hits"]
     
     def save_document(self, index: str, document: Dict[str, Any]) -> None:
@@ -72,10 +74,10 @@ class ElasticsearchClient:
         query = {"query": {"ids": {"values": ids}}}
         return self._execute_search(index, query)
     
-    def search_by_datetime(self, index: str, time_filter: Dict[str, Any]) -> List[Any]:
+    def search_by_datetime(self, index: str, time_filter: Dict[str, Any], size: int = 100) -> List[Any]:
         """ 시간 범위로 검색하는 함수 """
-        query = {"query": {"range": time_filter}}
-        return self._execute_search(index, query)
+        query = {"query": {"range": time_filter}, "size": size}
+        return self._execute_search(index, query, size=size)
 
     def search_by_terms(self, index: str, term_field: str, term_values: List[Any]) -> List[Dict[str, Any]]:
         """ terms 기반 검색 공통 함수 """
@@ -87,7 +89,7 @@ class ElasticsearchClient:
         query_body = {"query": {"match": {field: query}}}
         return self._execute_search(index, query_body)[:k]
 
-    def search_by_vector(self, index: str, query: str, vector_field: str = "vector", filters: Dict[str, Any] = None, k: int = 5, num_candidates: int = 100) -> List[Dict[str, Any]]:
+    def search_by_vector(self, index: str, query: str, vector_field: str = "vector", filters: Dict[str, Any] = None, k: int = 50, num_candidates: int = 200) -> List[Dict[str, Any]]:
         """ 벡터 검색 (KNN) """
         query_vector = self._generate_embeddings(query)
         query_body = {
