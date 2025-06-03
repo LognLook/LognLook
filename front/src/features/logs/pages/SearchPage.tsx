@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { DisplayLogItem, CHART_COLORS, LogLevel } from '../../../types/logs';
 import LogDetailModal from '../components/LogDetailModal';
@@ -18,13 +18,15 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
   const [logLevel, setLogLevel] = useState<'error' | 'warning' | 'info' | 'debug' | 'critical' | 'custom' | ''>('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-  const [resultLimit, setResultLimit] = useState(10);
 
   // 검색 결과 상태
   const [searchResults, setSearchResults] = useState<SearchLogEntry[]>([]);
+  const [displayedCount, setDisplayedCount] = useState(10); // 현재 표시된 결과 수
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [hasReachedEnd, setHasReachedEnd] = useState(false); // 더 이상 로드할 데이터가 없음을 표시
 
   // 모달 상태
   const [selectedLog, setSelectedLog] = useState<DisplayLogItem | null>(null);
@@ -37,6 +39,9 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
 
   // 정렬 상태
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+
+  // Intersection observer for infinite scroll
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // URL 파라미터에서 검색어 추출 및 자동 검색
   useEffect(() => {
@@ -55,6 +60,72 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
     return isSidebarOpen ? 'w-[74.93vw]' : 'w-[87.64vw]';
   };
 
+  // 더 많은 결과 로드
+  const loadMoreResults = useCallback(async () => {
+    if (isLoadingMore || !hasSearched || displayedCount >= searchResults.length || hasReachedEnd) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    try {
+      const newDisplayedCount = Math.min(displayedCount + 10, searchResults.length);
+      
+      // If we need more data from the server
+      if (newDisplayedCount >= searchResults.length && searchResults.length > 0) {
+        const searchParams: SearchLogParams = {
+          projectId: 1,
+          userId: 1,
+          query: searchQuery.trim(),
+          keyword: keyword.trim() || undefined,
+          logLevel: logLevel || undefined,
+          startTime: startTime || undefined,
+          endTime: endTime || undefined,
+          k: searchResults.length + 50, // Request 50 more results
+        };
+
+        const results = await searchLogs(searchParams);
+        
+        // Check if we got new results
+        if (results.length > searchResults.length) {
+          setSearchResults(results);
+          setDisplayedCount(newDisplayedCount);
+        } else {
+          // No more results available from server
+          setHasReachedEnd(true);
+        }
+      } else {
+        setDisplayedCount(newDisplayedCount);
+      }
+    } catch (error) {
+      console.error('Failed to load more results:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, hasSearched, displayedCount, searchResults.length, searchQuery, keyword, logLevel, startTime, endTime, hasReachedEnd]);
+
+  // Intersection observer setup
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore) {
+          loadMoreResults();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current) {
+        observer.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [loadMoreResults, isLoadingMore]);
+
   // 검색 실행 (매개변수로 쿼리를 받을 수 있음)
   const performSearch = async (query?: string) => {
     const searchQueryToUse = query || searchQuery;
@@ -67,6 +138,8 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
     setIsSearching(true);
     setSearchError(null);
     setHasSearched(true);
+    setDisplayedCount(10); // Reset displayed count
+    setHasReachedEnd(false); // Reset end state for new search
 
     try {
       const searchParams: SearchLogParams = {
@@ -77,7 +150,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
         logLevel: logLevel || undefined,
         startTime: startTime || undefined,
         endTime: endTime || undefined,
-        k: resultLimit,
+        k: 100, // Initially fetch more results for infinite scroll
       };
 
       console.log('Executing search with params:', searchParams);
@@ -88,6 +161,11 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
       
       setSearchResults(results);
       setSelectedLogs(new Set()); // 검색 시 선택 초기화
+      
+      // If we got less than requested, we've reached the end
+      if (results.length < 100) {
+        setHasReachedEnd(true);
+      }
       
       console.log('Search results:', results);
     } catch (error) {
@@ -146,8 +224,9 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
     };
   };
 
-  // 정렬된 검색 결과
+  // 정렬된 검색 결과 (표시할 개수만큼만)
   const sortedResults = searchResults
+    .slice(0, displayedCount)
     .map(convertToDisplayLog)
     .sort((a, b) => {
       const timeA = new Date(a.timestamp).getTime();
@@ -221,24 +300,19 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
     setLogLevel('');
     setStartTime('');
     setEndTime('');
-    setResultLimit(10);
     setSearchResults([]);
+    setDisplayedCount(10);
     setSearchError(null);
     setHasSearched(false);
     setSelectedLogs(new Set());
+    setHasReachedEnd(false); // Reset end state
   };
+
+  // 더 보기 가능 여부
+  const hasMoreResults = displayedCount < searchResults.length && !hasReachedEnd;
 
   return (
     <div className={`${getWidthClass()} flex flex-col gap-6 pt-8`}>
-      {/* 검색 결과 카운트 */}
-      {hasSearched && (
-        <div className="flex justify-end">
-          <div className="text-[clamp(12px,0.83vw,14px)] text-gray-600">
-            {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
-          </div>
-        </div>
-      )}
-
       {/* 검색 폼 */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="space-y-4">
@@ -337,23 +411,6 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
               />
             </div>
           </div>
-
-          {/* 결과 개수 제한 */}
-          <div className="w-32">
-            <label className="block text-[clamp(11px,0.76vw,12px)] font-medium text-gray-700 mb-1">
-              Max Results
-            </label>
-            <select
-              value={resultLimit}
-              onChange={(e) => setResultLimit(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-[#1E435F] focus:border-[#1E435F] text-[clamp(11px,0.76vw,12px)]"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
         </div>
 
         {/* 검색 에러 표시 */}
@@ -369,16 +426,9 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
         {/* 결과 헤더 */}
         {hasSearched && (
           <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[clamp(16px,1.11vw,18px)] font-semibold font-pretendard text-[#000000]">
-                Search Results
-              </h2>
-              {sortedResults.length > 0 && (
-                <span className="text-[clamp(12px,0.83vw,14px)] text-gray-600">
-                  Showing {sortedResults.length} result{sortedResults.length !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
+            <h2 className="text-[clamp(16px,1.11vw,18px)] font-semibold font-pretendard text-[#000000]">
+              Search Results
+            </h2>
           </div>
         )}
 
@@ -483,6 +533,29 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
                   </div>
                 ))}
               </div>
+
+              {/* Infinite scroll trigger and load more indicator */}
+              {(hasMoreResults || hasReachedEnd) && (
+                <div ref={loadMoreRef} className="p-4 flex items-center justify-center">
+                  {hasReachedEnd ? (
+                    <div className="text-gray-500 text-[clamp(12px,0.83vw,14px)] font-medium">
+                      No more logs to load
+                    </div>
+                  ) : isLoadingMore ? (
+                    <div className="flex items-center gap-3">
+                      <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>
+                      <span className="text-gray-600 text-[clamp(12px,0.83vw,14px)]">Loading more...</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={loadMoreResults}
+                      className="px-4 py-2 text-[#1E435F] border border-[#1E435F] rounded-md hover:bg-[#1E435F] hover:text-white transition-colors text-[clamp(12px,0.83vw,14px)] font-medium"
+                    >
+                      Load More
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
