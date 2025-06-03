@@ -14,7 +14,7 @@ class LogService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_logs(self, user_id: int, project_id: int, log_time: str) -> list:
+    def get_logs(self, user_id: int, project_id: int, log_time: str, size: int = 100) -> list:
         """로그 조회 서비스"""
         project_service = ProjectService(self.db)
 
@@ -26,6 +26,7 @@ class LogService:
             index_name=db_project.index,
             start_time=start_time,
             end_time=end_time,
+            size=size,
         )
 
         return extract_basic_logs(logs)
@@ -35,6 +36,7 @@ class LogService:
         user_id: int,
         project_id: int,
         count: int,
+        size: int = 100,
     ) -> list:
         """날짜 범위 로그 조회 서비스"""
         project_service = ProjectService(self.db)
@@ -47,6 +49,7 @@ class LogService:
             index_name=db_project.index,
             start_time=start_time,
             end_time=end_time,
+            size=size,
         )
 
         return extract_full_logs(logs)
