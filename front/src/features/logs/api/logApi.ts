@@ -80,27 +80,97 @@ export const fetchLogGraphData = async (params: FetchLogsParams): Promise<LogGra
     
     const logs: ApiLogEntry[] = response.data;
     
-    // 로그 레벨별 카운트 계산
+    // 현재 시간 기준으로 필터링할 시간 범위 계산
+    const now = new Date();
+    let startTime: Date;
+    let getTimeKey: (date: Date) => string;
+    
+    switch (queryParams.logTime) {
+      case 'day':
+        // 정확히 24시간 전부터 현재까지
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        getTimeKey = (date: Date) => `${date.getHours().toString().padStart(2, '0')}:00`;
+        break;
+      case 'week':
+        // 정확히 7일 전부터 현재까지
+        startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        getTimeKey = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        break;
+      case 'month':
+        // 정확히 30일 전부터 현재까지
+        startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        getTimeKey = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        break;
+      default:
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        getTimeKey = (date: Date) => `${date.getHours().toString().padStart(2, '0')}:00`;
+    }
+
+    console.log(`Filtering logs from ${startTime.toISOString()} to ${now.toISOString()}`);
+
+    // 지정된 시간 범위 내의 로그만 필터링
+    const filteredLogs = logs.filter(log => {
+      const logTime = new Date(log.message_timestamp);
+      return logTime >= startTime && logTime <= now;
+    });
+
+    console.log(`Filtered ${filteredLogs.length} logs out of ${logs.length} total logs`);
+
+    // 로그 레벨별 총합 계산
     const total = {
-      info: logs.filter(log => log.log_level === 'INFO').length,
-      warn: logs.filter(log => log.log_level === 'WARN').length,
-      error: logs.filter(log => log.log_level === 'ERROR').length
+      info: filteredLogs.filter(log => log.log_level === 'INFO').length,
+      warn: filteredLogs.filter(log => log.log_level === 'WARN').length,
+      error: filteredLogs.filter(log => log.log_level === 'ERROR').length
     };
 
     // 시간별 데이터 그룹화
-    const timeMap = new Map<string, { INFO: number; WARN: number; ERROR: number }>();
+    const timeMap = new Map<string, { INFO: number; WARN: number; ERROR: number; actualTime: Date }>();
     
-    logs.forEach(log => {
-      // message_timestamp에서 날짜 부분만 추출 (ISO 형식: 2025-06-03T01:57:21.706000)
-      const timestamp = log.message_timestamp;
-      const date = queryParams.logTime === 'day' 
-        ? timestamp.split('T')[1].split(':')[0] + ':00'  // 시간 단위로 그룹화 (HH:00)
-        : timestamp.split('T')[0];         // 일 단위로 그룹화 (YYYY-MM-DD)
-
-      if (!timeMap.has(date)) {
-        timeMap.set(date, { INFO: 0, WARN: 0, ERROR: 0 });
+    // 빈 시간 슬롯들을 미리 생성 (연속적인 시간 표시를 위해)
+    if (queryParams.logTime === 'day') {
+      // 현재 시각의 다음 시간부터 24시간 전까지 시간 슬롯 생성
+      
+      // 24시간을 1시간 단위로 분할 (현재 시간 포함)
+      for (let i = 0; i < 24; i++) {
+        // 현재 시간부터 거꾸로 가면서 시간 슬롯 생성
+        const hoursBack = 23 - i; // 23시간 전부터 현재까지
+        const slotTime = new Date(now.getTime() - hoursBack * 60 * 60 * 1000);
+        // 분, 초, 밀리초를 0으로 설정하여 정시로 맞춤
+        slotTime.setMinutes(0, 0, 0);
+        
+        const timeKey = getTimeKey(slotTime);
+        timeMap.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: slotTime });
       }
-      const counts = timeMap.get(date)!;
+    } else if (queryParams.logTime === 'week') {
+      // 7일을 1일 단위로 분할
+      for (let i = 0; i < 7; i++) {
+        const slotTime = new Date(startTime.getTime() + i * 24 * 60 * 60 * 1000);
+        const timeKey = getTimeKey(slotTime);
+        if (!timeMap.has(timeKey)) {
+          timeMap.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: slotTime });
+        }
+      }
+    } else if (queryParams.logTime === 'month') {
+      // 30일을 1일 단위로 분할
+      for (let i = 0; i < 30; i++) {
+        const slotTime = new Date(startTime.getTime() + i * 24 * 60 * 60 * 1000);
+        const timeKey = getTimeKey(slotTime);
+        if (!timeMap.has(timeKey)) {
+          timeMap.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: slotTime });
+        }
+      }
+    }
+    
+    // 실제 로그 데이터를 시간 슬롯에 배정
+    filteredLogs.forEach(log => {
+      const logTime = new Date(log.message_timestamp);
+      const timeKey = getTimeKey(logTime);
+      
+      if (!timeMap.has(timeKey)) {
+        timeMap.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: logTime });
+      }
+      
+      const counts = timeMap.get(timeKey)!;
       
       // 로그 레벨 카운팅
       if (log.log_level === 'ERROR') {
@@ -112,18 +182,38 @@ export const fetchLogGraphData = async (params: FetchLogsParams): Promise<LogGra
       }
     });
 
-    // Map을 배열로 변환하고 시간순으로 정렬
+    // Map을 배열로 변환하고 실제 시간순으로 정렬
     const data = Array.from(timeMap.entries())
-      .map(([date, counts]) => ({
-        time: date,
-        ...counts
+      .map(([time, counts]) => ({
+        time,
+        INFO: counts.INFO,
+        WARN: counts.WARN,
+        ERROR: counts.ERROR,
+        actualTime: counts.actualTime
       }))
       .sort((a, b) => {
         if (queryParams.logTime === 'day') {
-          return a.time.localeCompare(b.time);
+          // 실제 시간순으로 정렬 (24시간 연속성 고려)
+          return a.actualTime.getTime() - b.actualTime.getTime();
+        } else {
+          // 날짜 순서로 정렬
+          try {
+            const dateA = new Date(a.time + ', ' + now.getFullYear());
+            const dateB = new Date(b.time + ', ' + now.getFullYear());
+            return dateA.getTime() - dateB.getTime();
+          } catch {
+            return a.time.localeCompare(b.time);
+          }
         }
-        return new Date(a.time).getTime() - new Date(b.time).getTime();
-      });
+      })
+      .map(({ time, INFO, WARN, ERROR }) => ({ time, INFO, WARN, ERROR })); // actualTime 제거
+
+    console.log('Processed graph data:', { 
+      period: queryParams.logTime, 
+      dataPoints: data.length, 
+      timeRange: `${startTime.toLocaleString()} - ${now.toLocaleString()}`,
+      total 
+    });
 
     return {
       data,
