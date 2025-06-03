@@ -4,9 +4,10 @@ interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder = 'Search logs...' }) => {
+const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder = 'Search logs...', onKeyPress }) => {
   return (
     <div className="relative w-[431px] h-[56px]">
       <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
@@ -29,6 +30,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ value, onChange, placeholder = 'S
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyPress={onKeyPress}
         placeholder={placeholder}
         className="w-full h-full pl-14 pr-6 rounded-[28px] bg-white border border-[#E5E7EB] text-[#374151] placeholder-[#6B7280] focus:outline-none focus:border-[#DBEEFC] focus:ring-1 focus:ring-[#DBEEFC] hover:border-[#DBEEFC] transition-colors"
       />

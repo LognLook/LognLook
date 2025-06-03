@@ -1,37 +1,56 @@
-import { LogLevel } from '../types/logTypes';
 import api from '../../../api/axios';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 
-const SEARCH_API_URL = '/log/search';   // 검색 API URL
-
-// 로그 검색 파라미터 인터페이스
-export interface SearchLogsParams {
+// 검색 요청 파라미터 인터페이스
+export interface SearchLogParams {
   projectId: number;
   query: string;
   keyword?: string;
-  logLevel?: string;
+  logLevel?: 'error' | 'warning' | 'info' | 'debug' | 'critical' | 'custom';
   startTime?: string;
   endTime?: string;
   k?: number;
+  userId: number; // 헤더용
 }
 
-// 검색 결과 로그 엔트리 인터페이스 (검색 API 응답 구조)
+// 검색 응답 로그 아이템 인터페이스
 export interface SearchLogEntry {
   id: string;
   message_timestamp: string;
-  log_level: LogLevel;
+  log_level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG' | 'CRITICAL' | 'CUSTOM';
   keyword?: string;
-  message?: string;
+  message?: string; // 옵셔널로 변경
   host_name?: string;
+  extracted_timestamp?: string;
+  // 추가적인 필드들이 있을 수 있음
+  [key: string]: unknown;
 }
 
-// 로그 검색 API 함수
-export const searchLogs = async (params: SearchLogsParams): Promise<SearchLogEntry[]> => {
+// 검색 응답 인터페이스
+export interface SearchLogResponse {
+  results: SearchLogEntry[];
+  total: number;
+  query: string;
+  filters: {
+    project_id: number;
+    keyword?: string;
+    log_level?: string;
+    start_time?: string;
+    end_time?: string;
+    k: number;
+  };
+}
+
+/**
+ * 로그 검색 API 호출
+ */
+export const searchLogs = async (params: SearchLogParams): Promise<SearchLogEntry[]> => {
   try {
     console.log('Searching logs with params:', params);
-    const { projectId, ...queryParams } = params;
     
-    const response = await api.get(SEARCH_API_URL, {
+    const { projectId, userId, ...queryParams } = params;
+    
+    const response = await api.get('/log/search', {
       params: {
         project_id: projectId,
         query: queryParams.query,
@@ -42,13 +61,21 @@ export const searchLogs = async (params: SearchLogsParams): Promise<SearchLogEnt
         k: queryParams.k || 10,
       },
       headers: {
-        'accept': 'application/json',
-        'x-user-id': 1, // 현재는 하드코딩, 추후 context에서 가져오기
+        'x-user-id': userId,
       },
     });
     
     console.log('Search logs API response:', response.data);
-    return response.data;
+    
+    // API 응답이 배열이면 직접 반환, 객체면 results 필드 반환
+    if (Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data.results) {
+      return response.data.results;
+    } else {
+      console.warn('Unexpected API response format:', response.data);
+      return [];
+    }
   } catch (error) {
     console.error('Error searching logs:', error);
     if (axios.isAxiosError(error)) {
@@ -62,70 +89,102 @@ export const searchLogs = async (params: SearchLogsParams): Promise<SearchLogEnt
   }
 };
 
-// 편의를 위한 래퍼 함수들
-export const searchLogsByQuery = async (
-  projectId: number, 
-  query: string, 
-  options?: Partial<SearchLogsParams>
-): Promise<SearchLogEntry[]> => {
-  return searchLogs({
-    projectId,
-    query,
-    ...options,
-  });
-};
-
-export const searchLogsByKeyword = async (
-  projectId: number,
-  query: string,
-  keyword: string,
-  options?: Partial<SearchLogsParams>
-): Promise<SearchLogEntry[]> => {
-  return searchLogs({
-    projectId,
-    query,
-    keyword,
-    ...options,
-  });
-};
-
-export const searchLogsByLevel = async (
-  projectId: number,
-  query: string,
-  logLevel: string,
-  options?: Partial<SearchLogsParams>
-): Promise<SearchLogEntry[]> => {
-  return searchLogs({
-    projectId,
-    query,
-    logLevel,
-    ...options,
-  });
-};
-
-export const searchLogsByTimeRange = async (
-  projectId: number,
-  query: string,
-  startTime: string,
-  endTime: string,
-  options?: Partial<SearchLogsParams>
-): Promise<SearchLogEntry[]> => {
-  return searchLogs({
-    projectId,
-    query,
-    startTime,
-    endTime,
-    ...options,
-  });
+/**
+ * 고급 검색 옵션을 포함한 로그 검색
+ */
+export const searchLogsAdvanced = async (params: SearchLogParams): Promise<SearchLogResponse> => {
+  try {
+    console.log('Advanced searching logs with params:', params);
+    
+    const { projectId, userId, ...queryParams } = params;
+    
+    const response = await api.get('/log/search', {
+      params: {
+        project_id: projectId,
+        query: queryParams.query,
+        keyword: queryParams.keyword,
+        log_level: queryParams.logLevel,
+        start_time: queryParams.startTime,
+        end_time: queryParams.endTime,
+        k: queryParams.k || 10,
+      },
+      headers: {
+        'x-user-id': userId,
+      },
+    });
+    
+    console.log('Advanced search logs API response:', response.data);
+    
+    // 응답 데이터를 SearchLogResponse 형태로 변환
+    if (Array.isArray(response.data)) {
+      return {
+        results: response.data,
+        total: response.data.length,
+        query: queryParams.query,
+        filters: {
+          project_id: projectId,
+          keyword: queryParams.keyword,
+          log_level: queryParams.logLevel,
+          start_time: queryParams.startTime,
+          end_time: queryParams.endTime,
+          k: queryParams.k || 10,
+        }
+      };
+    } else {
+      return response.data;
+    }
+  } catch (error) {
+    console.error('Error in advanced search logs:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('API Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config
+      });
+    }
+    throw error;
+  }
 };
 
 // 통합된 searchLogApi 객체
 const searchLogApi = {
-  search: searchLogs,
-  searchByQuery: searchLogsByQuery,
-  searchByKeyword: searchLogsByKeyword,
-  searchByLevel: searchLogsByLevel,
-  searchByTimeRange: searchLogsByTimeRange,
+  search: async (
+    projectId: number, 
+    query: string, 
+    options?: {
+      keyword?: string;
+      logLevel?: 'error' | 'warning' | 'info' | 'debug' | 'critical' | 'custom';
+      startTime?: string;
+      endTime?: string;
+      k?: number;
+    }
+  ) => {
+    return searchLogs({
+      projectId,
+      query,
+      userId: 1, // 기본값, 필요시 매개변수로 변경
+      ...options,
+    });
+  },
+
+  searchAdvanced: async (
+    projectId: number, 
+    query: string, 
+    options?: {
+      keyword?: string;
+      logLevel?: 'error' | 'warning' | 'info' | 'debug' | 'critical' | 'custom';
+      startTime?: string;
+      endTime?: string;
+      k?: number;
+    }
+  ) => {
+    return searchLogsAdvanced({
+      projectId,
+      query,
+      userId: 1, // 기본값, 필요시 매개변수로 변경
+      ...options,
+    });
+  }
 };
 
 export default searchLogApi;
