@@ -1,5 +1,7 @@
 import React from "react";
 import { LogSection } from "../../../types/logs";
+import featureIcon from "../../../assets/icons/feature.png";
+import timeIcon from "../../../assets/icons/time.png";
 // Commented out imports that are needed for log parsing but not currently used
 // import { LogItem } from "../../../@types/logs";
 // import { parseLogItem } from "../../../utils/logParser";
@@ -94,7 +96,7 @@ const TeamBoard: React.FC = () => {
           {LOG_SECTIONS.map((section, index) => (
             <div
               key={index}
-              className="flex-none border-transparent border rounded-[8px] bg-white hover:bg-[#F1FFFC] hover:border-[#6E9990] px-4 py-3"
+              className="flex-none border-transparent border rounded-[8px] bg-white hover:bg-[#F1FFFC] hover:border-[#6E9990] px-4 py-3 relative"
               style={{ 
                 width: '226px',
                 minHeight: '132px'
@@ -108,23 +110,26 @@ const TeamBoard: React.FC = () => {
 
                 {/* Feature (e.g., Signup) */}
                 <div className="flex items-center gap-2 text-[clamp(12px,0.95vw,14px)] font-regular font-pretendard text-[#000000] pt-2">
-                  <div className="w-4 h-4 bg-gray-300 rounded-[4px] flex-shrink-0"></div>
+                  <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
+                    <img src={featureIcon} alt="Feature" className="w-4 h-4" />
+                  </div>
                   <span>{section.feature}</span>
                 </div>
 
                 {/* Last updated - using properly formatted timestamp */}
                 <div className="flex items-center gap-2 text-[clamp(12px,0.95vw,14px)] font-regular font-pretendard text-[#000000] pt-1">
-                  <div className="w-4 h-4 bg-gray-300 rounded-[4px] flex-shrink-0"></div>
+                  <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
+                    <img src={timeIcon} alt="Time" className="w-4 h-4" />
+                  </div>
                   <span>
                     {new Date(section.lastUpdated).toLocaleString()}
                   </span>
                 </div>
 
                 {/* Owner - right bottom aligned */}
-                <div className="flex justify-end pt-2">
-                  <div className="flex items-center gap-2 text-[clamp(10px,0.90vw,12px)] text-[#000000]">
-                    <div className="w-4 h-4 bg-gray-300 rounded-[4px] flex-shrink-0"></div>
-                    <span>{section.owner}</span>
+                <div className="absolute bottom-3 right-3">
+                  <div className="w-5 h-5 rounded-full bg-[#496660] flex items-center justify-center text-white font-medium text-[clamp(8px,0.6vw,9px)]">
+                    {section.owner.split(' ').map(name => name[0]).join('')}
                   </div>
                 </div>
               </div>
