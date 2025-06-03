@@ -14,7 +14,7 @@ class Trouble(Base):
     created_by = Column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    report_name = Column(String(50), nullable=False)
+    report_name = Column(String(1000), nullable=False)
     created_at = Column(DateTime, default=datetime.now, nullable=False)
     is_shared = Column(Boolean, default=False, nullable=False)
     user_query = Column(String(1000), nullable=False)
