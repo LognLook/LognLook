@@ -33,6 +33,26 @@ const LogGraph: React.FC<LogGraphProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 현재 시간 기준 범위 계산 함수
+  const getTimeRangeText = (period: TimePeriod): string => {
+    const now = new Date();
+    let startTime: Date;
+    
+    switch (period) {
+      case 'day':
+        startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        return `Last 24 Hours (${startTime.toLocaleDateString()} ${startTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} - ${now.toLocaleDateString()} ${now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})})`;
+      case 'week':
+        startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return `Last 7 Days (${startTime.toLocaleDateString()} - ${now.toLocaleDateString()})`;
+      case 'month':
+        startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return `Last 30 Days (${startTime.toLocaleDateString()} - ${now.toLocaleDateString()})`;
+      default:
+        return 'Log Graph';
+    }
+  };
+
   // Fetch graph data
   useEffect(() => {
     const loadGraphData = async () => {
@@ -133,9 +153,14 @@ const LogGraph: React.FC<LogGraphProps> = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-[clamp(17px,1.18vw,20px)] font-semibold font-pretendard text-[#000000]">
-        Log Graph
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-[clamp(17px,1.18vw,20px)] font-semibold font-pretendard text-[#000000]">
+          Log Graph
+        </h2>
+        <span className="text-[clamp(11px,0.76vw,13px)] text-gray-600 font-medium">
+          {getTimeRangeText(selectedPeriod)}
+        </span>
+      </div>
       <div className={`bg-white pt-4 pl-4 pr-4 pb-0 rounded-lg ${getGraphWidthClass()} h-[32vh]`}>
         <div className="flex justify-between items-center mb-4">
           <TimePeriodSelector
