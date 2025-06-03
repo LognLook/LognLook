@@ -37,7 +37,7 @@ def get_project_keyword(
     return service.get_project_keywords(project_id=project_id)
 
 
-@router.patch("/{project_id}/keywords", response_model=ProjectKeywordsUpdate)
+@router.patch("/project/{project_id}/keywords", response_model=ProjectKeywordsUpdate)
 def update_project_keyword(
     project_id: int,
     keywords_update: ProjectKeywordsUpdate,
