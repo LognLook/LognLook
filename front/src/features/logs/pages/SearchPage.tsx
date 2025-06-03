@@ -421,6 +421,48 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
         )}
       </div>
 
+      {/* 자연어 검색 가이드라인 */}
+      <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-5 h-5 bg-[#1E435F] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-[clamp(13px,0.9vw,15px)] font-semibold text-[#1E435F] mb-2">
+              💡 How to search with natural language
+            </h3>
+            <p className="text-[clamp(11px,0.8vw,13px)] text-gray-600 mb-3">
+              Use natural language to find logs easily. Try these examples or create your own queries:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "Show me error logs from yesterday",
+                "Find authentication failures",
+                "API timeout errors in the last hour",
+                "Database connection issues", 
+                "Login attempts with warning level",
+                "Server crashes in production"
+              ].map((example, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setSearchQuery(example);
+                    performSearch(example);
+                  }}
+                  className="inline-flex items-center px-3 py-1.5 bg-white border border-[#D1D5DB] rounded-full text-[clamp(10px,0.75vw,12px)] text-gray-700 hover:bg-[#F3F4F6] hover:border-[#9CA3AF] transition-colors cursor-pointer"
+                >
+                  <span className="mr-1">🔍</span>
+                  {example}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 검색 결과 */}
       <div className="bg-white rounded-lg shadow-sm">
         {/* 결과 헤더 */}
