@@ -77,4 +77,4 @@ class LogService:
             k=k,
         )
         
-        return extract_basic_logs(logs)
+        return extract_full_logs(logs)
