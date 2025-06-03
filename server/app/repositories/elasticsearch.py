@@ -31,7 +31,7 @@ def retrieve_logs(
     log_level: LogLevelFilter = None,
     start_time: str = None,
     end_time: str = None,
-    k: int = 10,
+    k: int = 50,
 ):
     """로그를 검색하는 함수"""
     keyword_filter = None
@@ -68,11 +68,11 @@ def get_logs_by_ids(index_name: str, ids: List[str]) -> List[Dict[str, Any]]:
             status_code=500, detail=f"Failed to retrieve logs by ID: {str(e)}"
         )
 
-def get_logs_by_datetime(index_name: str, start_time: str, end_time: str):
+def get_logs_by_datetime(index_name: str, start_time: str, end_time: str, size: int = 100):
     """시간 범위로 로그를 검색하는 함수"""
     try:
         time_filter = {"message_timestamp": {"gte": start_time, "lte": end_time}}
-        results = es.search_by_datetime(index=index_name, time_filter=time_filter)
+        results = es.search_by_datetime(index=index_name, time_filter=time_filter, size=size)
         return results
     except HTTPException:
         raise
