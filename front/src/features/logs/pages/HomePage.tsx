@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import WelcomeCard from "../components/WelcomeCard";
 import TeamBoard from "../components/TeamBoard";
 import LogGraph from "../components/LogGraph/LogGraph";
@@ -20,6 +21,7 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ isSidebarOpen }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   // API로부터 로그 데이터 가져오기
   const { data: logs } = useQuery<ApiLogEntry[]>({
@@ -31,6 +33,21 @@ const HomePage: React.FC<HomePageProps> = ({ isSidebarOpen }) => {
     retry: false,
   });
 
+  // 검색 실행 함수
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      // 검색어를 URL 파라미터로 전달하여 SearchPage로 이동
+      navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // 엔터 키로 검색
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   return (
     <div className={`flex flex-col ${isSidebarOpen ? 'w-[79.03vw]' : 'w-[87.64vw]'}`}>
       {/* 서치바와 프로필 */}
@@ -40,6 +57,7 @@ const HomePage: React.FC<HomePageProps> = ({ isSidebarOpen }) => {
             value={searchQuery}
             onChange={setSearchQuery}
             placeholder="Search anything"
+            onKeyPress={handleKeyPress}
           />
         </div>
         <div className="flex items-center gap-3 mr-[82px] lg:mr-[58px]">

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './features/logs/pages/HomePage';
 import TroubleShootingPage from './features/logs/pages/TroubleListPage';
+import SearchPage from './features/logs/pages/SearchPage';
 import DashboardLayout from './features/logs/layouts/DashboardLayout';
 
 const App: React.FC = () => {
@@ -21,6 +22,14 @@ const App: React.FC = () => {
           element={
             <DashboardLayout>
               {props => <TroubleShootingPage projectId={1} userId={1} {...props} />}
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <DashboardLayout>
+              {props => <SearchPage {...props} />}
             </DashboardLayout>
           }
         />
