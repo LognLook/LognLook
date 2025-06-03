@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import SearchBar from '../components/SearchBar';
 
 interface DashboardLayoutProps {
   children: (props: { isSidebarOpen: boolean }) => React.ReactNode;
@@ -7,12 +8,27 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
 
   const isDashboardActive = location.pathname === '/';
   const isTroubleActive = location.pathname.startsWith('/troubles');
   const isSearchActive = location.pathname.startsWith('/search');
+
+  // 검색 실행 함수
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // 엔터 키로 검색
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-[#F0F4F8] overflow-hidden">
@@ -86,8 +102,35 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       </button>
 
       {/* 메인 콘텐츠 */}
-      <main className={`${isSidebarOpen ? 'ml-[279px] w-[calc(100%-279px)]' : 'ml-[91px] w-[calc(100%-91px)]'} transition-all duration-300 flex-1 bg-[#F0F4F8] min-h-screen p-10`}>
-        {children({ isSidebarOpen })}
+      <main className={`${isSidebarOpen ? 'ml-[279px] w-[calc(100%-279px)]' : 'ml-[91px] w-[calc(100%-91px)]'} transition-all duration-300 flex-1 bg-[#F0F4F8] min-h-screen`}>
+        {/* 공통 헤더 */}
+        <div className={`flex items-center justify-between w-full ${!isDashboardActive ? 'bg-white shadow-sm' : ''}`}>
+          <div className="flex-1 px-10 py-4">
+            {isDashboardActive ? (
+              <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search anything"
+                onKeyPress={handleKeyPress}
+              />
+            ) : (
+              <h2 className="text-[clamp(20px,1.5vw,24px)] font-semibold font-pretendard text-[#1E435F]">
+                {isTroubleActive ? 'Trouble Shooting' : 'Search'}
+              </h2>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mr-[82px] lg:mr-[58px]">
+            <div className="w-[40px] h-[40px] rounded-full bg-[#496660] flex items-center justify-center text-white font-medium">
+              SY
+            </div>
+            <span className="text-[14px] font-medium text-gray-700">Seyoung</span>
+          </div>
+        </div>
+
+        {/* 페이지 컨텐츠 */}
+        <div className="px-10 pb-10">
+          {children({ isSidebarOpen })}
+        </div>
       </main>
     </div>
   );

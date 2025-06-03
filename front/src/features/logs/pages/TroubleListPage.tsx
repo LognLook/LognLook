@@ -19,6 +19,11 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
   const [detailData, setDetailData] = useState<ApiLogDetailEntry[]>([]);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
 
+  // 사이드바 상태에 따른 너비 계산
+  const getWidthClass = () => {
+    return isSidebarOpen ? 'w-[74.93vw]' : 'w-[87.64vw]';
+  };
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -83,7 +88,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
 
   if (loading) {
     return (
-      <div className={`flex flex-col ${isSidebarOpen ? 'w-[79.03vw]' : 'w-[87.64vw]'}`}>
+      <div className={`flex flex-col ${getWidthClass()}`}>
         <div className="flex items-center justify-center h-64">
           <div className="text-[#1E435F] text-lg font-pretendard">Loading...</div>
         </div>
@@ -92,17 +97,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
   }
 
   return (
-    <div className={`flex flex-col px-10 ${isSidebarOpen ? 'w-[79.03vw]' : 'w-[87.64vw]'}`}>
-      {/* 헤더 */}
-      <div className="mb-6">
-        <h2 className="text-[clamp(20px,1.5vw,24px)] font-semibold font-pretendard text-[#1E435F]">
-          Trouble Shooting
-        </h2>
-        <p className="text-[clamp(12px,0.95vw,14px)] font-normal font-pretendard text-[#6E9990] mt-1">
-          AI 트러블슈팅 리포트를 확인하세요
-        </p>
-      </div>
-
+    <div className={`${getWidthClass()} flex flex-col gap-6 pt-8`}>
       {/* 트러블슈팅 카드 그리드 */}
       <div className="w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-4">

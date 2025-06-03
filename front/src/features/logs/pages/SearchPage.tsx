@@ -229,20 +229,15 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
   };
 
   return (
-    <div className={`${getWidthClass()} flex flex-col gap-6`}>
-      {/* 페이지 헤더 */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-[clamp(20px,1.39vw,24px)] font-semibold font-pretendard text-[#000000]">
-          Search Logs
-        </h1>
-        <div className="text-[clamp(12px,0.83vw,14px)] text-gray-600">
-          {hasSearched && (
-            <span>
-              {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
-            </span>
-          )}
+    <div className={`${getWidthClass()} flex flex-col gap-6 pt-8`}>
+      {/* 검색 결과 카운트 */}
+      {hasSearched && (
+        <div className="flex justify-end">
+          <div className="text-[clamp(12px,0.83vw,14px)] text-gray-600">
+            {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 검색 폼 */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
