@@ -27,6 +27,7 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
   const [apiLoading, setApiLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [hasMoreLogs, setHasMoreLogs] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc'); // 기본: 최신순(desc)
 
   const observer = useRef<IntersectionObserver | null>(null);
 
@@ -111,11 +112,15 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
     };
   };
 
-  // Parse logs for display and sort by timestamp (newest first)
+  // Parse logs for display and sort by timestamp
   const displayLogs: DisplayLogItem[] = allRecentLogs
     .map(convertToDisplayLog)
     .filter(log => visibleLevels[log.level as LogLevel])
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    .sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    });
 
   const handleLogClick = async (index: number) => {
     const clickedLog = displayLogs[index];
@@ -223,6 +228,11 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
     }
   };
 
+  // 시간 정렬 토글 함수
+  const handleTimeSortToggle = () => {
+    setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+  };
+
   // 1440px 기준 사이드바 상태에 따른 너비 계산 (vw 단위 사용)
   const getWidthClass = () => {
     if (isSidebarOpen) {
@@ -310,7 +320,30 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
           <div className="bg-[#F1F1F5] px-5 h-[5.2vh] flex items-center text-[clamp(11px,0.83vw,12px)] font-[600] font-pretendard text-[#505050] rounded-[10px] leading-[1.2]">
             <div className="flex-1 pl-4 text-left">Logs</div>
             <div className="w-[157px] pl-4 text-center">Host name</div>
-            <div className="w-[175px] pl-4 text-center">Time</div>
+            <div className="w-[175px] pl-4 text-center">
+              <button 
+                onClick={handleTimeSortToggle}
+                className="flex items-center justify-center gap-1 hover:text-[#1E435F] transition-colors cursor-pointer w-full"
+                title={`Sort by time (${sortOrder === 'desc' ? 'newest first' : 'oldest first'})`}
+              >
+                <span>Time</span>
+                <svg 
+                  width="12" 
+                  height="12" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  className={`transition-transform duration-200 ${sortOrder === 'asc' ? 'rotate-180' : ''}`}
+                >
+                  <path 
+                    d="M7 14L12 9L17 14" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
             <div className="w-[97px] pl-4 text-center">Type</div>
             <div className="w-[99px] pl-4 text-center">Feature</div>
             <div className="w-[99px] flex items-center justify-center"></div>

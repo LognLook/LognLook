@@ -1,7 +1,7 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { LogLevel, TimePeriod, CHART_COLORS } from '../../types/logTypes';
-import { getAxisLabel, getTooltipLabel } from '../../utils/logUtils';
+import { getAxisLabel } from '../../utils/logUtils';
 
 interface ChartLogData {
   time: string;
@@ -40,6 +40,36 @@ export const LogChart: React.FC<LogChartProps> = ({
     return [0, finalMax];
   };
 
+  // X축 틱 간격 계산
+  const getTickInterval = () => {
+    switch (selectedPeriod) {
+      case 'day':
+        // 24시간 중에서 4시간마다 표시 (6개 틱)
+        return Math.floor(data.length / 6) || 3;
+      case 'week':
+        // 7일 모두 표시
+        return 0;
+      case 'month':
+        // 30일 중에서 5일마다 표시 (6개 틱)
+        return Math.floor(data.length / 6) || 4;
+      default:
+        return 0;
+    }
+  };
+
+  // 툴크 라벨 포맷팅
+  const formatTooltipLabel = (label: string) => {
+    switch (selectedPeriod) {
+      case 'day':
+        return `Time: ${label}`;
+      case 'week':
+      case 'month':
+        return `Date: ${label}`;
+      default:
+        return label;
+    }
+  };
+
   return (
     <ResponsiveContainer width="100%" height={196}>
       <AreaChart 
@@ -60,6 +90,7 @@ export const LogChart: React.FC<LogChartProps> = ({
           dataKey="time" 
           tick={{ fontSize: 11 }}
           tickMargin={8}
+          interval={getTickInterval()}
           label={{ 
             value: getAxisLabel(selectedPeriod), 
             position: 'insideBottomRight', 
@@ -73,9 +104,15 @@ export const LogChart: React.FC<LogChartProps> = ({
           domain={getYAxisDomain()}
         />
         <Tooltip 
-          contentStyle={{ fontSize: '0.83vw' }}
-          itemStyle={{ fontSize: '0.76vw' }}
-          labelFormatter={(label) => getTooltipLabel(label, selectedPeriod)}
+          contentStyle={{ 
+            fontSize: '12px',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+          }}
+          itemStyle={{ fontSize: '11px' }}
+          labelFormatter={formatTooltipLabel}
         />
         {(Object.keys(visibleLevels) as LogLevel[]).map(level => 
           visibleLevels[level] && (
@@ -87,7 +124,6 @@ export const LogChart: React.FC<LogChartProps> = ({
               strokeWidth={2}
               fill={`url(#${level}Gradient)`}
               fillOpacity={0.3}
-              // stackId 제거 - 이제 각 레벨이 개별적으로 표시됨
               dot={false}
               name={level}
             />
