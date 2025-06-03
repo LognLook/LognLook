@@ -27,6 +27,8 @@ The content should be in the following format:
 1. What happened
 2. Why it happened
 3. How to fix it
+The content should be in the selected language.
+<language>{language}</language>
 <user_query>{user_query}</user_query>
 <log_contents>{log_contents}</log_contents>
 """
