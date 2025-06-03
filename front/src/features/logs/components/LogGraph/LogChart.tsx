@@ -21,20 +21,6 @@ export const LogChart: React.FC<LogChartProps> = ({
   visibleLevels,
   selectedPeriod
 }) => {
-  // 디버그: 들어오는 데이터 확인
-  console.log('=== LogChart Debug ===');
-  console.log('Raw data:', data);
-  console.log('Visible levels:', visibleLevels);
-  console.log('Selected period:', selectedPeriod);
-  
-  // 샘플 데이터 몇 개만 자세히 확인
-  if (data.length > 0) {
-    console.log('First 3 data points:');
-    data.slice(0, 3).forEach((item, index) => {
-      console.log(`[${index}] time: ${item.time}, INFO: ${item.INFO}, WARN: ${item.WARN}, ERROR: ${item.ERROR}`);
-    });
-  }
-
   // Calculate maximum Y value for consistent y-axis
   const getYAxisDomain = () => {
     if (!data.length) return [0, 10];
@@ -44,14 +30,13 @@ export const LogChart: React.FC<LogChartProps> = ({
       Object.keys(visibleLevels).forEach(level => {
         if (visibleLevels[level as LogLevel]) {
           const value = item[level as LogLevel] || 0;
-          max = Math.max(max, value); // 스택이 아닌 개별 최대값 찾기
+          max = Math.max(max, value);
         }
       });
       return max;
     });
     
     const finalMax = Math.ceil(Math.max(...maxValues) * 1.1);
-    console.log('Y-axis domain:', [0, finalMax]);
     return [0, finalMax];
   };
 

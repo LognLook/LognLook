@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface DashboardLayoutProps {
   children: (props: { isSidebarOpen: boolean }) => React.ReactNode;
@@ -6,6 +7,11 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isDashboardActive = location.pathname === '/';
+  const isTroubleActive = location.pathname.startsWith('/troubles');
 
   return (
     <div className="flex min-h-screen bg-[#F0F4F8] overflow-hidden">
@@ -20,13 +26,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <nav>
               <ul className="space-y-2">
                 <li>
-                  <button className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#F1FFFC] hover:border hover:border-[#6E9990] hover:font-bold bg-[#F1FFFC] border border-[#6E9990] font-bold text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center'}`}>
+                  <button
+                    className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#F1FFFC] hover:border hover:border-[#6E9990] hover:font-bold text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center'} ${isDashboardActive ? 'bg-[#E6F7F1] border border-[#1E435F] font-bold text-[#1E435F]' : ''}`}
+                    onClick={() => navigate('/')}
+                  >
                     <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0 mx-1"></div>
                     <span className={`transition-opacity duration-300 ${!isSidebarOpen && 'opacity-0 absolute w-0 overflow-hidden'}`}>Dashboard</span>
                   </button>
                 </li>
                 <li>
-                  <button className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#F1FFFC] hover:border hover:border-[#6E9990] hover:font-bold font-medium text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center'}`}>
+                  <button
+                    className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] hover:bg-[#F1FFFC] hover:border hover:border-[#6E9990] hover:font-bold font-medium text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center'} ${isTroubleActive ? 'bg-[#E6F7F1] border border-[#1E435F] font-bold text-[#1E435F]' : ''}`}
+                    onClick={() => navigate('/troubles')}
+                  >
                     <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0 mx-1"></div>
                     <span className={`transition-opacity duration-300 ${!isSidebarOpen && 'opacity-0 absolute w-0 overflow-hidden'}`}>Trouble Shooting</span>
                   </button>
