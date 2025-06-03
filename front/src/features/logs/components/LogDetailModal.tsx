@@ -43,6 +43,10 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
     if (!chatMessage.trim() || troubleSent) return;
     setChatHistory(prev => [...prev, { type: 'user', message: chatMessage }]);
     setIsSending(true);
+    
+    // 즉시 로딩 메시지 추가
+    setChatHistory(prev => [...prev, { type: 'assistant', message: 'LOADING_PLACEHOLDER' }]);
+    
     try {
       // 체크된 로그들의 id 수집 (log.comment만 사용)
       const related_logs = Array.from(selectedLogs).map(idx => logs[idx]?.comment || '');
@@ -55,11 +59,29 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
       // userId는 예시로 1 사용, 필요시 prop으로 변경
       const troubleRes = await createTrouble(1, troubleReq);
       setTroubleShootingTitle(troubleRes.report_name);
-      setChatHistory(prev => [...prev, { type: 'assistant', message: troubleRes.content }]);
+      
+      // 로딩 메시지를 실제 응답으로 교체
+      setChatHistory(prev => {
+        const newHistory = [...prev];
+        const lastIndex = newHistory.length - 1;
+        if (newHistory[lastIndex].message === 'LOADING_PLACEHOLDER') {
+          newHistory[lastIndex] = { type: 'assistant', message: troubleRes.content };
+        }
+        return newHistory;
+      });
+      
       setSelectedLogs(new Set());
       setTroubleSent(true);
     } catch {
-      setChatHistory(prev => [...prev, { type: 'assistant', message: 'Failed to create trouble. Please try again.' }]);
+      // 로딩 메시지를 에러 메시지로 교체
+      setChatHistory(prev => {
+        const newHistory = [...prev];
+        const lastIndex = newHistory.length - 1;
+        if (newHistory[lastIndex].message === 'LOADING_PLACEHOLDER') {
+          newHistory[lastIndex] = { type: 'assistant', message: 'Failed to create trouble. Please try again.' };
+        }
+        return newHistory;
+      });
     } finally {
       setIsSending(false);
     }
@@ -622,9 +644,22 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                   )}
                   {chat.type === 'assistant' && (
                     <div className="space-y-3">
-                      <p className="text-[14px] font-pretendard text-gray-800 leading-relaxed">
-                        {chat.message}
-                      </p>
+                      {chat.message === 'LOADING_PLACEHOLDER' ? (
+                        <div className="bg-[#F8F9FA] rounded-lg p-4 border border-gray-200">
+                          <div className="flex items-center gap-3">
+                            <div className="flex gap-1">
+                              <div className="w-2 h-2 bg-[#1E435F] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                              <div className="w-2 h-2 bg-[#1E435F] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                              <div className="w-2 h-2 bg-[#1E435F] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                            </div>
+                            <span className="text-[14px] font-pretendard text-[#6E9990]">AI가 분석 중입니다...</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-[14px] font-pretendard text-gray-800 leading-relaxed">
+                          {chat.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -679,7 +714,7 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                     value={chatMessage}
                     onChange={(e) => setChatMessage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
-                    placeholder={selectedLogs.size > 0 ? "Ask about the selected logs..." : "Send a message"}
+                    placeholder={isSending ? "AI가 분석 중입니다..." : selectedLogs.size > 0 ? "Ask about the selected logs..." : "Send a message"}
                     className="w-full h-[11.72vh] p-4 border border-gray-300 hover:border-gray-400 focus:border-gray-500 rounded-[20px] focus:outline-none focus:ring-1 focus:ring-gray-500 text-[14px] font-pretendard resize-none bg-white transition-colors"
                     style={{ minHeight: '80px' }}
                     disabled={isSending}
@@ -690,9 +725,13 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                     className="absolute bottom-5 right-5 w-[2.22vw] h-[3.125vh] bg-[#496660] text-white rounded-full hover:bg-[#5a7670] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                     style={{ minWidth: '32px', minHeight: '32px' }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                    {isSending ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
                   </button>
                 </div>
               )}

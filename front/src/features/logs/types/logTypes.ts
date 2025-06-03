@@ -1,23 +1,38 @@
 export type LogLevel = 'ERROR' | 'WARN' | 'INFO';
 
-export type TimePeriod = 'day' | 'week' | 'month';
+export type TimePeriod = 'day' | 'week' | 'month' | 'hour';
 
 export interface LogEntry {
   id: string;
-  level: LogLevel;
-  message: string;
-  timestamp: string;
-  title: string;
-  host: {
+  level?: LogLevel;
+  message?: string;
+  timestamp?: string;
+  title?: string;
+  host?: {
     name: string;
   };
-  category: string;
+  category?: string;
   comment?: string;
   source?: string;
   metadata?: Record<string, string | number | boolean | null>;
+  event?: {
+    original?: string;
+  };
+  extracted_timestamp?: string;
+  log_level?: LogLevel;
+  message_timestamp?: string;
 }
 
 export interface LogGraphData {
+  time: string;
+  INFO: number;
+  WARN: number;
+  ERROR: number;
+  extracted_timestamp?: string;
+  log_level?: LogLevel;
+}
+
+export interface ChartLogData {
   time: string;
   INFO: number;
   WARN: number;

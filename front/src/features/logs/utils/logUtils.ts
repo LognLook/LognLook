@@ -1,4 +1,4 @@
-import { LogEntry, LogLevel, TimePeriod, ChartLogData } from '../types/logTypes';
+import { LogEntry, LogLevel, TimePeriod, ChartLogData, LogGraphData } from '../types/logTypes';
 
 // Extract log level from message
 export const extractLogLevel = (logEntry: LogEntry): LogLevel => {
@@ -31,6 +31,8 @@ export const formatTimeKey = (timestamp: Date, period: TimePeriod): string => {
     }
     case 'month':
       return `${(timestamp.getMonth() + 1).toString().padStart(2, '0')}-${timestamp.getDate().toString().padStart(2, '0')}`;
+    case 'hour':
+      return `${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}`;
   }
 };
 
@@ -94,10 +96,10 @@ export const aggregateLogsByPeriod = (
 
   // Aggregate logs into time slots
   logs.forEach(log => {
-    const logTime = new Date(log.extracted_timestamp).getTime();
+    const logTime = new Date(log.extracted_timestamp || log.time).getTime();
     if (logTime >= startTime.getTime() && logTime <= now.getTime()) {
       const slotIndex = Math.floor((logTime - startTime.getTime()) / interval);
-      if (slotIndex >= 0 && slotIndex < timeSlots.length) {
+      if (slotIndex >= 0 && slotIndex < timeSlots.length && log.log_level) {
         timeSlots[slotIndex][log.log_level]++;
       }
     }
@@ -109,6 +111,7 @@ export const aggregateLogsByPeriod = (
 // Get axis label based on period
 export const getAxisLabel = (period: TimePeriod): string => {
   switch (period) {
+    case 'hour': return 'Minutes';
     case 'day': return 'Hours';
     case 'week': return 'Days';
     case 'month': return 'Date';
@@ -119,6 +122,7 @@ export const getAxisLabel = (period: TimePeriod): string => {
 // Get tooltip label based on period
 export const getTooltipLabel = (label: string, period: TimePeriod): string => {
   switch (period) {
+    case 'hour': return `Time: ${label}`;
     case 'day': return `Hour: ${label}`;
     case 'week': return `Day: ${label}`;
     case 'month': return `Date: ${label}`;
