@@ -142,22 +142,40 @@ export const fetchLogGraphData = async (params: FetchLogsParams): Promise<LogGra
         timeMap.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: slotTime });
       }
     } else if (queryParams.logTime === 'week') {
-      // 7일을 1일 단위로 분할
-      for (let i = 0; i < 7; i++) {
+      // 7일을 1일 단위로 분할 (오늘 포함)
+      for (let i = 0; i <= 7; i++) {
         const slotTime = new Date(startTime.getTime() + i * 24 * 60 * 60 * 1000);
-        const timeKey = getTimeKey(slotTime);
-        if (!timeMap.has(timeKey)) {
-          timeMap.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: slotTime });
+        // 오늘 날짜를 초과하지 않도록 체크
+        if (slotTime <= now) {
+          const timeKey = getTimeKey(slotTime);
+          if (!timeMap.has(timeKey)) {
+            timeMap.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: slotTime });
+          }
         }
       }
+      
+      // 오늘 날짜가 반드시 포함되도록 확인
+      const todayKey = getTimeKey(now);
+      if (!timeMap.has(todayKey)) {
+        timeMap.set(todayKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: now });
+      }
     } else if (queryParams.logTime === 'month') {
-      // 30일을 1일 단위로 분할
-      for (let i = 0; i < 30; i++) {
+      // 30일을 1일 단위로 분할 (오늘 포함)
+      for (let i = 0; i <= 30; i++) {
         const slotTime = new Date(startTime.getTime() + i * 24 * 60 * 60 * 1000);
-        const timeKey = getTimeKey(slotTime);
-        if (!timeMap.has(timeKey)) {
-          timeMap.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: slotTime });
+        // 오늘 날짜를 초과하지 않도록 체크
+        if (slotTime <= now) {
+          const timeKey = getTimeKey(slotTime);
+          if (!timeMap.has(timeKey)) {
+            timeMap.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: slotTime });
+          }
         }
+      }
+      
+      // 오늘 날짜가 반드시 포함되도록 확인
+      const todayKey = getTimeKey(now);
+      if (!timeMap.has(todayKey)) {
+        timeMap.set(todayKey, { INFO: 0, WARN: 0, ERROR: 0, actualTime: now });
       }
     }
     
