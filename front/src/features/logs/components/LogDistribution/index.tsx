@@ -1,20 +1,27 @@
 import React from 'react';
-import { LogEntry } from '../../types/logTypes';
+import { LogEntry, TimePeriod } from '../../types/logTypes';
 import { useLogDistribution } from './useLogDistribution';
 import { LogPieChart } from './LogPieChart';
 import { PieChartLegend } from './PieChartLegend';
 
 interface LogDistributionProps {
   logs?: LogEntry[];
+  timePeriod?: TimePeriod;
 }
 
-const LogDistribution: React.FC<LogDistributionProps> = ({ logs: propLogs }) => {
+const LogDistribution: React.FC<LogDistributionProps> = ({ 
+  logs: propLogs,
+  timePeriod = 'day'
+}) => {
   const {
     chartSize,
     isSidebarOpen,
     pieData,
     containerRef,
-  } = useLogDistribution({ propLogs });
+  } = useLogDistribution({ 
+    propLogs,
+    timePeriod 
+  });
 
   // 사이드바 상태에 따라 너비 계산
   const getDistributionWidthClass = () => {

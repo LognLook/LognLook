@@ -1,32 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import WelcomeCard from "../components/WelcomeCard";
 import TeamBoard from "../components/TeamBoard";
 import LogGraph from "../components/LogGraph/LogGraph";
 import LogDistribution from "../components/LogDistribution/LogDistribution";
 import RecentLogs from "../components/RecentLogs";
-import { useQuery } from "@tanstack/react-query";
-import { getLogs } from "../api/logApi";
-import { LogLevel } from "../types/logTypes";
-
-interface ApiLogEntry {
-  extracted_timestamp: string;
-  log_level: LogLevel;
-}
+import { TimePeriod } from "../types/logTypes";
 
 interface HomePageProps {
   isSidebarOpen: boolean;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ isSidebarOpen }) => {
-  // API로부터 로그 데이터 가져오기
-  const { data: logs } = useQuery<ApiLogEntry[]>({
-    queryKey: ['logs'],
-    queryFn: async () => {
-      const response = await getLogs();
-      return response as unknown as ApiLogEntry[];
-    },
-    retry: false,
-  });
+  // TimePeriod 상태 관리
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>('day');
 
   return (
     <div className={`flex flex-col ${isSidebarOpen ? 'w-[79.03vw]' : 'w-[87.64vw]'}`}>
@@ -42,8 +28,15 @@ const HomePage: React.FC<HomePageProps> = ({ isSidebarOpen }) => {
 
       {/* 로그 그래프와 파이 차트 */}
       <section className="flex gap-8 mt-3">
-        <LogGraph projectId={1} />
-        <LogDistribution logs={logs} />
+        <LogGraph 
+          projectId={1} 
+          timePeriod={selectedTimePeriod}
+          onTimePeriodChange={setSelectedTimePeriod}
+        />
+        <LogDistribution 
+          projectId={1}
+          timePeriod={selectedTimePeriod}
+        />
       </section>
 
       {/* 로그 리스트 */}
