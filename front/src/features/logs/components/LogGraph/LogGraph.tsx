@@ -9,6 +9,7 @@ interface LogGraphProps {
   projectId: number;
   timePeriod?: TimePeriod;
   onToggleLevel?: (level: LogLevel) => void;
+  onTimePeriodChange?: (period: TimePeriod) => void;
 }
 
 interface LogGraphData {
@@ -20,7 +21,8 @@ interface LogGraphData {
 
 const LogGraph: React.FC<LogGraphProps> = ({ 
   projectId,
-  timePeriod: initialTimePeriod = 'day'
+  timePeriod: initialTimePeriod = 'day',
+  onTimePeriodChange
 }) => {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>(initialTimePeriod);
   const [visibleLevels, setVisibleLevels] = useState<Record<LogLevel, boolean>>({
@@ -32,6 +34,11 @@ const LogGraph: React.FC<LogGraphProps> = ({
   const [graphData, setGraphData] = useState<LogGraphData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // timePeriod prop이 변경되면 내부 상태도 업데이트
+  useEffect(() => {
+    setSelectedPeriod(initialTimePeriod);
+  }, [initialTimePeriod]);
 
   // 현재 시간 기준 범위 계산 함수
   const getTimeRangeText = (period: TimePeriod): string => {
@@ -58,11 +65,20 @@ const LogGraph: React.FC<LogGraphProps> = ({
     const loadGraphData = async () => {
       try {
         setIsLoading(true);
+        // API 호출 시 selectedPeriod를 logTime 매개변수로 전달
         const response = await logApi.fetchLogGraphData(projectId, selectedPeriod);
         
         // API 응답 데이터는 이미 올바른 형식이므로 직접 사용
         setGraphData(response.data);
         setError(null);
+        
+        // 디버깅을 위한 로그 추가
+        console.log(`Graph data for ${selectedPeriod}:`, {
+          dataLength: response.data.length,
+          firstPoint: response.data[0],
+          lastPoint: response.data[response.data.length - 1],
+          today: new Date().toLocaleDateString()
+        });
       } catch (err) {
         console.error('Error in loadGraphData:', err);
         setError('Failed to load log graph data');
@@ -109,6 +125,14 @@ const LogGraph: React.FC<LogGraphProps> = ({
   // Calculate width based on sidebar state
   const getGraphWidthClass = () => {
     return isSidebarOpen ? 'w-[50.97vw]' : 'w-[63.61vw]';
+  };
+
+  // TimePeriod 변경 핸들러
+  const handlePeriodChange = (period: TimePeriod) => {
+    setSelectedPeriod(period);
+    if (onTimePeriodChange) {
+      onTimePeriodChange(period);
+    }
   };
 
   if (isLoading) {
@@ -165,7 +189,7 @@ const LogGraph: React.FC<LogGraphProps> = ({
         <div className="flex justify-between items-center mb-4">
           <TimePeriodSelector
             selectedPeriod={selectedPeriod}
-            onPeriodChange={setSelectedPeriod}
+            onPeriodChange={handlePeriodChange}
           />
 
           <div className="flex items-center">
