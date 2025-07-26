@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.post("/project", response_model=Project)
 def create_projects(
-    project_dto: ProjectCreate, 
+    project_dto: ProjectCreate,
     service: ProjectService = Depends(get_project_service),
     username: str = Depends(get_current_username)
 ):

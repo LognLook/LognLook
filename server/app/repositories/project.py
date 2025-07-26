@@ -72,3 +72,42 @@ def update_project_keyword(
     db.commit()
     db.refresh(project)
     return project
+
+
+def delete_project(db: Session, project_id: int, user_id: int) -> bool:
+    """프로젝트 삭제"""
+    try:
+        # 프로젝트가 사용자에게 속해있는지 확인
+        user_project = (
+            db.query(UserProject)
+            .filter(
+                UserProject.user_id == user_id, UserProject.project_id == project_id
+            )
+            .first()
+        )
+
+        if not user_project:
+            return False
+
+        # 프로젝트 조회
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if not project:
+            return False
+
+        # 관련 데이터 삭제 (UserProject, ProjectSetting)
+        db.query(UserProject).filter(UserProject.project_id == project_id).delete()
+
+        db.query(ProjectSetting).filter(
+            ProjectSetting.project_id == project_id
+        ).delete()
+
+        # 프로젝트 삭제
+        db.delete(project)
+        db.commit()
+
+        return True
+
+    except Exception as e:
+        db.rollback()
+        print(f"Error deleting project: {e}")
+        return False

@@ -63,3 +63,32 @@ class ProjectService:
             )
 
         return keywords_update
+
+    def delete_project(self, project_id: int, user_id: int) -> dict:
+        """프로젝트 삭제 서비스"""
+        # 프로젝트 존재 여부 확인
+        db_project = ProjectRepository.get_project_by_id(self.db, project_id=project_id)
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # 사용자가 해당 프로젝트에 접근 권한이 있는지 확인
+        db_user = UserRepository.get_user_by_id(db=self.db, user_id=user_id)
+        if not db_user:
+            raise HTTPException(status_code=400, detail="Can't find user")
+
+        # 프로젝트 삭제 실행
+        success = ProjectRepository.delete_project(
+            db=self.db, project_id=project_id, user_id=db_user.id
+        )
+
+        if not success:
+            raise HTTPException(status_code=400, detail="Failed to delete project")
+
+        # Elasticsearch 인덱스도 삭제
+        try:
+            ElasticsearchRepository.delete_project_index(index_name=db_project.index)
+        except Exception as e:
+            # Elasticsearch 삭제 실패는 로그만 남기고 계속 진행
+            print(f"Failed to delete Elasticsearch index: {e}")
+
+        return {"message": "Project deleted successfully"}
