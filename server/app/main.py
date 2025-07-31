@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from app.infra.database.session import engine, Base
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routers import users, project, pipeline, log, trouble
+from app.api.routers import user, project, pipeline, log, trouble
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -26,7 +26,7 @@ app.add_middleware(
 )
 
 # 라우트 등록
-app.include_router(users.router, prefix="/api", tags=["users"])
+app.include_router(user.router, prefix="/api", tags=["users"])
 app.include_router(project.router, prefix="/api", tags=["project"])
 app.include_router(pipeline.router, prefix="/api", tags=["pipeline"])
 app.include_router(log.router, prefix="/api", tags=["log"])

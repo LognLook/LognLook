@@ -8,7 +8,7 @@ from app.schemas.trouble import (
     TroubleWithLogs
 )
 from app.services.trouble import TroubleService
-from app.core.config.dependencies import get_trouble_service
+from app.api.deps import get_trouble_service
 
 router = APIRouter()
 

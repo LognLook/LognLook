@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query, Header
 from datetime import datetime
 
 from app.core.enums.log_filter import LogLevelFilter, LogTimeFilter
-from app.core.config.dependencies import get_log_service
+from app.api.deps import get_log_service
 from app.services.log import LogService
 
 router = APIRouter()

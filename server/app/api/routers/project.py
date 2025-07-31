@@ -7,7 +7,7 @@ from app.schemas.project import (
     ProjectKeywordsBase,
 )
 
-from app.core.config.dependencies import get_project_service
+from app.api.deps import get_project_service
 from app.services.project import ProjectService
 
 router = APIRouter()
