@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     MYSQL_PORT: str
     MYSQL_SCHEMA: str
     
+    # JWT 설정
+    JWT_SECRET: str
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_MINUTES: int = 30
+    
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 @lru_cache # 싱글턴
