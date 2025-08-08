@@ -1,16 +1,11 @@
 from fastapi import APIRouter, Depends
 
-from app.schemas.user import UserCreate, UserRegister, UserLogin, Token, User
+from app.schemas.user import UserRegister, UserLogin, Token, User
 from app.services.user import UserService
 from app.api.deps import get_user_service, get_current_username
 from app.models.user import User as UserModel
 
 router = APIRouter()
-
-
-@router.post("/user")
-def create_users(user: UserCreate, service: UserService = Depends(get_user_service)):
-    return service.create_user(user)
 
 
 @router.post("/auth/register", response_model=User)
