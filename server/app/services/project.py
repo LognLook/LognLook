@@ -11,9 +11,9 @@ class ProjectService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_project(self, project_dto: ProjectCreate, user_email: str) -> Project:
+    def create_project(self, project_dto: ProjectCreate, username: str) -> Project:
         """프로젝트 생성 서비스"""
-        db_user = UserRepository.get_user_by_email(db=self.db, email=user_email)
+        db_user = UserRepository.get_user_by_username(db=self.db, username=username)
         if not db_user:
             raise HTTPException(status_code=400, detail="Can't find user")
 
@@ -28,9 +28,9 @@ class ProjectService:
         """프로젝트 조회 서비스"""
         return ProjectRepository.get_project_by_id(self.db, project_id=project_id)
 
-    def get_projects_by_user(self, user_email: str) -> list:
+    def get_projects_by_user(self, username: str) -> list:
         """사용자의 프로젝트 목록 조회 서비스"""
-        db_user = UserRepository.get_user_by_email(db=self.db, email=user_email)
+        db_user = UserRepository.get_user_by_username(db=self.db, username=username)
         if not db_user:
             raise HTTPException(status_code=400, detail="Can't find user")
 

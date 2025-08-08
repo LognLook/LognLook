@@ -1,7 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 class UserBase(BaseModel): 
-    email: EmailStr #이메일 형식 체크
+    username: str
     
     
 class User(UserBase):
@@ -14,11 +14,11 @@ class UserCreate(UserBase):
     password: str
 
 class UserRegister(BaseModel):
-    email: EmailStr
+    username: str
     password: str
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    username: str
     password: str
 
 class Token(BaseModel):
@@ -26,4 +26,4 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    email: str | None = None
+    username: str | None = None

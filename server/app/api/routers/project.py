@@ -7,7 +7,7 @@ from app.schemas.project import (
     ProjectKeywordsBase,
 )
 
-from app.api.deps import get_project_service, get_current_user_email
+from app.api.deps import get_project_service, get_current_username
 from app.services.project import ProjectService
 
 router = APIRouter()
@@ -17,17 +17,17 @@ router = APIRouter()
 def create_projects(
     project_dto: ProjectCreate, 
     service: ProjectService = Depends(get_project_service),
-    user_email: str = Depends(get_current_user_email)
+    username: str = Depends(get_current_username)
 ):
-    return service.create_project(project_dto=project_dto, user_email=user_email)
+    return service.create_project(project_dto=project_dto, username=username)
 
 
 @router.get("/project", response_model=list[Project])
 def get_project(
     service: ProjectService = Depends(get_project_service),
-    user_email: str = Depends(get_current_user_email)
+    username: str = Depends(get_current_username)
 ):
-    return service.get_projects_by_user(user_email=user_email)
+    return service.get_projects_by_user(username=username)
 
 
 @router.get("/project/{project_id}/keyword", response_model=ProjectKeywordsBase)

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.schemas.user import UserCreate, UserRegister, UserLogin, Token, User
 from app.services.user import UserService
-from app.api.deps import get_user_service, get_current_user_email
+from app.api.deps import get_user_service, get_current_username
 from app.models.user import User as UserModel
 
 router = APIRouter()
@@ -27,6 +27,6 @@ def login(login_data: UserLogin, service: UserService = Depends(get_user_service
 
 @router.get("/auth/me", response_model=User)
 def get_current_user_info(
-    email: str = Depends(get_current_user_email), service: UserService = Depends(get_user_service)):
+    username: str = Depends(get_current_username), service: UserService = Depends(get_user_service)):
     """현재 로그인한 사용자 정보 조회"""
-    return service.get_user_by_email(email)
+    return service.get_user_by_username(username)

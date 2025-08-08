@@ -31,14 +31,14 @@ class TroubleService:
         self.llm = LLMFactory.create_mini_chat_model()
 
     def create_trouble(
-        self, create_trouble_dto: TroubleCreate, user_email: str
+        self, create_trouble_dto: TroubleCreate, username: str
     ) -> Trouble:
         """
         새로운 trouble을 생성합니다.
 
         Args:
             create_trouble_dto: 생성할 trouble 데이터
-            user_email: 생성자 이메일 (인증된 사용자)
+            username: 생성자 아이디 (인증된 사용자)
 
         Returns:
             생성된 Trouble 객체
@@ -47,7 +47,7 @@ class TroubleService:
             HTTPException: 프로젝트가 존재하지 않거나 권한이 없는 경우
         """
         # 1. 사용자 정보 조회
-        user = user_repo.get_user_by_email(self.db, user_email)
+        user = user_repo.get_user_by_username(self.db, username)
         if not user:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
         
@@ -100,13 +100,13 @@ class TroubleService:
 
         return trouble
 
-    def get_trouble_by_id(self, trouble_id: int, user_email: str) -> TroubleWithLogs:
+    def get_trouble_by_id(self, trouble_id: int, username: str) -> TroubleWithLogs:
         """
         ID로 trouble을 조회합니다.
 
         Args:
             trouble_id: 조회할 trouble ID
-            user_email: 요청한 사용자 이메일 (권한 확인용)
+            username: 요청한 사용자 아이디 (권한 확인용)
 
         Returns:
             조회된 TroubleWithLogs 객체
@@ -115,7 +115,7 @@ class TroubleService:
             HTTPException: trouble이 존재하지 않거나 접근 권한이 없는 경우
         """
         # 1. 사용자 정보 조회
-        user = user_repo.get_user_by_email(self.db, user_email)
+        user = user_repo.get_user_by_username(self.db, username)
         if not user:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
         
@@ -144,7 +144,7 @@ class TroubleService:
         return TroubleWithLogs(trouble=trouble, logs=log_ids)
 
     def update_trouble(
-        self, trouble_id: int, trouble_update_dto: TroubleUpdate, user_email: str
+        self, trouble_id: int, trouble_update_dto: TroubleUpdate, username: str
     ) -> Trouble:
         """
         기존 trouble을 업데이트합니다.
@@ -152,7 +152,7 @@ class TroubleService:
         Args:
             trouble_id: 업데이트할 trouble ID
             trouble_update: 업데이트할 데이터
-            user_email: 요청한 사용자 이메일 (권한 확인용)
+            username: 요청한 사용자 아이디 (권한 확인용)
 
         Returns:
             업데이트된 Trouble 객체
@@ -161,7 +161,7 @@ class TroubleService:
             HTTPException: trouble이 존재하지 않거나 수정 권한이 없는 경우
         """
         # 1. 사용자 정보 조회
-        user = user_repo.get_user_by_email(self.db, user_email)
+        user = user_repo.get_user_by_username(self.db, username)
         if not user:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
         
@@ -186,19 +186,19 @@ class TroubleService:
 
         return updated_trouble
 
-    def delete_trouble(self, trouble_id: int, user_email: str) -> None:
+    def delete_trouble(self, trouble_id: int, username: str) -> None:
         """
         trouble을 삭제합니다.
 
         Args:
             trouble_id: 삭제할 trouble ID
-            user_email: 요청한 사용자 이메일 (권한 확인용)
+            username: 요청한 사용자 아이디 (권한 확인용)
 
         Raises:
             HTTPException: trouble이 존재하지 않거나 삭제 권한이 없는 경우
         """
         # 1. 사용자 정보 조회
-        user = user_repo.get_user_by_email(self.db, user_email)
+        user = user_repo.get_user_by_username(self.db, username)
         if not user:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
         
@@ -220,7 +220,7 @@ class TroubleService:
         trouble_repo.delete_trouble(self.db, trouble)
 
     def get_project_troubles(
-        self, project_id: int, query_params: TroubleListQuery, user_email: str
+        self, project_id: int, query_params: TroubleListQuery, username: str
     ) -> TroubleListResponse:
         """
         프로젝트의 trouble 목록을 페이지네이션과 함께 조회합니다.
@@ -228,7 +228,7 @@ class TroubleService:
         Args:
             project_id: 프로젝트 ID
             query_params: 페이지네이션 및 필터 파라미터
-            user_email: 요청한 사용자 이메일 (권한 확인용)
+            username: 요청한 사용자 아이디 (권한 확인용)
 
         Returns:
             페이지네이션된 trouble 목록
@@ -237,7 +237,7 @@ class TroubleService:
             HTTPException: 프로젝트가 존재하지 않거나 접근 권한이 없는 경우
         """
         # 1. 사용자 정보 조회
-        user = user_repo.get_user_by_email(self.db, user_email)
+        user = user_repo.get_user_by_username(self.db, username)
         if not user:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
         
@@ -256,7 +256,7 @@ class TroubleService:
         trouble_summaries = []
         for trouble in troubles:
             # 생성자 이메일 조회 (선택적)
-            creator_email = trouble_repo.get_creator_email(self.db, trouble.id)
+            creator_username = trouble_repo.get_creator_username(self.db, trouble.id)
 
             # 연관된 로그 개수 조회 (선택적)
             logs_count = (
@@ -268,7 +268,7 @@ class TroubleService:
                 report_name=trouble.report_name,
                 created_at=trouble.created_at,
                 is_shared=trouble.is_shared,
-                creator_email=creator_email,
+                creator_username=creator_username,
                 logs_count=logs_count,
             )
             trouble_summaries.append(summary)

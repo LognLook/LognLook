@@ -34,12 +34,12 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
 
 
 def verify_token(token: str) -> Union[str, None]:
-    """JWT 토큰을 검증하고 이메일을 반환"""
+    """JWT 토큰을 검증하고 username을 반환"""
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        username: str = payload.get("sub")
+        if username is None:
             return None
-        return email
+        return username
     except JWTError:
         return None
