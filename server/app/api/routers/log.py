@@ -1,9 +1,9 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, Header
+from fastapi import APIRouter, Depends, Query
 from datetime import datetime
 
 from app.core.enums.log_filter import LogLevelFilter, LogTimeFilter
-from app.api.deps import get_log_service
+from app.api.deps import get_log_service, get_current_user_email
 from app.services.log import LogService
 
 router = APIRouter()
@@ -16,21 +16,21 @@ def get_log(
     log_time: LogTimeFilter = LogTimeFilter.DAY,
     size: int = Query(100, description="검색 결과 최대 개수"),
     service: LogService = Depends(get_log_service),
-    x_user_id: int = Header(..., description="클라이언트에서 전달받은 사용자 ID"),
+    user_email: str = Depends(get_current_user_email),
 ):
-    return service.get_logs(x_user_id, project_id, log_time, size)
+    return service.get_logs(user_email, project_id, log_time, size)
 
 
 @router.get("/log/recent")
 def get_recent_logs(
     project_id: int,
-    x_user_id: int = Header(..., description="클라이언트에서 전달받은 사용자 ID"),
+    user_email: str = Depends(get_current_user_email),
     count: int = Query(..., description="무한 스크롤 조회 횟수, 1부터 시작"),
     size: int = Query(100, description="검색 결과 최대 개수"),
     service: LogService = Depends(get_log_service),
 ):
     return service.get_recent_logs(
-        user_id=x_user_id,
+        user_email=user_email,
         project_id=project_id,
         count=count,
         size=size,
