@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
 import logging
 from uuid import UUID
-from app.core.config.dependencies import get_pipeline_service
+from app.api.deps import get_pipeline_service
 from app.services.pipeline import PipelineService
 
 router = APIRouter()

@@ -44,3 +44,6 @@ Thumbs.db
 
 # environment variables
 .env
+
+# claude code
+CLAUDE.md
