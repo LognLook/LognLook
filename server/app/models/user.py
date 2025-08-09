@@ -7,7 +7,8 @@ from sqlalchemy.orm import relationship
 class User(Base):
     __tablename__ = "users"
     id: int | None = Column(Integer, primary_key=True, index=True)
-    email: str = Column(String(50), nullable=False)
+    username: str = Column(String(50), nullable=False, unique=True)
+    password: str = Column(String(255), nullable=False)
     create_at: DateTime = Column(DateTime, default=datetime.now)
 
     user_projects = relationship(

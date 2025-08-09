@@ -80,7 +80,7 @@ class TroubleSummary(BaseModel):
     report_name: str
     created_at: datetime
     is_shared: bool
-    creator_email: Optional[str] = Field(None, description="생성자 이메일")
+    creator_username: Optional[str] = Field(None, description="생성자 아이디")
     logs_count: Optional[int] = Field(None, description="연관된 로그 개수")
 
     model_config = {
@@ -91,7 +91,7 @@ class TroubleSummary(BaseModel):
                 "report_name": "로그인 오류 분석",
                 "created_at": "2024-01-01T10:00:00Z",
                 "is_shared": False,
-                "creator_email": "user@example.com",
+                "creator_username": "user123",
                 "logs_count": 5,
             }
         },
@@ -128,7 +128,7 @@ class TroubleListResponse(BaseModel):
                         "report_name": "로그인 오류 분석",
                         "created_at": "2024-01-01T10:00:00Z",
                         "is_shared": False,
-                        "creator_email": "user@example.com",
+                        "creator_username": "user123",
                         "logs_count": 5,
                     }
                 ],

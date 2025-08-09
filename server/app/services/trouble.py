@@ -10,6 +10,7 @@ from app.core.llm.prompts import TROUBLESHOOTING_TEMPLATE, TroubleContent
 from app.repositories.project import get_project_by_id
 from app.repositories.elasticsearch import get_logs_by_ids
 from app.repositories import trouble as trouble_repo
+from app.repositories import user as user_repo
 from app.schemas.trouble import (
     TroubleCreate,
     TroubleUpdate,
@@ -30,14 +31,14 @@ class TroubleService:
         self.llm = LLMFactory.create_mini_chat_model()
 
     def create_trouble(
-        self, create_trouble_dto: TroubleCreate, created_by: int
+        self, create_trouble_dto: TroubleCreate, username: str
     ) -> Trouble:
         """
         새로운 trouble을 생성합니다.
 
         Args:
             create_trouble_dto: 생성할 trouble 데이터
-            created_by: 생성자 ID (인증된 사용자)
+            username: 생성자 아이디 (인증된 사용자)
 
         Returns:
             생성된 Trouble 객체
@@ -45,14 +46,19 @@ class TroubleService:
         Raises:
             HTTPException: 프로젝트가 존재하지 않거나 권한이 없는 경우
         """
-        # 1. 프로젝트 존재 여부 및 접근 권한 확인
+        # 1. 사용자 정보 조회
+        user = user_repo.get_user_by_username(self.db, username)
+        if not user:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
+        
+        # 2. 프로젝트 존재 여부 및 접근 권한 확인
         project = get_project_by_id(self.db, create_trouble_dto.project_id)
         if not project:
             raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다")
 
         # 사용자가 해당 프로젝트에 접근 권한이 있는지 확인
         if not trouble_repo.check_user_project_access(
-            self.db, create_trouble_dto.project_id, created_by
+            self.db, create_trouble_dto.project_id, user.id
         ):
             raise HTTPException(
                 status_code=403, detail="프로젝트에 접근 권한이 없습니다"
@@ -81,7 +87,7 @@ class TroubleService:
         trouble = trouble_repo.create_trouble(
             self.db,
             create_trouble_dto,
-            created_by,
+            user.id,
             ai_content.title,
             ai_content.content,
         )
@@ -94,13 +100,13 @@ class TroubleService:
 
         return trouble
 
-    def get_trouble_by_id(self, trouble_id: int, user_id: int) -> TroubleWithLogs:
+    def get_trouble_by_id(self, trouble_id: int, username: str) -> TroubleWithLogs:
         """
         ID로 trouble을 조회합니다.
 
         Args:
             trouble_id: 조회할 trouble ID
-            user_id: 요청한 사용자 ID (권한 확인용)
+            username: 요청한 사용자 아이디 (권한 확인용)
 
         Returns:
             조회된 TroubleWithLogs 객체
@@ -108,15 +114,20 @@ class TroubleService:
         Raises:
             HTTPException: trouble이 존재하지 않거나 접근 권한이 없는 경우
         """
-        # 1. trouble 존재 여부 확인
+        # 1. 사용자 정보 조회
+        user = user_repo.get_user_by_username(self.db, username)
+        if not user:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
+        
+        # 2. trouble 존재 여부 확인
         trouble = trouble_repo.get_trouble_by_id(self.db, trouble_id)
         if not trouble:
             raise HTTPException(
                 status_code=404, detail="요청한 트러블슈팅을 찾을 수 없습니다"
             )
 
-        # 2. 접근 권한 확인 (생성자이거나 공유된 trouble만 조회 가능)
-        if not self._check_trouble_access(trouble, user_id):
+        # 3. 접근 권한 확인 (생성자이거나 공유된 trouble만 조회 가능)
+        if not self._check_trouble_access(trouble, user.id):
             raise HTTPException(
                 status_code=403, detail="이 트러블슈팅에 접근할 권한이 없습니다"
             )
@@ -129,11 +140,11 @@ class TroubleService:
         # 4. 로그 데이터 가져오기
         log_ids = [log.log_id for log in trouble_logs]
 
-        # 6. trouble 반환
+        # 5. trouble 반환
         return TroubleWithLogs(trouble=trouble, logs=log_ids)
 
     def update_trouble(
-        self, trouble_id: int, trouble_update_dto: TroubleUpdate, user_id: int
+        self, trouble_id: int, trouble_update_dto: TroubleUpdate, username: str
     ) -> Trouble:
         """
         기존 trouble을 업데이트합니다.
@@ -141,7 +152,7 @@ class TroubleService:
         Args:
             trouble_id: 업데이트할 trouble ID
             trouble_update: 업데이트할 데이터
-            user_id: 요청한 사용자 ID (권한 확인용)
+            username: 요청한 사용자 아이디 (권한 확인용)
 
         Returns:
             업데이트된 Trouble 객체
@@ -149,57 +160,67 @@ class TroubleService:
         Raises:
             HTTPException: trouble이 존재하지 않거나 수정 권한이 없는 경우
         """
-        # 1. trouble 존재 여부 확인
+        # 1. 사용자 정보 조회
+        user = user_repo.get_user_by_username(self.db, username)
+        if not user:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
+        
+        # 2. trouble 존재 여부 확인
         trouble = trouble_repo.get_trouble_by_id(self.db, trouble_id)
         if not trouble:
             raise HTTPException(
                 status_code=404, detail="요청한 트러블슈팅을 찾을 수 없습니다"
             )
 
-        # 2. 수정 권한 확인 (생성자만 수정 가능)
-        if trouble.created_by != user_id:
+        # 3. 수정 권한 확인 (생성자만 수정 가능)
+        if trouble.created_by != user.id:
             raise HTTPException(
                 status_code=403,
                 detail="이 트러블슈팅을 수정할 권한이 없습니다. 생성자만 수정할 수 있습니다",
             )
 
-        # 3. trouble 업데이트
+        # 4. trouble 업데이트
         updated_trouble = trouble_repo.update_trouble(
             self.db, trouble, trouble_update_dto
         )
 
         return updated_trouble
 
-    def delete_trouble(self, trouble_id: int, user_id: int) -> None:
+    def delete_trouble(self, trouble_id: int, username: str) -> None:
         """
         trouble을 삭제합니다.
 
         Args:
             trouble_id: 삭제할 trouble ID
-            user_id: 요청한 사용자 ID (권한 확인용)
+            username: 요청한 사용자 아이디 (권한 확인용)
 
         Raises:
             HTTPException: trouble이 존재하지 않거나 삭제 권한이 없는 경우
         """
-        # 1. trouble 존재 여부 확인
+        # 1. 사용자 정보 조회
+        user = user_repo.get_user_by_username(self.db, username)
+        if not user:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
+        
+        # 2. trouble 존재 여부 확인
         trouble = trouble_repo.get_trouble_by_id(self.db, trouble_id)
         if not trouble:
             raise HTTPException(
                 status_code=404, detail="요청한 트러블슈팅을 찾을 수 없습니다"
             )
 
-        # 2. 삭제 권한 확인 (생성자만 삭제 가능)
-        if trouble.created_by != user_id:
+        # 3. 삭제 권한 확인 (생성자만 삭제 가능)
+        if trouble.created_by != user.id:
             raise HTTPException(
                 status_code=403,
                 detail="이 트러블슈팅을 삭제할 권한이 없습니다. 생성자만 삭제할 수 있습니다",
             )
 
-        # 3. trouble 삭제 (연관된 trouble_logs도 cascade로 함께 삭제됨)
+        # 4. trouble 삭제 (연관된 trouble_logs도 cascade로 함께 삭제됨)
         trouble_repo.delete_trouble(self.db, trouble)
 
     def get_project_troubles(
-        self, project_id: int, query_params: TroubleListQuery, user_id: int
+        self, project_id: int, query_params: TroubleListQuery, username: str
     ) -> TroubleListResponse:
         """
         프로젝트의 trouble 목록을 페이지네이션과 함께 조회합니다.
@@ -207,7 +228,7 @@ class TroubleService:
         Args:
             project_id: 프로젝트 ID
             query_params: 페이지네이션 및 필터 파라미터
-            user_id: 요청한 사용자 ID (권한 확인용)
+            username: 요청한 사용자 아이디 (권한 확인용)
 
         Returns:
             페이지네이션된 trouble 목록
@@ -215,22 +236,27 @@ class TroubleService:
         Raises:
             HTTPException: 프로젝트가 존재하지 않거나 접근 권한이 없는 경우
         """
-        # 1. 프로젝트 존재 여부 확인
+        # 1. 사용자 정보 조회
+        user = user_repo.get_user_by_username(self.db, username)
+        if not user:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
+        
+        # 2. 프로젝트 존재 여부 확인
         project = get_project_by_id(self.db, project_id)
         if not project:
             raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다")
 
-        # 2. 페이지네이션된 trouble 목록 조회
+        # 3. 페이지네이션된 trouble 목록 조회
         troubles, total = trouble_repo.get_project_troubles_paginated(
-            self.db, project_id, query_params, user_id
+            self.db, project_id, query_params, user.id
         )
 
-        # 3. 응답 데이터 구성
+        # 4. 응답 데이터 구성
         # trouble 목록을 TroubleSummary로 변환 (필요한 경우 추가 정보 포함)
         trouble_summaries = []
         for trouble in troubles:
             # 생성자 이메일 조회 (선택적)
-            creator_email = trouble_repo.get_creator_email(self.db, trouble.id)
+            creator_username = trouble_repo.get_creator_username(self.db, trouble.id)
 
             # 연관된 로그 개수 조회 (선택적)
             logs_count = (
@@ -242,12 +268,12 @@ class TroubleService:
                 report_name=trouble.report_name,
                 created_at=trouble.created_at,
                 is_shared=trouble.is_shared,
-                creator_email=creator_email,
+                creator_username=creator_username,
                 logs_count=logs_count,
             )
             trouble_summaries.append(summary)
 
-        # 4. 총 페이지 수 계산
+        # 5. 총 페이지 수 계산
         total_pages = (total + query_params.size - 1) // query_params.size
 
         return TroubleListResponse(

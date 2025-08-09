@@ -135,10 +135,10 @@ def save_trouble_logs(db: Session, trouble_id: int, log_ids: List[str]) -> None:
     db.commit()
 
 
-def get_creator_email(db: Session, trouble_id: int) -> Optional[str]:
-    """trouble 생성자의 이메일을 조회합니다."""
+def get_creator_username(db: Session, trouble_id: int) -> Optional[str]:
+    """trouble 생성자의 username을 조회합니다."""
     result = (
-        db.query(User.email)
+        db.query(User.username)
         .join(Trouble, Trouble.created_by == User.id)
         .filter(Trouble.id == trouble_id)
         .first()

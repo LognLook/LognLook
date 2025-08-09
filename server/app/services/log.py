@@ -14,11 +14,11 @@ class LogService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_logs(self, user_id: int, project_id: int, log_time: str, size: int = 100) -> list:
+    def get_logs(self, username: str, project_id: int, log_time: str, size: int = 100) -> list:
         """로그 조회 서비스"""
         project_service = ProjectService(self.db)
 
-        db_user = UserRepository.get_user_by_id(self.db, user_id=user_id)
+        db_user = UserRepository.get_user_by_username(self.db, username=username)
         db_project = project_service.get_project_by_id(project_id=project_id)
 
         start_time, end_time = get_start_time(log_time)
@@ -33,7 +33,7 @@ class LogService:
 
     def get_recent_logs(
         self,
-        user_id: int,
+        username: str,
         project_id: int,
         count: int,
         size: int = 100,
@@ -41,7 +41,7 @@ class LogService:
         """날짜 범위 로그 조회 서비스"""
         project_service = ProjectService(self.db)
 
-        db_user = UserRepository.get_user_by_id(self.db, user_id=user_id)
+        db_user = UserRepository.get_user_by_username(self.db, username=username)
         db_project = project_service.get_project_by_id(project_id=project_id)
 
         start_time, end_time = get_log_time_by_count(count)
