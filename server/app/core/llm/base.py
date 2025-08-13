@@ -3,6 +3,7 @@ from app.core.config.settings import get_settings
 from app.core.llm.providers.openai_provider import OpenAIProvider
 from app.core.llm.providers.anthropic_provider import AnthropicProvider
 from app.core.llm.providers.ollama_provider import OllamaProvider
+from app.core.llm.providers.huggingface_provider import HuggingFaceProvider
 
 settings = get_settings()
 
@@ -15,6 +16,7 @@ class LLMFactory:
         "openai": OpenAIProvider,
         "anthropic": AnthropicProvider,
         "ollama": OllamaProvider,
+        "huggingface": HuggingFaceProvider,
     }
     
     @classmethod

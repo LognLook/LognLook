@@ -1,5 +1,5 @@
 from typing import Any
-from langchain_community.llms import Ollama
+from langchain_ollama import ChatOllama
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from app.core.config.settings import get_settings
@@ -11,25 +11,22 @@ settings = get_settings()
 class OllamaProvider(BaseLLMProvider):
     """Ollama LLM 제공업체 구현체 (로컬 실행)"""
 
-    def create_chat_model(self, temperature: float = 0.5, **kwargs) -> Ollama:
+    def create_chat_model(self, temperature: float = 0.5, **kwargs) -> ChatOllama:
         """Ollama Chat 모델 생성
 
         Args:
             temperature: 온도 (높을수록 더 창의적인 응답)
             **kwargs: 추가 설정 파라미터
                 - model_name: 모델 이름 (기본값: settings.CHAT_MODEL_NAME)
-                - timeout: 타임아웃 설정 (기본값: settings.OLLAMA_TIMEOUT)
 
         Returns:
-            Ollama 인스턴스
+            ChatOllama 인스턴스
         """
         model_name = kwargs.get('model_name', settings.CHAT_MODEL_NAME)
-        timeout = kwargs.get('timeout', settings.OLLAMA_TIMEOUT)
         
-        return Ollama(
+        return ChatOllama(
             model=model_name,
             base_url=settings.OLLAMA_BASE_URL,
-            timeout=timeout,
             temperature=temperature,
         )
 
