@@ -1,14 +1,17 @@
 from fastapi import HTTPException
 from app.infra.database.elaticsearch import ElasticsearchClient
-from app.core.config.elastic_config import ELASTIC_MAPPINGS
+from app.core.config.elastic_config import get_elastic_mappings
 from typing import List, Dict, Any
 from app.core.enums.log_filter import LogLevelFilter
 
 es = ElasticsearchClient()
 
 
-def create_project_index(index_name: str, mappings: dict = ELASTIC_MAPPINGS) -> None:
+def create_project_index(index_name: str, mappings: dict = None) -> None:
     """인덱스를 생성하는 함수"""
+    if mappings is None:
+        mappings = get_elastic_mappings()
+    
     try:
         es.create_index(index_name, mappings)
     except ValueError as e:

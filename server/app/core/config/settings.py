@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     
     # 임베딩 모델 설정
     EMBEDDING_MODEL_NAME: str = "text-embedding-3-small"
+    EMBEDDING_VECTOR_DIMS: int = 1536  # 임베딩 벡터 차원수 (모델별로 설정 필요)
     
     # OpenAI 설정
     OPENAI_API_KEY: str = ""
