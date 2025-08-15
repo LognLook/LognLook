@@ -48,3 +48,12 @@ def update_project_keyword(
         project_id=project_id, keywords_update=keywords_update
     )
     return updated_project
+
+
+@router.delete("/project/{project_id}")
+def delete_project(
+    project_id: int,
+    service: ProjectService = Depends(get_project_service),
+    username: str = Depends(get_current_username)
+):
+    return service.delete_project(project_id=project_id, username=username)

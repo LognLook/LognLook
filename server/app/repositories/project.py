@@ -41,7 +41,9 @@ def create_project(db: Session, project: ProjectCreate, user: int) -> Project:
         .filter_by(user_id=user, project_id=db_project.id)
         .first()
     ):
-        user_project = UserProject(user_id=user, project_id=db_project.id)
+        user_project = UserProject(
+            user_id=user, project_id=db_project.id, role="master"
+        )
         db.add(user_project)
         db.commit()
 
@@ -72,6 +74,44 @@ def update_project_keyword(
     db.commit()
     db.refresh(project)
     return project
+
+
+def get_user_role_in_project(db: Session, user_id: int, project_id: int) -> str | None:
+    """프로젝트에서 사용자의 역할 조회"""
+    user_project = (
+        db.query(UserProject)
+        .filter(UserProject.user_id == user_id, UserProject.project_id == project_id)
+        .first()
+    )
+    return user_project.role if user_project else None
+
+
+def get_project_members_count(db: Session, project_id: int) -> int:
+    """프로젝트 멤버 수 조회"""
+    return db.query(UserProject).filter(UserProject.project_id == project_id).count()
+
+
+def delete_user_project(db: Session, user_id: int, project_id: int) -> bool:
+    """프로젝트에서 사용자 제거"""
+    try:
+        user_project = (
+            db.query(UserProject)
+            .filter(
+                UserProject.user_id == user_id, UserProject.project_id == project_id
+            )
+            .first()
+        )
+
+        if not user_project:
+            return False
+
+        db.delete(user_project)
+        db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        print(f"Error removing user from project: {e}")
+        return False
 
 
 def delete_project(db: Session, project_id: int, user_id: int) -> bool:

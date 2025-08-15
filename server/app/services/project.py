@@ -64,31 +64,65 @@ class ProjectService:
 
         return keywords_update
 
-    def delete_project(self, project_id: int, user_id: int) -> dict:
+    def delete_project(self, project_id: int, username: str) -> dict:
         """프로젝트 삭제 서비스"""
         # 프로젝트 존재 여부 확인
         db_project = ProjectRepository.get_project_by_id(self.db, project_id=project_id)
         if not db_project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        # 사용자가 해당 프로젝트에 접근 권한이 있는지 확인
-        db_user = UserRepository.get_user_by_id(db=self.db, user_id=user_id)
+        # 사용자 확인
+        db_user = UserRepository.get_user_by_username(db=self.db, username=username)
         if not db_user:
             raise HTTPException(status_code=400, detail="Can't find user")
 
-        # 프로젝트 삭제 실행
-        success = ProjectRepository.delete_project(
-            db=self.db, project_id=project_id, user_id=db_user.id
+        # 사용자의 프로젝트 내 역할 확인
+        user_role = ProjectRepository.get_user_role_in_project(
+            db=self.db, user_id=db_user.id, project_id=project_id
         )
 
-        if not success:
-            raise HTTPException(status_code=400, detail="Failed to delete project")
+        if not user_role:
+            raise HTTPException(
+                status_code=403, detail="You are not a member of this project"
+            )
 
-        # Elasticsearch 인덱스도 삭제
-        try:
-            ElasticsearchRepository.delete_project_index(index_name=db_project.index)
-        except Exception as e:
-            # Elasticsearch 삭제 실패는 로그만 남기고 계속 진행
-            print(f"Failed to delete Elasticsearch index: {e}")
+        # 프로젝트 멤버 수 확인
+        members_count = ProjectRepository.get_project_members_count(
+            db=self.db, project_id=project_id
+        )
 
-        return {"message": "Project deleted successfully"}
+        if user_role == "master":
+            if members_count > 1:
+                raise HTTPException(
+                    status_code=400, detail="The master cannot leave the project."
+                )
+            else:
+                # 마스터가 유일한 멤버인 경우 프로젝트 전체 삭제
+                success = ProjectRepository.delete_project(
+                    db=self.db, project_id=project_id, user_id=db_user.id
+                )
+
+                if not success:
+                    raise HTTPException(
+                        status_code=400, detail="Failed to delete project"
+                    )
+
+                # Elasticsearch 인덱스도 삭제
+                try:
+                    ElasticsearchRepository.delete_project_index(
+                        index_name=db_project.index
+                    )
+                except Exception as e:
+                    print(f"Failed to delete Elasticsearch index: {e}")
+
+                return {"message": "Project deleted successfully"}
+        else:
+            # 멤버인 경우 프로젝트에서 자신만 제거
+            success = ProjectRepository.delete_user_project(
+                db=self.db, user_id=db_user.id, project_id=project_id
+            )
+
+            if not success:
+                raise HTTPException(status_code=400, detail="Failed to leave project")
+
+            return {"message": "Successfully left the project"}
