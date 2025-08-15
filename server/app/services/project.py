@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 import logging
 from app.repositories import elasticsearch as ElasticsearchRepository
 from app.repositories import project as ProjectRepository
@@ -9,7 +10,14 @@ from app.schemas.project import (
     ProjectKeywordsUpdate,
     Project,
     ProjectInvite,
+    ProjectMembers,
+    RoleChange,
 )
+from app.core.enums.roles import (
+    ProjectRole,
+    Permission,
+)
+from app.core.utils.roles_utils import has_permission, can_manage_role
 
 
 class ProjectService:
@@ -184,3 +192,88 @@ class ProjectService:
             "project_id": db_project.id,
             "project_name": db_project.name,
         }
+
+    def get_project_members(self, project_id: int, username: str) -> List[dict]:
+        """프로젝트 역할 조회 서비스"""
+        db_project = ProjectRepository.get_project_by_id(self.db, project_id=project_id)
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # 사용자 확인
+        db_user = UserRepository.get_user_by_username(db=self.db, username=username)
+        if not db_user:
+            raise HTTPException(status_code=400, detail="Can't find user")
+
+        # 사용자가 프로젝트 멤버인지 확인
+        user_role = ProjectRepository.get_user_role_in_project(
+            db=self.db, user_id=db_user.id, project_id=project_id
+        )
+
+        if not user_role:
+            raise HTTPException(
+                status_code=403, detail="You are not a member of this project"
+            )
+
+        return ProjectRepository.get_project_members(db=self.db, project_id=project_id)
+
+    def change_user_role(
+        self, project_id: int, role_change: RoleChange, username: str
+    ) -> dict:
+        """사용자 역할 변경 서비스"""
+        # 프로젝트 존재 여부 확인
+        db_project = ProjectRepository.get_project_by_id(self.db, project_id=project_id)
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # 요청자 확인
+        db_user = UserRepository.get_user_by_username(db=self.db, username=username)
+        if not db_user:
+            raise HTTPException(status_code=400, detail="Can't find user")
+
+        # 요청자의 역할 확인
+        requester_role = ProjectRepository.get_user_role_in_project(
+            db=self.db, user_id=db_user.id, project_id=project_id
+        )
+
+        if not requester_role:
+            raise HTTPException(
+                status_code=403, detail="You are not a member of this project"
+            )
+
+        # 역할 변경 권한 확인 (master, manager, moderator만 가능)
+        requester_project_role = ProjectRole(requester_role)
+        if not has_permission(requester_project_role, Permission.CHANGE_ROLE):
+            raise HTTPException(
+                status_code=403, detail="You don't have permission to change roles"
+            )
+
+        # 대상 사용자의 현재 역할 확인
+        target_role = ProjectRepository.get_user_role_in_project(
+            db=self.db, user_id=role_change.user_id, project_id=project_id
+        )
+
+        if not target_role:
+            raise HTTPException(
+                status_code=400, detail="Target user is not a member of this project"
+            )
+
+        target_project_role = ProjectRole(target_role)
+
+        # 계층 구조 확인 (상위 역할만 하위 역할을 관리할 수 있음)
+        if not can_manage_role(requester_project_role, target_project_role):
+            raise HTTPException(
+                status_code=403, detail="You can only manage lower-level roles"
+            )
+
+        # 역할 변경 실행
+        success = ProjectRepository.update_user_role_in_project(
+            db=self.db,
+            user_id=role_change.user_id,
+            project_id=project_id,
+            new_role=role_change.new_role.value,
+        )
+
+        if not success:
+            raise HTTPException(status_code=400, detail="Failed to change user role")
+
+        return {"message": "User role changed successfully"}
