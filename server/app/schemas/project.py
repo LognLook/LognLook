@@ -38,3 +38,8 @@ class ProjectKeywordsUpdate(ProjectKeywordsBase):
             "example": {"keywords": ["error", "warning", "critical"]}
         },
     }
+
+
+# Project Invite
+class ProjectInvite(BaseModel):
+    invite_code: str

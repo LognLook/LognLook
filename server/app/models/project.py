@@ -13,6 +13,7 @@ class Project(Base):
     description: str = Column(String(50))
     index: UUID = Column(String(36), nullable=False)
     api_key: UUID = Column(String(36), nullable=False)
+    invite_code: str = Column(String(22), nullable=False)
     language: str = Column(
         SqlEnum(Language), nullable=False, default=Language.KOREAN
     )

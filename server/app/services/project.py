@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.repositories import elasticsearch as ElasticsearchRepository
 from app.repositories import project as ProjectRepository
 from app.repositories import user as UserRepository
-from app.schemas.project import ProjectCreate, ProjectKeywordsUpdate, Project
+from app.schemas.project import ProjectCreate, ProjectKeywordsUpdate, Project, ProjectInvite
 
 
 class ProjectService:
@@ -126,3 +126,48 @@ class ProjectService:
                 raise HTTPException(status_code=400, detail="Failed to leave project")
 
             return {"message": "Successfully left the project"}
+
+    def get_project_invite_code(self, project_id: int, username: str) -> dict:
+        """프로젝트 초대코드 조회 서비스"""
+        # 프로젝트 존재 여부 확인
+        db_project = ProjectRepository.get_project_by_id(self.db, project_id=project_id)
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # 사용자 확인
+        db_user = UserRepository.get_user_by_username(db=self.db, username=username)
+        if not db_user:
+            raise HTTPException(status_code=400, detail="Can't find user")
+
+        # 사용자가 프로젝트 멤버인지 확인
+        user_role = ProjectRepository.get_user_role_in_project(
+            db=self.db, user_id=db_user.id, project_id=project_id
+        )
+        
+        if not user_role:
+            raise HTTPException(status_code=403, detail="You are not a member of this project")
+
+        return {"invite_code": db_project.invite_code}
+
+    def join_project_by_invite(self, invite_dto: ProjectInvite, username: str) -> dict:
+        """초대코드로 프로젝트 참여 서비스"""
+        db_user = UserRepository.get_user_by_username(db=self.db, username=username)
+        if not db_user:
+            raise HTTPException(status_code=400, detail="Can't find user")
+
+        # 초대코드로 프로젝트 찾기
+        db_project = ProjectRepository.get_project_by_invite_code(
+            db=self.db, invite_code=invite_dto.invite_code
+        )
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Invalid invite code")
+
+        # 사용자를 프로젝트에 멤버로 추가
+        success = ProjectRepository.add_user_to_project(
+            db=self.db, user_id=db_user.id, project_id=db_project.id, role="member"
+        )
+        
+        if not success:
+            raise HTTPException(status_code=400, detail="Failed to join project or already a member")
+
+        return {"message": "Successfully joined the project", "project_id": db_project.id, "project_name": db_project.name}

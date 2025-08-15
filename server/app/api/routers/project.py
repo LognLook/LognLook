@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 from app.schemas.project import (
-    ProjectBase,
     Project,
     ProjectCreate,
     ProjectKeywordsUpdate,
     ProjectKeywordsBase,
+    ProjectInvite,
 )
 
 from app.api.deps import get_project_service, get_current_username
@@ -57,3 +57,21 @@ def delete_project(
     username: str = Depends(get_current_username)
 ):
     return service.delete_project(project_id=project_id, username=username)
+
+
+@router.get("/project/{project_id}/invite-code")
+def get_project_invite_code(
+    project_id: int,
+    service: ProjectService = Depends(get_project_service),
+    username: str = Depends(get_current_username)
+):
+    return service.get_project_invite_code(project_id=project_id, username=username)
+
+
+@router.post("/project/invite")
+def join_project_by_invite(
+    invite_dto: ProjectInvite,
+    service: ProjectService = Depends(get_project_service),
+    username: str = Depends(get_current_username)
+):
+    return service.join_project_by_invite(invite_dto=invite_dto, username=username)
