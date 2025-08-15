@@ -1,10 +1,15 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-
+import logging
 from app.repositories import elasticsearch as ElasticsearchRepository
 from app.repositories import project as ProjectRepository
 from app.repositories import user as UserRepository
-from app.schemas.project import ProjectCreate, ProjectKeywordsUpdate, Project, ProjectInvite
+from app.schemas.project import (
+    ProjectCreate,
+    ProjectKeywordsUpdate,
+    Project,
+    ProjectInvite,
+)
 
 
 class ProjectService:
@@ -113,7 +118,7 @@ class ProjectService:
                         index_name=db_project.index
                     )
                 except Exception as e:
-                    print(f"Failed to delete Elasticsearch index: {e}")
+                    logging.error(f"Failed to delete Elasticsearch index: {e}")
 
                 return {"message": "Project deleted successfully"}
         else:
@@ -143,9 +148,11 @@ class ProjectService:
         user_role = ProjectRepository.get_user_role_in_project(
             db=self.db, user_id=db_user.id, project_id=project_id
         )
-        
+
         if not user_role:
-            raise HTTPException(status_code=403, detail="You are not a member of this project")
+            raise HTTPException(
+                status_code=403, detail="You are not a member of this project"
+            )
 
         return {"invite_code": db_project.invite_code}
 
@@ -166,8 +173,14 @@ class ProjectService:
         success = ProjectRepository.add_user_to_project(
             db=self.db, user_id=db_user.id, project_id=db_project.id, role="member"
         )
-        
-        if not success:
-            raise HTTPException(status_code=400, detail="Failed to join project or already a member")
 
-        return {"message": "Successfully joined the project", "project_id": db_project.id, "project_name": db_project.name}
+        if not success:
+            raise HTTPException(
+                status_code=400, detail="Failed to join project or already a member"
+            )
+
+        return {
+            "message": "Successfully joined the project",
+            "project_id": db_project.id,
+            "project_name": db_project.name,
+        }

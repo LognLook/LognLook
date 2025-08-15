@@ -8,6 +8,7 @@ from app.repositories.user import get_user_by_id
 from fastapi import HTTPException
 import uuid
 import secrets
+import logging
 
 
 def _create_uuid(db: Session, max_retries=5):
@@ -117,7 +118,7 @@ def add_user_to_project(db: Session, user_id: int, project_id: int, role: str = 
         return True
     except Exception as e:
         db.rollback()
-        print(f"Error adding user to project: {e}")
+        logging.error(f"Error adding user to project: {e}")
         return False
 
 
@@ -140,7 +141,7 @@ def delete_user_project(db: Session, user_id: int, project_id: int) -> bool:
         return True
     except Exception as e:
         db.rollback()
-        print(f"Error removing user from project: {e}")
+        logging.error(f"Error removing user from project: {e}")
         return False
 
 
@@ -179,5 +180,5 @@ def delete_project(db: Session, project_id: int, user_id: int) -> bool:
 
     except Exception as e:
         db.rollback()
-        print(f"Error deleting project: {e}")
+        logging.error(f"Error deleting project: {e}")
         return False
