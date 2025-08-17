@@ -105,7 +105,7 @@ class ProjectService:
             db=self.db, project_id=project_id
         )
 
-        if user_role == "master":
+        if user_role == ProjectRole.MASTER:
             if members_count > 1:
                 raise HTTPException(
                     status_code=400, detail="The master cannot leave the project."
@@ -180,7 +180,7 @@ class ProjectService:
 
         # 사용자를 프로젝트에 멤버로 추가
         success = ProjectRepository.add_user_to_project(
-            db=self.db, user_id=db_user.id, project_id=db_project.id, role="member"
+            db=self.db, user_id=db_user.id, project_id=db_project.id, role=ProjectRole.MEMBER
         )
 
         if not success:
