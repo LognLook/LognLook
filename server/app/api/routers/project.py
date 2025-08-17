@@ -98,3 +98,4 @@ def change_user_role(
     return service.change_user_role(
         project_id=project_id, role_change=role_change, username=username
     )
+
