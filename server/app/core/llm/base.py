@@ -18,7 +18,7 @@ class LLMFactory:
         "ollama": OllamaProvider,
         "huggingface": HuggingFaceProvider,
     }
-    
+
     @classmethod
     def _get_provider(cls):
         """현재 설정된 제공업체 인스턴스 반환"""
@@ -34,7 +34,7 @@ class LLMFactory:
         provider.validate_config()
         
         return provider
-    
+
     @classmethod
     def create_chat_model(cls, temperature: float = None, **kwargs) -> Any:
         """Chat 모델 생성
@@ -51,23 +51,38 @@ class LLMFactory:
             
         provider = cls._get_provider()
         return provider.create_chat_model(temperature=temperature, **kwargs)
-    
+
     @classmethod
-    def create_mini_chat_model(cls, temperature: float = 0.5, **kwargs) -> Any:
-        """미니 모델 생성 (하위 호환성 유지)
+    def create_pipeline_model(cls, **kwargs) -> Any:
+        """파이프라인용 모델 생성 (로그 분류, 코멘트 생성)
         
         Args:
-            temperature: 온도
-            **kwargs: 추가 설정 파라미터
+            **kwargs: 제공업체별 추가 설정 파라미터
             
         Returns:
-            제공업체별 Chat 모델 인스턴스
+            제공업체별 파이프라인용 Chat 모델 인스턴스
         """
-        # OpenAI의 경우 gpt-4o-mini 모델 사용
-        if settings.LLM_PROVIDER.lower() == "openai":
-            kwargs.setdefault('model_name', 'gpt-4o-mini')
+        kwargs.setdefault('model_name', settings.PIPELINE_MODEL_NAME)
+        kwargs.setdefault('temperature', 0.3)  # 일관된 출력을 위해 낮은 온도
         
-        return cls.create_chat_model(temperature=temperature, **kwargs)
+        provider = cls._get_provider()
+        return provider.create_chat_model(**kwargs)
+
+    @classmethod
+    def create_troubleshooting_model(cls, **kwargs) -> Any:
+        """트러블슈팅용 모델 생성 (정확한 분석)
+        
+        Args:
+            **kwargs: 제공업체별 추가 설정 파라미터
+            
+        Returns:
+            제공업체별 트러블슈팅용 Chat 모델 인스턴스
+        """
+        kwargs.setdefault('model_name', settings.TROUBLESHOOTING_MODEL_NAME)
+        kwargs.setdefault('temperature', 0.5)  # 균형잡힌 출력
+        
+        provider = cls._get_provider()
+        return provider.create_chat_model(**kwargs)
     
     @classmethod
     def create_embedding_model(cls, **kwargs) -> Any:

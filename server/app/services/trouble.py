@@ -28,7 +28,7 @@ class TroubleService:
 
     def __init__(self, db: Session):
         self.db = db
-        self.llm = LLMFactory.create_mini_chat_model()
+        self.llm = LLMFactory.create_troubleshooting_model()
 
     def create_trouble(
         self, create_trouble_dto: TroubleCreate, username: str

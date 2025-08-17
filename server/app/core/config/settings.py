@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     CHAT_MODEL_TEMPERATURE: float = 0.5
     CHAT_MODEL_MAX_TOKENS: int = 2000
     
+    # 용도별 모델 설정
+    PIPELINE_MODEL_NAME: str = "gpt-4o-mini"  # 로그 처리용 (빠른 처리)
+    TROUBLESHOOTING_MODEL_NAME: str = "gpt-4o"  # 트러블슈팅용 (정확한 분석)
+    
     # 임베딩 모델 설정
     EMBEDDING_MODEL_NAME: str = "text-embedding-3-small"
     EMBEDDING_VECTOR_DIMS: int = 1536  # 임베딩 벡터 차원수 (모델별로 설정 필요)

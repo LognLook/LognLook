@@ -57,7 +57,7 @@ class PipelineService:
         """
         로그 메세지에 대한 코멘트를 생성하는 함수
         """
-        comment_model = LLMFactory.create_mini_chat_model()
+        comment_model = LLMFactory.create_pipeline_model()
         prompt = PromptTemplate(
             template=LOG_COMMENT_TEMPLATE,
             input_variables=["log_message", "category_list", "language"],
