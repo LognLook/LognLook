@@ -1,10 +1,15 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-
+import logging
 from app.repositories import elasticsearch as ElasticsearchRepository
 from app.repositories import project as ProjectRepository
 from app.repositories import user as UserRepository
-from app.schemas.project import ProjectCreate, ProjectKeywordsUpdate, Project
+from app.schemas.project import (
+    ProjectCreate,
+    ProjectKeywordsUpdate,
+    Project,
+    ProjectInvite,
+)
 
 
 class ProjectService:
@@ -63,3 +68,119 @@ class ProjectService:
             )
 
         return keywords_update
+
+    def delete_project(self, project_id: int, username: str) -> dict:
+        """프로젝트 삭제 서비스"""
+        # 프로젝트 존재 여부 확인
+        db_project = ProjectRepository.get_project_by_id(self.db, project_id=project_id)
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # 사용자 확인
+        db_user = UserRepository.get_user_by_username(db=self.db, username=username)
+        if not db_user:
+            raise HTTPException(status_code=400, detail="Can't find user")
+
+        # 사용자의 프로젝트 내 역할 확인
+        user_role = ProjectRepository.get_user_role_in_project(
+            db=self.db, user_id=db_user.id, project_id=project_id
+        )
+
+        if not user_role:
+            raise HTTPException(
+                status_code=403, detail="You are not a member of this project"
+            )
+
+        # 프로젝트 멤버 수 확인
+        members_count = ProjectRepository.get_project_members_count(
+            db=self.db, project_id=project_id
+        )
+
+        if user_role == "master":
+            if members_count > 1:
+                raise HTTPException(
+                    status_code=400, detail="The master cannot leave the project."
+                )
+            else:
+                # 마스터가 유일한 멤버인 경우 프로젝트 전체 삭제
+                success = ProjectRepository.delete_project(
+                    db=self.db, project_id=project_id, user_id=db_user.id
+                )
+
+                if not success:
+                    raise HTTPException(
+                        status_code=400, detail="Failed to delete project"
+                    )
+
+                # Elasticsearch 인덱스도 삭제
+                try:
+                    ElasticsearchRepository.delete_project_index(
+                        index_name=db_project.index
+                    )
+                except Exception as e:
+                    logging.error(f"Failed to delete Elasticsearch index: {e}")
+
+                return {"message": "Project deleted successfully"}
+        else:
+            # 멤버인 경우 프로젝트에서 자신만 제거
+            success = ProjectRepository.delete_user_project(
+                db=self.db, user_id=db_user.id, project_id=project_id
+            )
+
+            if not success:
+                raise HTTPException(status_code=400, detail="Failed to leave project")
+
+            return {"message": "Successfully left the project"}
+
+    def get_project_invite_code(self, project_id: int, username: str) -> dict:
+        """프로젝트 초대코드 조회 서비스"""
+        # 프로젝트 존재 여부 확인
+        db_project = ProjectRepository.get_project_by_id(self.db, project_id=project_id)
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        # 사용자 확인
+        db_user = UserRepository.get_user_by_username(db=self.db, username=username)
+        if not db_user:
+            raise HTTPException(status_code=400, detail="Can't find user")
+
+        # 사용자가 프로젝트 멤버인지 확인
+        user_role = ProjectRepository.get_user_role_in_project(
+            db=self.db, user_id=db_user.id, project_id=project_id
+        )
+
+        if not user_role:
+            raise HTTPException(
+                status_code=403, detail="You are not a member of this project"
+            )
+
+        return {"invite_code": db_project.invite_code}
+
+    def join_project_by_invite(self, invite_dto: ProjectInvite, username: str) -> dict:
+        """초대코드로 프로젝트 참여 서비스"""
+        db_user = UserRepository.get_user_by_username(db=self.db, username=username)
+        if not db_user:
+            raise HTTPException(status_code=400, detail="Can't find user")
+
+        # 초대코드로 프로젝트 찾기
+        db_project = ProjectRepository.get_project_by_invite_code(
+            db=self.db, invite_code=invite_dto.invite_code
+        )
+        if not db_project:
+            raise HTTPException(status_code=404, detail="Invalid invite code")
+
+        # 사용자를 프로젝트에 멤버로 추가
+        success = ProjectRepository.add_user_to_project(
+            db=self.db, user_id=db_user.id, project_id=db_project.id, role="member"
+        )
+
+        if not success:
+            raise HTTPException(
+                status_code=400, detail="Failed to join project or already a member"
+            )
+
+        return {
+            "message": "Successfully joined the project",
+            "project_id": db_project.id,
+            "project_name": db_project.name,
+        }
