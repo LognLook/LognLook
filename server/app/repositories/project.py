@@ -1,8 +1,10 @@
 from typing import List
 from sqlalchemy.orm import Session
+from app.core.enums.roles import ProjectRole
 from app.models.project import Project
 from app.models.project_setting import ProjectSetting
 from app.models.user_project import UserProject
+from app.models.user import User
 from app.schemas.project import ProjectCreate
 from app.repositories.user import get_user_by_id
 from fastapi import HTTPException
@@ -45,7 +47,7 @@ def create_project(db: Session, project: ProjectCreate, user: int) -> Project:
         .first()
     ):
         user_project = UserProject(
-            user_id=user, project_id=db_project.id, role="master"
+            user_id=user, project_id=db_project.id, role=ProjectRole.MASTER
         )
         db.add(user_project)
         db.commit()
@@ -99,19 +101,23 @@ def get_project_members_count(db: Session, project_id: int) -> int:
     return db.query(UserProject).filter(UserProject.project_id == project_id).count()
 
 
-def add_user_to_project(db: Session, user_id: int, project_id: int, role: str = "member") -> bool:
+def add_user_to_project(
+    db: Session, user_id: int, project_id: int, role: str = "member"
+) -> bool:
     """프로젝트에 사용자 추가"""
     try:
         # 이미 프로젝트 멤버인지 확인
         existing_user_project = (
             db.query(UserProject)
-            .filter(UserProject.user_id == user_id, UserProject.project_id == project_id)
+            .filter(
+                UserProject.user_id == user_id, UserProject.project_id == project_id
+            )
             .first()
         )
-        
+
         if existing_user_project:
             return False  # 이미 멤버임
-            
+
         user_project = UserProject(user_id=user_id, project_id=project_id, role=role)
         db.add(user_project)
         db.commit()
@@ -181,4 +187,51 @@ def delete_project(db: Session, project_id: int, user_id: int) -> bool:
     except Exception as e:
         db.rollback()
         logging.error(f"Error deleting project: {e}")
+        return False
+
+
+def get_project_members(db: Session, project_id: int) -> List[dict]:
+    """프로젝트 멤버들의 역할 조회"""
+    try:
+        members = (
+            db.query(UserProject, User)
+            .join(User, UserProject.user_id == User.id)
+            .filter(UserProject.project_id == project_id)
+            .all()
+        )
+
+        result = []
+        for user_project, user in members:
+            result.append(
+                {"id": user.id, "name": user.username, "role": user_project.role}
+            )
+
+        return result
+    except Exception as e:
+        logging.error(f"Error getting project members: {e}")
+        return []
+
+
+def update_user_role_in_project(
+    db: Session, user_id: int, project_id: int, new_role: str
+) -> bool:
+    """프로젝트에서 사용자 역할 변경"""
+    try:
+        user_project = (
+            db.query(UserProject)
+            .filter(
+                UserProject.user_id == user_id, UserProject.project_id == project_id
+            )
+            .first()
+        )
+
+        if not user_project:
+            return False
+
+        user_project.role = new_role
+        db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        logging.error(f"Error updating user role: {e}")
         return False
