@@ -20,6 +20,7 @@ from app.core.enums.roles import (
 from app.core.utils.roles_utils import has_permission, can_manage_role
 
 
+
 class ProjectService:
     def __init__(self, db: Session):
         self.db = db

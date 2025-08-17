@@ -65,7 +65,7 @@ def update_project_keyword(
 def delete_project(
     project_id: int,
     service: ProjectService = Depends(get_project_service),
-    username: str = Depends(get_current_username),
+    username: str = Depends(get_current_username)
 ):
     return service.delete_project(project_id=project_id, username=username)
 
@@ -74,7 +74,7 @@ def delete_project(
 def get_project_invite_code(
     project_id: int,
     service: ProjectService = Depends(get_project_service),
-    username: str = Depends(get_current_username),
+    username: str = Depends(get_current_username)
 ):
     return service.get_project_invite_code(project_id=project_id, username=username)
 
@@ -98,4 +98,5 @@ def change_user_role(
     return service.change_user_role(
         project_id=project_id, role_change=role_change, username=username
     )
+
 

@@ -184,7 +184,6 @@ def delete_project(db: Session, project_id: int, user_id: int) -> bool:
         logging.error(f"Error deleting project: {e}")
         return False
 
-
 def get_project_members(db: Session, project_id: int) -> List[dict]:
     """프로젝트 멤버들의 역할 조회"""
     try:

@@ -46,7 +46,6 @@ class ProjectKeywordsUpdate(ProjectKeywordsBase):
 class ProjectInvite(BaseModel):
     invite_code: str
 
-
 class ProjectMembers(BaseModel):
     id: int
     name: str
