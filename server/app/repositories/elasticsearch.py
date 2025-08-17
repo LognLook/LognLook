@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from app.infra.database.elaticsearch import ElasticsearchClient
+from app.infra.database.elasticsearch import ElasticsearchClient
 from app.core.config.elastic_config import ELASTIC_MAPPINGS
 from typing import List, Dict, Any
 from app.core.enums.log_filter import LogLevelFilter
@@ -19,6 +19,18 @@ def create_project_index(index_name: str, mappings: dict = ELASTIC_MAPPINGS) -> 
         raise HTTPException(
             status_code=500, detail=f"Failed to create index {index_name}: {str(e)}"
         )
+
+
+def delete_project_index(index_name: str) -> None:
+    """인덱스를 삭제하는 함수"""
+    try:
+        es.delete_index(index_name)
+    except Exception as e:
+        # Elasticsearch 관련 에러
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete index {index_name}: {str(e)}"
+        )
+
 
 def save_log(index_name: str, log_data: dict):
     """로그를 저장하는 함수"""
