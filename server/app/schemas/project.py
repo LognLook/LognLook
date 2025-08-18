@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from typing import List
 
+from app.core.utils.roles_utils import ProjectRole
+
 
 # Project
 class ProjectBase(BaseModel):
@@ -38,3 +40,19 @@ class ProjectKeywordsUpdate(ProjectKeywordsBase):
             "example": {"keywords": ["error", "warning", "critical"]}
         },
     }
+
+
+# Project Invite
+class ProjectInvite(BaseModel):
+    invite_code: str
+
+class ProjectMembers(BaseModel):
+    id: int
+    name: str
+    role: ProjectRole
+
+
+# Role Change
+class RoleChange(BaseModel):
+    user_id: int
+    new_role: ProjectRole

@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage
 
 from app.core.llm.base import LLMFactory
 from app.core.enums.language import Language
-from app.infra.database.elaticsearch import ElasticsearchClient
+from app.infra.database.elasticsearch import ElasticsearchClient
 from app.core.llm.prompts import LOG_COMMENT_TEMPLATE, AIMessage
 from app.models.project import Project
 

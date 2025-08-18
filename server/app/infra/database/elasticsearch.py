@@ -69,6 +69,13 @@ class ElasticsearchClient:
         else:
             raise ValueError(f"Index {index} already exists")
 
+    def delete_index(self, index: str) -> None:
+        """ 인덱스를 삭제하는 함수 """
+        if self.es.indices.exists(index=index):
+            self.es.indices.delete(index=index)
+        else:
+            raise ValueError(f"Index {index} does not exist")
+
     def search_by_id(self, index: str, ids: List[str]) -> List[Any]:
         """ id로 검색하는 함수 """
         query = {"query": {"ids": {"values": ids}}}
