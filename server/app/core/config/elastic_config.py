@@ -1,5 +1,10 @@
-# index 설정
-ELASTIC_MAPPINGS = {
+from app.core.config.settings import get_settings
+
+def get_elastic_mappings() -> dict:
+    """동적 Elasticsearch 매핑 생성 (임베딩 차원수 반영)"""
+    settings = get_settings()
+    
+    return {
     "properties": {
         "@timestamp": {"type": "date"},
         "@version": {
@@ -174,7 +179,7 @@ ELASTIC_MAPPINGS = {
         },
         "vector": {
             "type": "dense_vector",
-            "dims": 1536,
+            "dims": settings.EMBEDDING_VECTOR_DIMS,
             "index": True,
             "similarity": "cosine",
         }
