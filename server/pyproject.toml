@@ -52,6 +52,10 @@ dependencies = [
     "pytest (>=8.3.5,<9.0.0)",
     "python-jose[cryptography] (>=3.5.0,<4.0.0)",
     "passlib[bcrypt] (>=1.7.4,<2.0.0)",
+    "langchain-anthropic (>=0.3.18,<0.4.0)",
+    "langchain-ollama (>=0.3.6,<0.4.0)",
+    "langchain-huggingface (>=0.3.1,<0.4.0)",
+    "langchain-community (>=0.3.27,<0.4.0)",
 ]
 
 
