@@ -1,5 +1,6 @@
 from typing import Any
 from app.core.config.settings import get_settings
+from app.core.enums.LLMProvider import LLMProvider
 from app.core.llm.providers.openai_provider import OpenAIProvider
 from app.core.llm.providers.anthropic_provider import AnthropicProvider
 from app.core.llm.providers.ollama_provider import OllamaProvider
@@ -13,21 +14,22 @@ class LLMFactory:
     
     # 제공업체 매핑
     _providers = {
-        "openai": OpenAIProvider,
-        "anthropic": AnthropicProvider,
-        "ollama": OllamaProvider,
-        "huggingface": HuggingFaceProvider,
+        LLMProvider.OPENAI: OpenAIProvider,
+        LLMProvider.ANTHROPIC: AnthropicProvider,
+        LLMProvider.OLLAMA: OllamaProvider,
+        LLMProvider.HUGGINGFACE: HuggingFaceProvider,
     }
 
     @classmethod
     def _get_provider(cls):
         """현재 설정된 제공업체 인스턴스 반환"""
-        provider_name = settings.LLM_PROVIDER.lower()
+        provider = settings.LLM_PROVIDER
         
-        if provider_name not in cls._providers:
-            raise ValueError(f"Unsupported LLM provider: {provider_name}")
+        if provider not in cls._providers:
+            supported = [p.value for p in LLMProvider]
+            raise ValueError(f"Unsupported LLM provider: {provider}. Supported: {supported}")
         
-        provider_class = cls._providers[provider_name]
+        provider_class = cls._providers[provider]
         provider = provider_class()
         
         # 설정 검증

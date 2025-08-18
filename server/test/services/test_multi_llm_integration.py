@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.services.pipeline import PipelineService
 from app.services.trouble import TroubleService
 from app.core.enums.language import Language
+from app.core.enums.LLMProvider import LLMProvider
 from app.schemas.trouble import TroubleCreate
 from app.core.llm.prompts import AIMessage, TroubleContent
 
@@ -155,7 +156,7 @@ class TestMultiProviderScenarios:
         
         # OpenAI 설정
         mock_settings = Mock(spec=Settings)
-        mock_settings.LLM_PROVIDER = "openai"
+        mock_settings.LLM_PROVIDER = LLMProvider.OPENAI
         mock_settings.OPENAI_API_KEY = "test-key"
         mock_settings.PIPELINE_MODEL_NAME = "gpt-4o-mini"
         mock_settings.TROUBLESHOOTING_MODEL_NAME = "gpt-4o"
@@ -187,7 +188,7 @@ class TestMultiProviderScenarios:
         
         # Ollama 설정
         mock_settings = Mock(spec=Settings)
-        mock_settings.LLM_PROVIDER = "ollama"
+        mock_settings.LLM_PROVIDER = LLMProvider.OLLAMA
         mock_settings.OLLAMA_BASE_URL = "http://localhost:11434"
         mock_settings.PIPELINE_MODEL_NAME = "llama3.2:1b"
         mock_settings.TROUBLESHOOTING_MODEL_NAME = "llama3.2:8b"
@@ -221,7 +222,7 @@ class TestMultiProviderScenarios:
         mock_get_settings.return_value = mock_settings
         
         # OpenAI -> Anthropic 전환 시뮬레이션
-        mock_settings.LLM_PROVIDER = "openai"
+        mock_settings.LLM_PROVIDER = LLMProvider.OPENAI
         mock_settings.OPENAI_API_KEY = "test-openai-key"
         mock_settings.PIPELINE_MODEL_NAME = "gpt-4o-mini"
         
@@ -237,7 +238,7 @@ class TestMultiProviderScenarios:
             assert openai_model == mock_openai_model
         
         # Anthropic으로 전환
-        mock_settings.LLM_PROVIDER = "anthropic"
+        mock_settings.LLM_PROVIDER = LLMProvider.ANTHROPIC
         mock_settings.ANTHROPIC_API_KEY = "test-anthropic-key"
         
         with patch('app.core.llm.providers.anthropic_provider.AnthropicProvider') as mock_anthropic_provider:

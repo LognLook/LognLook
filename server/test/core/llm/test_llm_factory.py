@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import Mock, patch
 from app.core.llm.base import LLMFactory
 from app.core.config.settings import Settings
+from app.core.enums.LLMProvider import LLMProvider
 
 
 class TestLLMFactory:
@@ -10,7 +11,7 @@ class TestLLMFactory:
     def setup_method(self):
         """각 테스트 메서드 실행 전 호출"""
         self.mock_settings = Mock(spec=Settings)
-        self.mock_settings.LLM_PROVIDER = "openai"
+        self.mock_settings.LLM_PROVIDER = LLMProvider.OPENAI
         self.mock_settings.OPENAI_API_KEY = "test-key"
         self.mock_settings.CHAT_MODEL_TEMPERATURE = 0.5
         self.mock_settings.PIPELINE_MODEL_NAME = "gpt-4o-mini"
@@ -86,7 +87,7 @@ class TestLLMFactory:
     @patch('app.core.llm.base.get_settings')
     def test_unsupported_provider_raises_error(self, mock_get_settings):
         """지원하지 않는 제공업체 설정 시 오류 발생 테스트"""
-        self.mock_settings.LLM_PROVIDER = "unsupported_provider"
+        self.mock_settings.LLM_PROVIDER = "unsupported_provider"  # 문자열 그대로 (에러 테스트용)
         mock_get_settings.return_value = self.mock_settings
         
         with pytest.raises(ValueError, match="Unsupported LLM provider: unsupported_provider"):
@@ -95,7 +96,7 @@ class TestLLMFactory:
     @patch('app.core.llm.base.get_settings')
     def test_anthropic_provider_selection(self, mock_get_settings):
         """Anthropic 제공업체 선택 테스트"""
-        self.mock_settings.LLM_PROVIDER = "anthropic"
+        self.mock_settings.LLM_PROVIDER = LLMProvider.ANTHROPIC
         self.mock_settings.ANTHROPIC_API_KEY = "test-anthropic-key"
         mock_get_settings.return_value = self.mock_settings
         
@@ -117,7 +118,7 @@ class TestLLMFactory:
     @patch('app.core.llm.base.get_settings')
     def test_ollama_provider_selection(self, mock_get_settings):
         """Ollama 제공업체 선택 테스트"""
-        self.mock_settings.LLM_PROVIDER = "ollama"
+        self.mock_settings.LLM_PROVIDER = LLMProvider.OLLAMA
         self.mock_settings.OLLAMA_BASE_URL = "http://localhost:11434"
         mock_get_settings.return_value = self.mock_settings
         

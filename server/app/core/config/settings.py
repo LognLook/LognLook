@@ -1,10 +1,12 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
-from typing import Optional
+
+from app.core.enums.LLMProvider import LLMProvider
+
 
 class Settings(BaseSettings):
     # LLM 제공업체 설정
-    LLM_PROVIDER: str = "openai"  # openai, anthropic, ollama, huggingface
+    LLM_PROVIDER: LLMProvider = LLMProvider.OPENAI
     
     # Chat 모델 설정
     CHAT_MODEL_NAME: str = "gpt-4o"  # 제공업체별 기본값

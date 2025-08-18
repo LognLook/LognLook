@@ -7,6 +7,7 @@ from unittest.mock import patch, Mock
 from app.core.llm.base import LLMFactory
 from app.core.config.elastic_config import get_elastic_mappings
 from app.core.config.settings import get_settings
+from app.core.enums.LLMProvider import LLMProvider
 
 
 class TestBasicFunctionality:
@@ -31,7 +32,7 @@ class TestBasicFunctionality:
         assert hasattr(settings, 'EMBEDDING_VECTOR_DIMS')
         
         # 기본값 확인
-        assert settings.LLM_PROVIDER == "openai"
+        assert settings.LLM_PROVIDER == LLMProvider.OPENAI
         assert settings.PIPELINE_MODEL_NAME == "gpt-4o-mini"
         assert settings.TROUBLESHOOTING_MODEL_NAME == "gpt-4o"
         assert settings.EMBEDDING_VECTOR_DIMS == 1536
@@ -63,7 +64,7 @@ class TestBasicFunctionality:
         from app.core.config.settings import Settings
         settings = Settings()
         
-        assert settings.LLM_PROVIDER == "openai"
+        assert settings.LLM_PROVIDER == LLMProvider.OPENAI
         assert settings.PIPELINE_MODEL_NAME == "gpt-4o-mini"
         assert settings.TROUBLESHOOTING_MODEL_NAME == "gpt-4o"
     
@@ -73,7 +74,7 @@ class TestBasicFunctionality:
         """팩토리 메서드별 차이점 테스트"""
         # Mock 설정
         mock_settings = Mock()
-        mock_settings.LLM_PROVIDER = "openai"
+        mock_settings.LLM_PROVIDER = LLMProvider.OPENAI
         mock_settings.PIPELINE_MODEL_NAME = "gpt-4o-mini"
         mock_settings.TROUBLESHOOTING_MODEL_NAME = "gpt-4o"
         mock_get_settings.return_value = mock_settings
@@ -134,7 +135,7 @@ class TestErrorHandling:
     def test_unsupported_provider_error(self, mock_get_settings):
         """지원하지 않는 제공업체 오류 테스트"""
         mock_settings = Mock()
-        mock_settings.LLM_PROVIDER = "unsupported_provider"
+        mock_settings.LLM_PROVIDER = "unsupported_provider"  # 문자열 그대로 (에러 테스트용)
         mock_get_settings.return_value = mock_settings
         
         with pytest.raises(ValueError, match="Unsupported LLM provider: unsupported_provider"):
