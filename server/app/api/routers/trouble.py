@@ -55,12 +55,12 @@ def delete_trouble(
     return {"message": "Trouble deleted successfully"}
 
 
-@router.get("/project/{project_id}/troubles", response_model=TroubleListResponse)
-def get_project_troubles(
+@router.get("/trouble/{project_id}", response_model=TroubleListResponse)
+def get_trouble_list(
     project_id: int,
     query_params: TroubleListQuery = Depends(),
     service: TroubleService = Depends(get_trouble_service),
     username: str = Depends(get_current_username)
 ):
-    """프로젝트의 trouble 목록을 조회합니다."""
+    """프로젝트의 trouble 중 유저에게 권한이 있는 목록을 조회합니다."""
     return service.get_project_troubles(project_id, query_params, username)
