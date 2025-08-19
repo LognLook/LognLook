@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from app.infra.database.elaticsearch import ElasticsearchClient
+from app.infra.database.elasticsearch import ElasticsearchClient
 from app.core.config.elastic_config import get_elastic_mappings
 from typing import List, Dict, Any
 from app.core.enums.log_filter import LogLevelFilter
