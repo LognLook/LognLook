@@ -30,10 +30,6 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout, hideProject
     };
   }, []);
 
-  const handleProfileClick = () => {
-    setIsOpen(false);
-    navigate('/profile');
-  };
 
   const handleProfileSettingsClick = () => {
     setIsOpen(false);

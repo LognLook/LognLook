@@ -55,7 +55,7 @@ export const fetchTroubleList = async (projectId: number, _userId: number): Prom
 };
 
 // 특정 트러블 상세 조회
-export const fetchTroubleById = async (troubleId: number, userId: number): Promise<TroubleWithLogs> => {
+export const fetchTroubleById = async (troubleId: number, _userId: number): Promise<TroubleWithLogs> => {
   try {
     const response = await troubleService.getTrouble(troubleId);
     console.log('✅ Trouble Detail API Response:', response);

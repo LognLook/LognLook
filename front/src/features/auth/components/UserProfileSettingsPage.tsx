@@ -14,13 +14,6 @@ interface UserInfo {
   language?: string;
 }
 
-interface NotificationSettings {
-  emailNotifications: boolean;
-  pushNotifications: boolean;
-  logAlerts: boolean;
-  weeklyReports: boolean;
-  securityAlerts: boolean;
-}
 
 const UserProfileSettingsPage: React.FC = () => {
   const [userInfo, setUserInfo] = useState<UserInfo>({ 
@@ -42,13 +35,6 @@ const UserProfileSettingsPage: React.FC = () => {
   });
   const [saveMessage, setSaveMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'preferences'>('profile');
-  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
-    emailNotifications: true,
-    pushNotifications: true,
-    logAlerts: true,
-    weeklyReports: false,
-    securityAlerts: true
-  });
   
   const navigate = useNavigate();
 

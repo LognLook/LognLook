@@ -1,5 +1,4 @@
 import { apiClient } from './api';
-import { ProjectKeyword, ProjectLogFilter } from '../types/project';
 
 export interface Project {
   id: number;
@@ -51,15 +50,7 @@ export interface ProjectKeywordResponse {
   keywords: string[];
 }
 
-export interface ProjectLogFilterResponse {
-  id: number;
-  name: string;
-  type: 'include' | 'exclude';
-  pattern: string;
-  is_active: boolean;
-  description?: string;
-  created_at: string;
-}
+// Removed unused ProjectLogFilter types and endpoints
 
 class ProjectService {
   async getProjects(): Promise<Project[]> {
@@ -130,55 +121,6 @@ class ProjectService {
       keywords
     });
     return response.keywords;
-  }
-  
-  async getProjectLogFilters(projectId: number): Promise<ProjectLogFilter[]> {
-    const response = await apiClient.get<ProjectLogFilterResponse[]>(`/projects/${projectId}/filters`);
-    return response.map(filter => ({
-      id: filter.id,
-      name: filter.name,
-      type: filter.type,
-      pattern: filter.pattern,
-      isActive: filter.is_active,
-      description: filter.description,
-      createdAt: filter.created_at
-    }));
-  }
-  
-  async addProjectLogFilter(projectId: number, filter: Omit<ProjectLogFilter, 'id' | 'createdAt'>): Promise<ProjectLogFilter> {
-    const response = await apiClient.post<ProjectLogFilterResponse>(`/projects/${projectId}/filters`, {
-      name: filter.name,
-      type: filter.type,
-      pattern: filter.pattern,
-      is_active: filter.isActive,
-      description: filter.description
-    });
-    return {
-      id: response.id,
-      name: response.name,
-      type: response.type,
-      pattern: response.pattern,
-      isActive: response.is_active,
-      description: response.description,
-      createdAt: response.created_at
-    };
-  }
-  
-  async updateProjectLogFilter(projectId: number, filterId: number, updates: Partial<ProjectLogFilter>): Promise<ProjectLogFilter> {
-    const response = await apiClient.put<ProjectLogFilterResponse>(`/projects/${projectId}/filters/${filterId}`, updates);
-    return {
-      id: response.id,
-      name: response.name,
-      type: response.type,
-      pattern: response.pattern,
-      isActive: response.is_active,
-      description: response.description,
-      createdAt: response.created_at
-    };
-  }
-  
-  async deleteProjectLogFilter(projectId: number, filterId: number): Promise<void> {
-    return apiClient.delete(`/projects/${projectId}/filters/${filterId}`);
   }
   
   async regenerateApiKey(projectId: number): Promise<{ api_key: string }> {
