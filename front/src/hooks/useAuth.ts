@@ -9,7 +9,7 @@ export const useAuth = () => {
   const navigate = useNavigate();
   const [hasCheckedTokenOnMount, setHasCheckedTokenOnMount] = useState(false);
 
-  // 컴포넌트 마운트 시 토큰 유효성 검증
+  // Validate token on component mount
   useEffect(() => {
     if (!hasCheckedTokenOnMount) {
       checkTokenValidity();
@@ -21,15 +21,15 @@ export const useAuth = () => {
     mutationFn: async (credentials: LoginRequest) => {
       const authData = await authService.login(credentials);
       
-      // 임시로 토큰을 저장하여 사용자 정보를 가져올 수 있게 함
+      // Temporarily store token to fetch user data
       localStorage.setItem('token', authData.access_token);
       
       try {
         const userData = await authService.getCurrentUser();
         return { authData, userData };
       } catch (error) {
-        // 사용자 정보 가져오기 실패 시, 기본값 사용
-        console.warn('사용자 정보 가져오기 실패, 기본값 사용', error);
+        // Use fallback data if user info fetch fails
+        console.warn('Failed to fetch user info, using fallback', error);
         return { 
           authData, 
           userData: { id: 1, username: credentials.username } 

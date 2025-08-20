@@ -4,7 +4,7 @@ import TeamBoard from "../components/TeamBoard";
 import LogGraph from "../components/LogGraph/LogGraph";
 import LogDistribution from "../components/LogDistribution/LogDistribution";
 import RecentLogs from "../components/RecentLogs";
-import { TimePeriod } from "../types/logTypes";
+import { TimePeriod } from "../../../types/logs";
 import { useProjectStore } from "../../../store/projectStore";
 
 interface HomePageProps {

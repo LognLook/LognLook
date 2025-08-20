@@ -33,7 +33,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       
       login: (token: string, user: User) => {
-        // localStorage와 Zustand store 모두에 토큰 저장
+        // Store token in both localStorage and Zustand store
         localStorage.setItem('token', token);
         set({ 
           token, 
@@ -44,7 +44,7 @@ export const useAuthStore = create<AuthState>()(
       },
       
       logout: () => {
-        // localStorage와 Zustand store 모두에서 토큰 제거
+        // Remove token from both localStorage and Zustand store
         localStorage.removeItem('token');
         set({ 
           token: null, 
@@ -70,24 +70,24 @@ export const useAuthStore = create<AuthState>()(
         const token = state.token;
         const storedToken = localStorage.getItem('token');
         
-        // localStorage에 토큰이 있고 store와 다르면 동기화
+        // Sync token if localStorage has different token than store
         if (storedToken && token !== storedToken) {
           set({ 
             token: storedToken, 
             isAuthenticated: true,
-            // 사용자 정보가 없으면 null로 설정
+            // Set user info to null if not available
             user: state.user || null
           });
           return true;
         }
         
-        // localStorage에 토큰이 없으면 로그아웃
+        // Logout if no token in localStorage
         if (!storedToken) {
           get().logout();
           return false;
         }
         
-        // 둘 다 있고 같으면 인증된 상태
+        // Authenticated if both tokens exist and match
         if (token && storedToken) {
           return true;
         }
@@ -96,7 +96,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       getStoredToken: () => {
-        // localStorage에서 토큰을 우선적으로 가져오고, 없으면 store에서 가져옴
+        // Get token from localStorage first, fallback to store
         const storedToken = localStorage.getItem('token');
         if (storedToken) {
           return storedToken;
@@ -104,7 +104,7 @@ export const useAuthStore = create<AuthState>()(
         return get().token;
       },
 
-      // 디버깅용: 토큰 상태 확인
+      // Debug helper: check token state
       debugTokenState: () => {
         const storeToken = get().token;
         const localStorageToken = localStorage.getItem('token');
@@ -120,16 +120,16 @@ export const useAuthStore = create<AuthState>()(
         user: state.user, 
         isAuthenticated: state.isAuthenticated 
       }),
-      // 페이지 로드 시 localStorage와 동기화
+      // Sync with localStorage on page load
       onRehydrateStorage: () => (state) => {
         if (state) {
           const storedToken = localStorage.getItem('token');
           if (storedToken) {
             state.token = storedToken;
             state.isAuthenticated = true;
-            // 사용자 정보가 없으면 null로 설정하고 실제 사용자 정보는 API에서 가져오도록 함
+            // Set user info to null and let API fetch actual user data
           } else if (!storedToken && state.token) {
-            // localStorage에 토큰이 없으면 상태 초기화
+            // Reset state if no token in localStorage
             state.token = null;
             state.user = null;
             state.isAuthenticated = false;

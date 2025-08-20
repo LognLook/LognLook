@@ -56,7 +56,7 @@ export interface ProjectTroublesResponse {
 }
 
 class TroubleService {
-  // 프로젝트의 트러블 목록 조회
+  // Get project troubles list
   async getProjectTroubles(
     projectId: number, 
     page: number = 1, 
@@ -83,7 +83,7 @@ class TroubleService {
     }
   }
 
-  // 특정 트러블 상세 조회
+  // Get specific trouble details
   async getTrouble(troubleId: number): Promise<TroubleDetail> {
     try {
       const response = await api.get(`/troubles/${troubleId}`);
@@ -94,7 +94,7 @@ class TroubleService {
     }
   }
 
-  // 트러블 생성
+  // Create trouble
   async createTrouble(troubleData: CreateTroubleRequest): Promise<TroubleItem> {
     try {
       const response = await api.post(`/troubles`, troubleData);
@@ -105,7 +105,7 @@ class TroubleService {
     }
   }
 
-  // 트러블 수정
+  // Update trouble
   async updateTrouble(troubleId: number, troubleData: UpdateTroubleRequest): Promise<TroubleItem> {
     try {
       const response = await api.put(`/troubles/${troubleId}`, troubleData);
@@ -116,7 +116,7 @@ class TroubleService {
     }
   }
 
-  // 트러블 삭제
+  // Delete trouble
   async deleteTrouble(troubleId: number): Promise<string> {
     try {
       const response = await api.delete(`/troubles/${troubleId}`);

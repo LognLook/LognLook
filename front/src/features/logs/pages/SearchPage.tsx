@@ -146,8 +146,8 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
     setIsSearching(true);
     setSearchError(null);
     setHasSearched(true);
-    setDisplayedCount(10); // Reset displayed count
-    setHasReachedEnd(false); // Reset end state for new search
+    setDisplayedCount(10);
+    setHasReachedEnd(false);
 
     try {
       const searchParams: LogSearchParams = {
@@ -326,7 +326,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
     setSearchError(null);
     setHasSearched(false);
     setSelectedLogs(new Set());
-    setHasReachedEnd(false); // Reset end state
+    setHasReachedEnd(false);
   };
 
   // 더 보기 가능 여부

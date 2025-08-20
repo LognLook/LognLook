@@ -36,12 +36,12 @@ const LogGraph: React.FC<LogGraphProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // timePeriod prop이 변경되면 내부 상태도 업데이트
+  // Update internal state when timePeriod prop changes
   useEffect(() => {
     setSelectedPeriod(initialTimePeriod);
   }, [initialTimePeriod]);
 
-  // 현재 시간 기준 범위 계산 함수
+  // Calculate time range text based on current time
   const getTimeRangeText = (period: TimePeriod): string => {
     const now = new Date();
     let startTime: Date;
@@ -61,30 +61,52 @@ const LogGraph: React.FC<LogGraphProps> = ({
     }
   };
 
-  // Fetch graph data
+  // Fetch graph data with fallback periods
   useEffect(() => {
     const loadGraphData = async () => {
       try {
         setIsLoading(true);
-        console.log(`LogGraph - Loading graph data for projectId: ${projectId}, period: ${selectedPeriod}`);
         
-        // logService를 사용하여 데이터 가져오기
-        const stats = await logService.getLogStats(projectId, selectedPeriod);
-        console.log(`LogGraph - Log stats received:`, {
-          totalLogs: stats.totalLogs,
-          levelDistribution: stats.levelDistribution,
-          recentTrendsCount: stats.recentTrends.length
-        });
+        // Try to find data by testing different periods
+        const periods: TimePeriod[] = [selectedPeriod, 'day', 'week', 'month'];
+        let stats = null;
+        let foundPeriod = selectedPeriod;
         
-        // API 응답 데이터를 그래프 형식으로 변환
-        if (stats.totalLogs > 0) {
-          // 로그 데이터를 시간별로 그룹화하여 그래프 데이터 생성
+        for (const period of periods) {
+          console.log(`LogGraph - Trying period: ${period}`);
+          stats = await logService.getLogStats(projectId, period);
+          
+          if (stats.totalLogs > 0) {
+            foundPeriod = period;
+            console.log(`LogGraph - Found data in period: ${period}, totalLogs: ${stats.totalLogs}`);
+            break;
+          }
+        }
+        
+        // Update selected period if we found data in a different period
+        if (foundPeriod !== selectedPeriod && stats && stats.totalLogs > 0) {
+          setSelectedPeriod(foundPeriod);
+          if (onTimePeriodChange) {
+            onTimePeriodChange(foundPeriod);
+          }
+        }
+        
+        // Convert API response data to graph format
+        if (stats && stats.totalLogs > 0) {
+          // Group log data by time to create graph data
           const timeGroups = new Map<string, { INFO: number; WARN: number; ERROR: number }>();
           
-          // recentTrends를 사용하여 그래프 데이터 생성
+          // Generate graph data using recentTrends
           stats.recentTrends.forEach((trend) => {
+            // Convert ISO string to Date object
             const date = new Date(trend.date);
-            const timeKey = date.toLocaleDateString() + ' ' + date.getHours() + ':00';
+            if (isNaN(date.getTime())) {
+              console.warn('Invalid date format:', trend.date);
+              return;
+            }
+            
+            // Group by hour (create more accurate time key)
+            const timeKey = date.toISOString().slice(0, 13) + ':00:00';
             
             if (!timeGroups.has(timeKey)) {
               timeGroups.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0 });
@@ -98,29 +120,27 @@ const LogGraph: React.FC<LogGraphProps> = ({
             }
           });
           
-          // 시간순으로 정렬하여 그래프 데이터 생성
+          // Sort by time and generate graph data (sort by ISO string)
           const sortedData = Array.from(timeGroups.entries())
-            .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+            .sort(([timeA], [timeB]) => timeA.localeCompare(timeB))
             .map(([time, counts]) => ({
-              time,
+              time: new Date(time).toLocaleString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }),
               ...counts
             }));
           
-          console.log(`LogGraph - Processed graph data:`, {
-            timeGroupsCount: timeGroups.size,
-            sortedDataCount: sortedData.length,
-            sampleData: sortedData.slice(0, 3)
-          });
-          
           setGraphData(sortedData);
         } else {
-          console.log('LogGraph - No log data available');
           setGraphData([]);
         }
         
         setError(null);
       } catch (error) {
-        console.error('LogGraph - Failed to load graph data:', error);
+        console.error('Failed to load graph data:', error);
         setError('Failed to load graph data');
         setGraphData([]);
       } finally {
@@ -129,12 +149,8 @@ const LogGraph: React.FC<LogGraphProps> = ({
     };
     
     loadGraphData();
-  }, [projectId, selectedPeriod]);
+  }, [projectId, selectedPeriod, onTimePeriodChange]);
 
-  // Add effect to monitor graphData changes
-  useEffect(() => {
-    console.log('Current graphData:', graphData);
-  }, [graphData]);
 
   // Monitor sidebar state
   useEffect(() => {
@@ -168,7 +184,7 @@ const LogGraph: React.FC<LogGraphProps> = ({
     return isSidebarOpen ? 'w-[50.97vw]' : 'w-[63.61vw]';
   };
 
-  // TimePeriod 변경 핸들러
+  // TimePeriod change handler
   const handlePeriodChange = (period: TimePeriod) => {
     setSelectedPeriod(period);
     if (onTimePeriodChange) {

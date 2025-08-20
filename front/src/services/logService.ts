@@ -44,7 +44,7 @@ class LogService {
         k: params.k
       };
       
-      // 선택적 파라미터들 추가
+      // Add optional parameters
       if (params.keyword) apiParams.keyword = params.keyword;
       if (params.logLevel) apiParams.log_level = params.logLevel;
       if (params.startTime) apiParams.start_time = params.startTime;
@@ -52,9 +52,8 @@ class LogService {
       
       const response = await api.get('/logs/search', { params: apiParams });
       
-      // API 응답이 string인 경우 (로그 데이터 자체)
+      // Handle string response (raw log data)
       if (typeof response.data === 'string') {
-        // 로그 데이터를 파싱하여 LogEntry[]로 변환
         try {
           const logs = JSON.parse(response.data);
           return {
@@ -74,7 +73,7 @@ class LogService {
         }
       }
       
-      // 기존 응답 형식 지원
+      // Handle standard response format
       return {
         logs: response.data.logs || response.data || [],
         total: response.data.total || 0,
@@ -84,7 +83,7 @@ class LogService {
     } catch (error) {
       console.error('Search API error:', error);
       
-      // API 실패 시 Mock 데이터 반환
+      // Return mock data on API failure
       const mockLogs: LogEntry[] = [];
       const query = params.query || '';
       
@@ -133,7 +132,7 @@ class LogService {
     } catch (error) {
       console.error('Recent logs API call failed:', error);
       
-      // Mock 데이터 반환
+      // Return mock data
       const mockLogs: LogEntry[] = [];
       for (let i = 0; i < Math.min(size, 10); i++) {
         const levels: ('INFO' | 'ERROR' | 'WARNING')[] = ['INFO', 'ERROR', 'WARNING'];
@@ -156,6 +155,13 @@ class LogService {
   
   async getLogStats(projectId: number, timeRange: string = '7d'): Promise<LogStats> {
     try {
+      console.log('getLogStats - Calling API with params:', { projectId, timeRange });
+      
+      // 토큰 확인
+      const token = localStorage.getItem('token');
+      console.log('getLogStats - Token available:', !!token);
+      console.log('getLogStats - Token preview:', token ? token.substring(0, 20) + '...' : 'No token');
+      
       const response = await api.get('/logs/mainboard', { 
         params: { 
           project_id: projectId, 
@@ -163,7 +169,64 @@ class LogService {
         }
       });
       
+      console.log('getLogStats - Raw API response:', response);
+      console.log('getLogStats - Response data:', response.data);
+      
       const logs = response.data || [];
+      console.log('getLogStats - Extracted logs:', logs);
+      console.log('getLogStats - Logs length:', logs.length);
+      
+      // 만약 mainboard API에서 데이터가 없다면, recent logs를 사용해서 통계 생성
+      if (logs.length === 0) {
+        console.log('getLogStats - No data from mainboard API, trying recent logs...');
+        try {
+          const recentLogs = await this.getRecentLogs(projectId, 1, 100);
+          console.log('getLogStats - Recent logs found:', recentLogs.length);
+          
+          if (recentLogs.length > 0) {
+            // recent logs에서 통계 생성
+            const levelDistribution: Record<string, number> = {};
+            const timeGroups: Record<string, Record<string, number>> = {};
+            
+                         recentLogs.forEach((log: any) => {
+               const level = log.log_level || 'UNKNOWN';
+               levelDistribution[level] = (levelDistribution[level] || 0) + 1;
+               
+               if (log.message_timestamp) {
+                 // 시간별 그룹화 (더 세밀하게)
+                 const date = new Date(log.message_timestamp);
+                 const timeKey = date.toISOString().slice(0, 13) + ':00:00'; // YYYY-MM-DDTHH:00:00
+                 
+                 if (!timeGroups[timeKey]) {
+                   timeGroups[timeKey] = {};
+                 }
+                 if (!timeGroups[timeKey][level]) {
+                   timeGroups[timeKey][level] = 0;
+                 }
+                 timeGroups[timeKey][level]++;
+               }
+             });
+            
+            const recentTrends: Array<{date: string, count: number, level: string}> = [];
+            Object.entries(timeGroups).forEach(([date, levelCounts]) => {
+              Object.entries(levelCounts).forEach(([level, count]) => {
+                recentTrends.push({ date, count, level });
+              });
+            });
+            
+            const result = {
+              totalLogs: recentLogs.length,
+              levelDistribution,
+              recentTrends
+            };
+            
+            console.log('getLogStats - Generated stats from recent logs:', result);
+            return result;
+          }
+        } catch (recentError) {
+          console.log('getLogStats - Failed to get recent logs:', recentError);
+        }
+      }
       
       // 로그 레벨별 분포 계산
       const levelDistribution: Record<string, number> = {};
@@ -171,6 +234,8 @@ class LogService {
         const level = log.log_level || 'UNKNOWN';
         levelDistribution[level] = (levelDistribution[level] || 0) + 1;
       });
+      
+      console.log('getLogStats - Level distribution:', levelDistribution);
       
       // 최근 트렌드 데이터 생성 (시간별 로그 수)
       const recentTrends: Array<{date: string, count: number, level: string}> = [];
@@ -198,13 +263,24 @@ class LogService {
         });
       });
       
-      return {
+      console.log('getLogStats - Recent trends:', recentTrends);
+      
+      const result = {
         totalLogs: logs.length,
         levelDistribution,
         recentTrends
       };
-    } catch (error) {
+      
+      console.log('getLogStats - Final result:', result);
+      return result;
+    } catch (error: any) {
       console.error('Log stats API call failed:', error);
+      console.error('Log stats API call error details:', {
+        message: error?.message || 'Unknown error',
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data
+      });
       return {
         totalLogs: 0,
         levelDistribution: {},
@@ -221,43 +297,30 @@ class LogService {
       }
       const actualProjectId = projectId;
       
-      // logId가 배열이 아닌 경우 배열로 변환
+      // Convert logId to array if needed
       const logIds = Array.isArray(logId) ? logId : [logId];
       
-      console.log('🔍 getLogDetail called with:', {
-        projectId: actualProjectId,
-        logIds: logIds,
-        originalLogId: logId
-      });
-      
-      // 서버에서 log_ids를 List[str] 형태의 쿼리 파라미터로 받으므로
-      // log_ids[] 형태로 보내야 함
+      // Server expects log_ids as List[str] query parameters
       const params = new URLSearchParams();
       params.append('project_id', actualProjectId.toString());
       logIds.forEach(id => {
         params.append('log_ids', id);
       });
       
-      console.log('📤 API request params:', params.toString());
-      
       const response = await api.get('/logs/detail', { 
         params: params
       });
       
-      console.log('📥 Raw API response:', response.data);
-      
-      // API 응답이 배열인 경우 그대로 반환, 아니면 빈 배열 반환
+      // Return array response or empty array
       if (Array.isArray(response.data)) {
-        console.log('✅ API returned array with', response.data.length, 'items');
         return response.data;
       } else {
-        console.warn('⚠️ Log detail API returned non-array response:', response.data);
         return [];
       }
     } catch (error) {
-      console.error('❌ Log detail API call failed:', error);
+      console.error('Log detail API call failed:', error);
       
-      // Mock 데이터 반환 (개발 중에만)
+      // Return mock data for development
       return [{
         _id: logId,
         _source: {

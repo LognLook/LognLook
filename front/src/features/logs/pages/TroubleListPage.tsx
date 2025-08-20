@@ -18,13 +18,13 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTrouble, setSelectedTrouble] = useState<TroubleWithLogs | null>(null);
   const [modalLogs, setModalLogs] = useState<DisplayLogItem[]>([]);
-  const [detailData, setDetailData] = useState<any[]>([]); // ApiLogDetailEntry[] 대신 any[] 사용
+  const [detailData, setDetailData] = useState<any[]>([]);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [actualLogCounts, setActualLogCounts] = useState<Record<number, number>>({});
   const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ isOpen: boolean; troubleId: number | null; troubleName: string }>({ isOpen: false, troubleId: null, troubleName: '' });
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // 사이드바 상태에 따른 너비 계산
+  // Calculate width based on sidebar state
   const getWidthClass = () => {
     return isSidebarOpen ? 'w-[74.93vw]' : 'w-[87.64vw]';
   };
@@ -41,7 +41,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
         logCounts[trouble.id] = troubleDetails.logs.length;
       } catch (error) {
         console.error(`Failed to fetch logs for trouble ${trouble.id}:`, error);
-        // 에러 시 기본값 사용
+        // Use default value on error
         logCounts[trouble.id] = trouble.logs_count;
       }
     }
@@ -55,10 +55,10 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
       
       setLoading(true);
       try {
-        const res = await getProjectTroubles(selectedProject.id, 1, 50); // 페이지 1, 최대 50개
+        const res = await getProjectTroubles(selectedProject.id, 1, 50);
         setTroubles(res.items);
         
-        // 실제 로그 개수 가져오기
+        // Fetch actual log counts
         await fetchActualLogCounts(res.items);
       } finally {
         setLoading(false);
@@ -73,25 +73,25 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
     try {
       setIsDetailLoading(true);
       
-      // 1. Trouble 상세 정보 가져오기
+      // 1. Get trouble details
       const troubleDetails = await fetchTroubleById(troubleId, userId);
       setSelectedTrouble(troubleDetails);
       
-      // 2. 관련 로그 상세 정보 먼저 가져오기
+      // 2. Fetch related log details first
       let logDetails: any[] = [];
       if (troubleDetails.logs.length > 0) {
-        // 각 로그 ID에 대해 상세 정보 가져오기
+        // Get detailed information for each log ID
         const logDetailPromises = troubleDetails.logs.map(logId => 
           logService.getLogDetail(selectedProject.id, logId)
         );
         const logDetailResults = await Promise.all(logDetailPromises);
-        logDetails = logDetailResults.flat(); // 모든 결과를 하나의 배열로 합치기
+        logDetails = logDetailResults.flat();
         setDetailData(logDetails);
       }
       
-      // 3. 로그 상세 정보를 바탕으로 DisplayLogItem 생성
+      // 3. Create DisplayLogItem based on log details
       const displayLogs: DisplayLogItem[] = troubleDetails.logs.map((logId, index) => {
-        // 해당 로그 ID와 일치하는 상세 정보 찾기
+        // Find detailed information matching the log ID
         const logDetail = logDetails.find(detail => detail._id === logId || detail.id === logId);
         
         return {
@@ -100,7 +100,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
           timestamp: logDetail?._source?.message_timestamp || logDetail?._source?.['@timestamp'] || logDetail?.message_timestamp || new Date().toISOString(),
           level: (logDetail?._source?.log_level || logDetail?.log_level as 'INFO' | 'WARN' | 'ERROR') || 'INFO',
           category: logDetail?._source?.keyword || logDetail?.keyword || 'system',
-          comment: logId // 로그 ID를 comment에 저장
+          comment: logId
         };
       });
       setModalLogs(displayLogs);
@@ -120,11 +120,9 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
     setDetailData([]);
   };
 
-  // 새로운 트러블이 생성되었을 때 목록 새로고침
+  // Refresh list when new trouble is created
   const handleTroubleCreated = async (troubleId: number) => {
-    console.log('🔄 New trouble created, refreshing list...');
-    
-    // 잠시 대기 후 목록 새로고침 (서버에서 데이터가 완전히 처리될 시간을 줌)
+    // Wait briefly then refresh list (give server time to process data)
     setTimeout(async () => {
       if (!selectedProject) return;
       
@@ -132,23 +130,21 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
         const res = await getProjectTroubles(selectedProject.id, 1, 50);
         setTroubles(res.items);
         
-        // 실제 로그 개수도 새로고침
+        // Also refresh actual log counts
         await fetchActualLogCounts(res.items);
-        
-        console.log('✅ Trouble list refreshed successfully');
       } catch (error) {
-        console.error('❌ Failed to refresh trouble list:', error);
+        console.error('Failed to refresh trouble list:', error);
       }
-    }, 2000); // 2초 대기
+    }, 2000);
   };
 
-  // 트러블 삭제 확인 모달 열기
+  // Open delete confirmation modal
   const handleDeleteClick = (e: React.MouseEvent, troubleId: number, troubleName: string) => {
-    e.stopPropagation(); // 카드 클릭 이벤트 방지
+    e.stopPropagation();
     setDeleteConfirmModal({ isOpen: true, troubleId, troubleName });
   };
 
-  // 트러블 삭제 실행
+  // Execute trouble deletion
   const handleDeleteConfirm = async () => {
     if (!deleteConfirmModal.troubleId) return;
     
@@ -157,19 +153,19 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
       const result = await deleteTrouble(deleteConfirmModal.troubleId);
       
       if (result.success) {
-        console.log('✅ Trouble deleted successfully');
-        
-        // 목록에서 삭제된 트러블 제거
+        // Remove deleted trouble from list
         setTroubles(prev => prev.filter(trouble => trouble.id !== deleteConfirmModal.troubleId));
         
-        // 성공 알림 (선택사항)
+        // TODO: Replace with proper toast notification
         alert('Trouble deleted successfully!');
       } else {
-        console.error('❌ Delete failed:', result.message);
+        console.error('Delete failed:', result.message);
+        // TODO: Replace with proper toast notification
         alert(`Failed to delete trouble: ${result.message}`);
       }
     } catch (error) {
-      console.error('❌ Delete error:', error);
+      console.error('Delete error:', error);
+      // TODO: Replace with proper toast notification
       alert('An error occurred while deleting the trouble.');
     } finally {
       setIsDeleting(false);
@@ -177,12 +173,12 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
     }
   };
 
-  // 삭제 확인 모달 닫기
+  // Close delete confirmation modal
   const handleDeleteCancel = () => {
     setDeleteConfirmModal({ isOpen: false, troubleId: null, troubleName: '' });
   };
 
-  // 프로젝트가 선택되지 않은 경우
+  // If no project is selected
   if (!selectedProject) {
     return (
       <div className={`flex flex-col ${getWidthClass()}`}>
@@ -205,7 +201,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
 
   return (
     <div className={`${getWidthClass()} flex flex-col gap-6 pt-8`}>
-      {/* 트러블슈팅 카드 그리드 */}
+      {/* Troubleshooting card grid */}
       <div className="w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-4">
           {troubles.map(trouble => (
@@ -218,7 +214,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
               }}
               onClick={() => handleTroubleClick(trouble.id)}
             >
-              {/* 삭제 버튼 */}
+              {/* Delete button */}
               <button
                 onClick={(e) => handleDeleteClick(e, trouble.id, trouble.report_name)}
                 className="absolute top-3 right-3 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center z-30"
@@ -228,7 +224,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
                   <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
-              {/* 상단: 제목과 공유 상태 */}
+              {/* Top: Title and sharing status */}
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h3 className="text-[clamp(14px,1vw,16px)] font-semibold font-pretendard text-black flex-1 overflow-hidden whitespace-nowrap text-ellipsis" 
                     title={trouble.report_name}>
@@ -243,7 +239,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
                 </span>
               </div>
 
-              {/* 생성 시간 */}
+              {/* Created time */}
               <div className="mb-3">
                 <div className="flex items-center gap-2 text-[clamp(12px,0.9vw,13px)] font-normal font-pretendard text-black">
                   <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
@@ -253,7 +249,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
                 </div>
               </div>
 
-              {/* 로그 개수 */}
+              {/* Log count */}
               <div className="mb-3">
                 <div className="flex items-center gap-2 text-[clamp(12px,0.9vw,13px)] font-normal font-pretendard text-black">
                   <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
@@ -280,7 +276,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
                 </div>
               </div>
 
-              {/* 하단 오른쪽: 작성자 프로필 */}
+              {/* Bottom right: Author profile */}
               <div className="absolute bottom-3 right-3">
                 <div className="w-6 h-6 rounded-full bg-[#496660] flex items-center justify-center text-white font-medium text-[clamp(9px,0.65vw,10px)]">
                   SY
@@ -291,7 +287,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
         </div>
       </div>
 
-      {/* 빈 상태 */}
+      {/* Empty state */}
       {troubles.length === 0 && (
         <div className="flex flex-col items-center justify-center h-64">
           <div className="text-black text-lg font-pretendard mb-2">

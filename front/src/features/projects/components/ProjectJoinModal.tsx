@@ -22,7 +22,7 @@ const ProjectJoinModal: React.FC<ProjectJoinModalProps> = ({
   const queryClient = useQueryClient();
   const { addProject } = useProjectStore();
 
-  // 모달이 열릴 때마다 초기화
+  // Reset when modal opens
   useEffect(() => {
     if (isOpen) {
       setInviteCode('');
@@ -35,25 +35,23 @@ const ProjectJoinModal: React.FC<ProjectJoinModalProps> = ({
   const joinProjectMutation = useMutation({
     mutationFn: (joinData: JoinProjectRequest) => projectService.joinProject(joinData),
     onSuccess: (joinedProject) => {
-      console.log('✅ ProjectJoinModal: 프로젝트 참가 성공', joinedProject);
-      
-      // 참가한 프로젝트 정보 저장
+      // Store joined project information
       setJoinedProject(joinedProject);
       
-      // 성공 상태로 변경
+      // Change to success state
       setIsSuccess(true);
       
-      // store에 프로젝트 추가
+      // Add project to store
       addProject(joinedProject);
       
-      // 쿼리 무효화
+      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       
-      // 에러 초기화
+      // Reset error
       setError('');
     },
     onError: (error: any) => {
-      console.error('❌ ProjectJoinModal: 프로젝트 참가 실패', error);
+      console.error('Project join failed:', error);
       setError(error?.response?.data?.detail || error?.message || 'Failed to join project');
       setIsSuccess(false);
     }
@@ -62,7 +60,7 @@ const ProjectJoinModal: React.FC<ProjectJoinModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inviteCode.trim()) {
-      setError(''); // 에러 초기화
+      setError('');
       joinProjectMutation.mutate({
         inviteCode: inviteCode.trim()
       });
@@ -71,7 +69,7 @@ const ProjectJoinModal: React.FC<ProjectJoinModalProps> = ({
 
   const handleClose = () => {
     if (isSuccess && joinedProject && onSuccess) {
-      // 성공한 경우 프로젝트 선택 콜백 실행
+      // Execute project selection callback on success
       onSuccess(joinedProject);
     }
     onClose();
@@ -95,7 +93,7 @@ const ProjectJoinModal: React.FC<ProjectJoinModalProps> = ({
         </div>
         
         {!isSuccess ? (
-          // 프로젝트 참가 폼
+          // Project join form
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -139,7 +137,7 @@ const ProjectJoinModal: React.FC<ProjectJoinModalProps> = ({
             </div>
           </form>
         ) : (
-          // 성공 화면
+          // Success screen
           <div className="space-y-6">
             <div className="text-center">
               <div className="w-16 h-16 bg-[#E6F7F1] rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#496660]">

@@ -1,6 +1,6 @@
 import { troubleService, CreateTroubleRequest, ProjectTroublesResponse } from '../../../services/troubleService';
 
-// Trouble 관련 API 함수들
+// Trouble-related API functions
 export interface TroubleListItem {
   id: number;
   report_name: string;
@@ -24,7 +24,7 @@ export interface TroubleWithLogs {
   logs: string[];
 }
 
-// LogDetailModal에서 필요한 타입들
+// Types needed for LogDetailModal
 export interface CreateTroubleResponse {
   id: number;
   report_name: string;
@@ -34,37 +34,35 @@ export interface CreateTroubleResponse {
   project_id: number;
   created_at: string;
   created_by: number;
-  status?: 'processing' | 'completed' | 'failed'; // AI 분석 상태 추가
+  status?: 'processing' | 'completed' | 'failed';
 }
 
-// 프로젝트의 트러블 목록 조회
+// Fetch project trouble list
 export const fetchTroubleList = async (projectId: number, _userId: number): Promise<{ items: TroubleListItem[] }> => {
   try {
     const response = await troubleService.getProjectTroubles(projectId);
-    console.log('✅ Trouble List API Response:', response);
     
     return {
       items: response.items || []
     };
   } catch (error) {
-    console.error('❌ Trouble List API Error:', error);
+    console.error('Trouble List API Error:', error);
     
-    // 에러 시 빈 배열 반환
+    // Return empty array on error
     return { items: [] };
   }
 };
 
-// 특정 트러블 상세 조회
+// Fetch specific trouble details
 export const fetchTroubleById = async (troubleId: number, _userId: number): Promise<TroubleWithLogs> => {
   try {
     const response = await troubleService.getTrouble(troubleId);
-    console.log('✅ Trouble Detail API Response:', response);
     
     return response;
   } catch (error) {
-    console.error('❌ Trouble Detail API Error:', error);
+    console.error('Trouble Detail API Error:', error);
     
-    // 에러 시 기본 데이터 반환
+    // Return default data on error
     return {
       trouble: {
         id: troubleId,
@@ -81,22 +79,21 @@ export const fetchTroubleById = async (troubleId: number, _userId: number): Prom
   }
 };
 
-// 트러블 생성
+// Create trouble
 export const createTrouble = async (request: CreateTroubleRequest): Promise<CreateTroubleResponse> => {
   try {
     const response = await troubleService.createTrouble(request);
-    console.log('✅ Trouble API Response:', response);
     
     return response;
   } catch (error) {
-    console.error('❌ Trouble API Error:', error);
+    console.error('Trouble API Error:', error);
     
-    // 에러 시 임시 응답 반환 (개발 중에만)
+    // Return mock response on error (development only)
     return {
       id: Math.floor(Math.random() * 1000),
       report_name: "Error - Using Mock Data",
       user_query: request.user_query,
-      content: `API 연결 실패: ${error instanceof Error ? error.message : 'Unknown error'}. 백엔드 서버가 실행 중인지 확인해주세요.`,
+      content: `API connection failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please check if the backend server is running.`,
       is_shared: request.is_shared,
       project_id: request.project_id,
       created_at: new Date().toISOString(),
@@ -105,7 +102,7 @@ export const createTrouble = async (request: CreateTroubleRequest): Promise<Crea
   }
 };
 
-// 프로젝트 트러블 목록 조회
+// Get project troubles list
 export const getProjectTroubles = async (
   projectId: number,
   page: number = 1,
@@ -115,8 +112,6 @@ export const getProjectTroubles = async (
   created_by?: number
 ): Promise<ProjectTroublesResponse> => {
   try {
-    console.log(`🔍 Getting troubles for project ${projectId}, page ${page}`);
-    
     const response = await troubleService.getProjectTroubles(
       projectId, 
       page, 
@@ -125,14 +120,12 @@ export const getProjectTroubles = async (
       is_shared, 
       created_by
     );
-    
-    console.log('✅ Project troubles received:', response);
     return response;
     
   } catch (error) {
-    console.error('❌ Failed to get project troubles:', error);
+    console.error('Failed to get project troubles:', error);
     
-    // 에러 시 빈 목록 반환
+    // Return empty list on error
     return {
       items: [],
       page: 1,
@@ -143,21 +136,17 @@ export const getProjectTroubles = async (
   }
 };
 
-// 트러블 삭제
+// Delete trouble
 export const deleteTrouble = async (troubleId: number): Promise<{ success: boolean; message: string }> => {
   try {
-    console.log(`🗑️ Deleting trouble ${troubleId}`);
-    
     await troubleService.deleteTrouble(troubleId);
-    
-    console.log('✅ Trouble deleted successfully');
     return {
       success: true,
       message: 'Trouble deleted successfully'
     };
     
   } catch (error) {
-    console.error('❌ Failed to delete trouble:', error);
+    console.error('Failed to delete trouble:', error);
     
     return {
       success: false,

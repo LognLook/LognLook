@@ -43,13 +43,13 @@ const UserProfileSettingsPage: React.FC = () => {
   const { user: authUser, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    // 인증되지 않은 경우 로그인 페이지로 리다이렉트
+    // Redirect to login page if not authenticated
     if (!isAuthenticated) {
       navigate('/');
       return;
     }
 
-    // API에서 사용자 정보 로드
+    // Load user info from API
     const loadUserInfo = async () => {
       try {
         const currentUser = await authService.getCurrentUser();
@@ -57,7 +57,7 @@ const UserProfileSettingsPage: React.FC = () => {
           id: currentUser.id.toString(),
           name: currentUser.username,
           email: (currentUser as any).email || `${currentUser.username}@example.com`,
-          role: (currentUser as any).role || 'Admin', // API에서 role 정보가 있으면 사용
+          role: (currentUser as any).role || 'Admin',
           timezone: (currentUser as any).timezone || 'UTC',
           language: (currentUser as any).language || 'English'
         };
@@ -65,7 +65,7 @@ const UserProfileSettingsPage: React.FC = () => {
         setEditedInfo(info);
       } catch (error) {
         console.error('Failed to load user info:', error);
-        // API 실패 시 authStore의 사용자 정보 사용
+        // Use authStore user info on API failure
         if (authUser) {
           const info = {
             id: authUser.id.toString(),
@@ -88,7 +88,7 @@ const UserProfileSettingsPage: React.FC = () => {
 
   const handleEditToggle = () => {
     if (isEditing) {
-      // 취소 시 원래 정보로 되돌리기
+      // Revert to original info on cancel
       setEditedInfo(userInfo);
     }
     setIsEditing(!isEditing);
@@ -96,7 +96,7 @@ const UserProfileSettingsPage: React.FC = () => {
   };
 
   const handleSaveProfile = () => {
-    // 목업 데이터 업데이트 (실제 API 연결 시 수정 필요)
+    // Update mock data (needs modification for actual API connection)
     const storedUser = localStorage.getItem('user');
     const mockUser = localStorage.getItem('mockUser');
     
@@ -304,6 +304,7 @@ const UserProfileSettingsPage: React.FC = () => {
                           if (userInfo.role === 'Admin') {
                             setEditedInfo({ ...editedInfo, role: e.target.value });
                           } else {
+                            // TODO: Replace with proper toast notification
                             alert('This feature will be available soon!');
                           }
                         }}
@@ -383,7 +384,10 @@ const UserProfileSettingsPage: React.FC = () => {
                             Once you delete your account, there is no going back. Please be certain.
                           </p>
                           <button
-                            onClick={() => alert('This feature will be available soon!')}
+                            onClick={() => {
+                              // TODO: Replace with proper toast notification
+                              alert('This feature will be available soon!');
+                            }}
                             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                           >
                             Delete Account
@@ -396,7 +400,10 @@ const UserProfileSettingsPage: React.FC = () => {
                             Download all your data before deleting your account.
                           </p>
                           <button
-                            onClick={() => alert('This feature will be available soon!')}
+                            onClick={() => {
+                              // TODO: Replace with proper toast notification
+                              alert('This feature will be available soon!');
+                            }}
                             className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
                           >
                             Export Data
