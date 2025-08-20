@@ -126,6 +126,17 @@ class TroubleService {
       throw error;
     }
   }
+
+  // Toggle trouble share status
+  async toggleTroubleShare(troubleId: number): Promise<{ id: number; is_shared: boolean; message: string }> {
+    try {
+      const response = await api.patch(`/troubles/${troubleId}/share`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to toggle trouble share status:', error);
+      throw error;
+    }
+  }
 }
 
 export const troubleService = new TroubleService();

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import WelcomeCard from "../components/WelcomeCard";
 import TeamBoard from "../components/TeamBoard";
 import LogGraph from "../components/LogGraph/LogGraph";
@@ -6,6 +7,7 @@ import LogDistribution from "../components/LogDistribution/LogDistribution";
 import RecentLogs from "../components/RecentLogs";
 import { TimePeriod } from "../../../types/logs";
 import { useProjectStore } from "../../../store/projectStore";
+import { TroubleItem } from "../../../services/troubleService";
 
 interface HomePageProps {
   isSidebarOpen: boolean;
@@ -14,9 +16,24 @@ interface HomePageProps {
 const HomePage: React.FC<HomePageProps> = ({ isSidebarOpen }) => {
   // TimePeriod 상태 관리
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>('day');
+  const navigate = useNavigate();
   
   // 선택된 프로젝트 가져오기
   const { selectedProject } = useProjectStore();
+
+  // 트러블 카드 클릭 핸들러
+  const handleTroubleClick = (trouble: any) => {
+    // 팀보드에서 클릭된 트러블의 경우, 트러블 슈팅 모달을 열기 위해
+    // 트러블 슈팅 탭으로 이동하고 해당 트러블을 선택된 상태로 설정
+    navigate('/troubles', { 
+      state: { 
+        selectedTroubleId: trouble.id,
+        openTroubleModal: true 
+      } 
+    });
+    
+    console.log('Navigating to trouble with ID:', trouble.id);
+  };
 
   // 프로젝트가 선택되지 않은 경우 대기 상태 표시
   if (!selectedProject) {
@@ -39,7 +56,7 @@ const HomePage: React.FC<HomePageProps> = ({ isSidebarOpen }) => {
         <WelcomeCard className="flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="w-full">
-            <TeamBoard />
+            <TeamBoard onTroubleClick={handleTroubleClick} />
           </div>
         </div>
       </div>

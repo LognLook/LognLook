@@ -121,6 +121,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       )}
                     </button>
                   </li>
+
                   <li>
                     <button
                       className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center bg-transparent border-none hover:bg-transparent hover:border-none'} ${isSearchActive && isSidebarOpen ? 'bg-[#E6F7F1] border border-[#6E9990] font-bold text-[#000000]' : ''}`}
