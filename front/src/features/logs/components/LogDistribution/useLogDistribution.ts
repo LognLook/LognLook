@@ -48,7 +48,7 @@ export const useLogDistribution = ({
       console.log(`useLogDistribution - Fetching logs for project ${projectId}, period ${timePeriod}`);
       try {
         // mainboard API 직접 호출
-        const response = await apiClient.get<any[]>(`/log/mainboard`, { 
+        const response = await apiClient.get<any[]>(`/logs/mainboard`, { 
           project_id: projectId, 
           log_time: timePeriod === 'day' ? 'day' : timePeriod === 'week' ? 'week' : 'month' 
         });
