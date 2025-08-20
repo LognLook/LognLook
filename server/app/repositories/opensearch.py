@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from app.infra.database.opensearch import OpenSearchClient
-from app.core.config.elastic_config import get_elastic_mappings
+from app.core.config.elastic_config import get_opensearch_mappings
 from typing import List, Dict, Any
 from app.core.enums.log_filter import LogLevelFilter
 
@@ -10,7 +10,7 @@ client = OpenSearchClient()
 def create_project_index(index_name: str, mappings: dict = None) -> None:
     """인덱스를 생성하는 함수"""
     if mappings is None:
-        mappings = get_elastic_mappings()
+        mappings = get_opensearch_mappings()
     
     try:
         client.create_index(index_name, mappings)
@@ -18,7 +18,7 @@ def create_project_index(index_name: str, mappings: dict = None) -> None:
         # 인덱스가 이미 존재하는 경우
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        # 기타 Elasticsearch 관련 에러
+        # 기타 OpenSearch 관련 에러
         raise HTTPException(
             status_code=500, detail=f"Failed to create index {index_name}: {str(e)}"
         )
@@ -29,7 +29,7 @@ def delete_project_index(index_name: str) -> None:
     try:
         client.delete_index(index_name)
     except Exception as e:
-        # Elasticsearch 관련 에러
+        # OpenSearch 관련 에러
         raise HTTPException(
             status_code=500, detail=f"Failed to delete index {index_name}: {str(e)}"
         )
