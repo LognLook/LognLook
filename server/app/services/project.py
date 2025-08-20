@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 import logging
-from app.repositories import elasticsearch as ElasticsearchRepository
+from app.repositories import opensearch as ElasticsearchRepository
 from app.repositories import project as ProjectRepository
 from app.repositories import user as UserRepository
 from app.schemas.project import (

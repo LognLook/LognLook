@@ -1,10 +1,10 @@
 from fastapi import HTTPException
-from app.infra.database.elasticsearch import ElasticsearchClient
+from app.infra.database.opensearch import OpenSearchClient
 from app.core.config.elastic_config import get_elastic_mappings
 from typing import List, Dict, Any
 from app.core.enums.log_filter import LogLevelFilter
 
-es = ElasticsearchClient()
+client = OpenSearchClient()
 
 
 def create_project_index(index_name: str, mappings: dict = None) -> None:
@@ -13,7 +13,7 @@ def create_project_index(index_name: str, mappings: dict = None) -> None:
         mappings = get_elastic_mappings()
     
     try:
-        es.create_index(index_name, mappings)
+        client.create_index(index_name, mappings)
     except ValueError as e:
         # 인덱스가 이미 존재하는 경우
         raise HTTPException(status_code=400, detail=str(e))
@@ -27,7 +27,7 @@ def create_project_index(index_name: str, mappings: dict = None) -> None:
 def delete_project_index(index_name: str) -> None:
     """인덱스를 삭제하는 함수"""
     try:
-        es.delete_index(index_name)
+        client.delete_index(index_name)
     except Exception as e:
         # Elasticsearch 관련 에러
         raise HTTPException(
@@ -37,7 +37,7 @@ def delete_project_index(index_name: str) -> None:
 
 def save_log(index_name: str, log_data: dict):
     """로그를 저장하는 함수"""
-    es.save_document(index=index_name, document=log_data)
+    client.save_document(index=index_name, document=log_data)
 
 def retrieve_logs(
     index_name: str,
@@ -61,10 +61,10 @@ def retrieve_logs(
     if start_time and end_time:
         time_filter = {"message_timestamp": {"gte": start_time, "lte": end_time}}
         
-    search_by_hybrid = es.search_by_vector(
+    search_by_hybrid = client.search_by_vector(
         index=index_name,
         query=query,
-        filters=es.generate_filter(
+        filters=client.generate_filter(
             term_filter=term_filter, range_filter=time_filter
         ),
         k=k,
@@ -74,7 +74,7 @@ def retrieve_logs(
 def get_logs_by_ids(index_name: str, ids: List[str]) -> List[Dict[str, Any]]:
     """id로 로그를 검색하는 함수"""
     try:
-        results = es.search_by_id(index=index_name, ids=ids)
+        results = client.search_by_id(index=index_name, ids=ids)
         return results
     except HTTPException:
         raise
@@ -87,7 +87,7 @@ def get_logs_by_datetime(index_name: str, start_time: str, end_time: str, size: 
     """시간 범위로 로그를 검색하는 함수"""
     try:
         time_filter = {"message_timestamp": {"gte": start_time, "lte": end_time}}
-        results = es.search_by_datetime(index=index_name, time_filter=time_filter, size=size)
+        results = client.search_by_datetime(index=index_name, time_filter=time_filter, size=size)
         return results
     except HTTPException:
         raise

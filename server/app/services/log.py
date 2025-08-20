@@ -6,7 +6,7 @@ from app.core.utils.time_utils import get_start_time, get_log_time_by_count
 from app.core.utils.log_utils import extract_basic_logs, extract_full_logs, remove_vector_from_logs
 from app.services.project import ProjectService
 from app.repositories import user as UserRepository
-from app.repositories import elasticsearch as ElasticsearchRepository
+from app.repositories import opensearch as ElasticsearchRepository
 from app.core.enums.log_filter import LogLevelFilter
 
 
