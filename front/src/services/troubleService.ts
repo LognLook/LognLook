@@ -75,7 +75,7 @@ class TroubleService {
       if (is_shared !== undefined) params.append('is_shared', is_shared.toString());
       if (created_by) params.append('created_by', created_by.toString());
       
-      const response = await api.get(`/project/${projectId}/troubles?${params.toString()}`);
+      const response = await api.get(`/troubles/${projectId}?${params.toString()}`);
       return response.data;
     } catch (error) {
       console.error('Failed to get project troubles:', error);
@@ -86,7 +86,7 @@ class TroubleService {
   // 특정 트러블 상세 조회
   async getTrouble(troubleId: number): Promise<TroubleDetail> {
     try {
-      const response = await api.get(`/trouble/${troubleId}`);
+      const response = await api.get(`/troubles/${troubleId}`);
       return response.data;
     } catch (error) {
       console.error('Failed to get trouble detail:', error);
@@ -97,7 +97,7 @@ class TroubleService {
   // 트러블 생성
   async createTrouble(troubleData: CreateTroubleRequest): Promise<TroubleItem> {
     try {
-      const response = await api.post(`/trouble`, troubleData);
+      const response = await api.post(`/troubles`, troubleData);
       return response.data;
     } catch (error) {
       console.error('Failed to create trouble:', error);
@@ -108,7 +108,7 @@ class TroubleService {
   // 트러블 수정
   async updateTrouble(troubleId: number, troubleData: UpdateTroubleRequest): Promise<TroubleItem> {
     try {
-      const response = await api.put(`/trouble/${troubleId}`, troubleData);
+      const response = await api.put(`/troubles/${troubleId}`, troubleData);
       return response.data;
     } catch (error) {
       console.error('Failed to update trouble:', error);
@@ -119,7 +119,7 @@ class TroubleService {
   // 트러블 삭제
   async deleteTrouble(troubleId: number): Promise<string> {
     try {
-      const response = await api.delete(`/trouble/${troubleId}`);
+      const response = await api.delete(`/troubles/${troubleId}`);
       return response.data;
     } catch (error) {
       console.error('Failed to delete trouble:', error);

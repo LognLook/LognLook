@@ -63,18 +63,18 @@ export interface ProjectLogFilterResponse {
 
 class ProjectService {
   async getProjects(): Promise<Project[]> {
-    const projects = await apiClient.get<Project[]>('/project');
+    const projects = await apiClient.get<Project[]>('/projects');
     
     // 각 프로젝트에 역할 정보 추가
     return projects.map(project => ({
       ...project,
-      inviteCode: (project as any).invite_code || project.inviteCode,
-      role: (project as any).role || 'member'
+      inviteCode: (project as CreateProjectResponse).invite_code || project.inviteCode,
+      role: (project as CreateProjectResponse & { role?: string }).role || 'member'
     }));
   }
   
   async createProject(projectData: CreateProjectRequest): Promise<Project> {
-    const response = await apiClient.post<CreateProjectResponse>('/project', projectData);
+    const response = await apiClient.post<CreateProjectResponse>('/projects', projectData);
     
     // 응답을 Project 인터페이스에 맞게 변환
     return {
@@ -89,7 +89,7 @@ class ProjectService {
   }
   
   async joinProject(joinData: JoinProjectRequest): Promise<Project> {
-    const response = await apiClient.post<JoinProjectResponse>('/project/invite', {
+    const response = await apiClient.post<JoinProjectResponse>('/projects/invite', {
       invite_code: joinData.inviteCode
     });
     
@@ -105,35 +105,35 @@ class ProjectService {
   }
   
   async deleteProject(projectId: number): Promise<void> {
-    return apiClient.delete(`/project/${projectId}`);
+    return apiClient.delete(`/projects/${projectId}`);
   }
   
   async leaveProject(projectId: number): Promise<void> {
-    return apiClient.post(`/project/${projectId}/leave`);
+    return apiClient.post(`/projects/${projectId}/leave`);
   }
   
   async getProjectInviteCode(projectId: number): Promise<{ invite_code: string }> {
-    return apiClient.get(`/project/${projectId}/invite-code`);
+    return apiClient.get(`/projects/${projectId}/invite-code`);
   }
   
   async updateProjectSettings(projectId: number, settings: UpdateProjectSettingsRequest): Promise<void> {
-    return apiClient.put(`/project/${projectId}/settings`, settings);
+    return apiClient.put(`/projects/${projectId}/settings`, settings);
   }
   
   async getProjectKeywords(projectId: number): Promise<string[]> {
-    const response = await apiClient.get<ProjectKeywordResponse>(`/project/${projectId}/keyword`);
+    const response = await apiClient.get<ProjectKeywordResponse>(`/projects/${projectId}/keywords`);
     return response.keywords;
   }
   
   async updateProjectKeywords(projectId: number, keywords: string[]): Promise<string[]> {
-    const response = await apiClient.patch<ProjectKeywordResponse>(`/project/${projectId}/keywords`, {
+    const response = await apiClient.patch<ProjectKeywordResponse>(`/projects/${projectId}/keywords`, {
       keywords
     });
     return response.keywords;
   }
   
   async getProjectLogFilters(projectId: number): Promise<ProjectLogFilter[]> {
-    const response = await apiClient.get<ProjectLogFilterResponse[]>(`/project/${projectId}/filters`);
+    const response = await apiClient.get<ProjectLogFilterResponse[]>(`/projects/${projectId}/filters`);
     return response.map(filter => ({
       id: filter.id,
       name: filter.name,
@@ -146,7 +146,7 @@ class ProjectService {
   }
   
   async addProjectLogFilter(projectId: number, filter: Omit<ProjectLogFilter, 'id' | 'createdAt'>): Promise<ProjectLogFilter> {
-    const response = await apiClient.post<ProjectLogFilterResponse>(`/project/${projectId}/filters`, {
+    const response = await apiClient.post<ProjectLogFilterResponse>(`/projects/${projectId}/filters`, {
       name: filter.name,
       type: filter.type,
       pattern: filter.pattern,
@@ -165,7 +165,7 @@ class ProjectService {
   }
   
   async updateProjectLogFilter(projectId: number, filterId: number, updates: Partial<ProjectLogFilter>): Promise<ProjectLogFilter> {
-    const response = await apiClient.put<ProjectLogFilterResponse>(`/project/${projectId}/filters/${filterId}`, updates);
+    const response = await apiClient.put<ProjectLogFilterResponse>(`/projects/${projectId}/filters/${filterId}`, updates);
     return {
       id: response.id,
       name: response.name,
@@ -178,11 +178,11 @@ class ProjectService {
   }
   
   async deleteProjectLogFilter(projectId: number, filterId: number): Promise<void> {
-    return apiClient.delete(`/project/${projectId}/filters/${filterId}`);
+    return apiClient.delete(`/projects/${projectId}/filters/${filterId}`);
   }
   
   async regenerateApiKey(projectId: number): Promise<{ api_key: string }> {
-    return apiClient.post(`/project/${projectId}/regenerate-api-key`);
+    return apiClient.post(`/projects/${projectId}/regenerate-api-key`);
   }
 }
 

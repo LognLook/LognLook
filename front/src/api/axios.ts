@@ -12,8 +12,8 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // /log/search API는 토큰 없이 보내기
-    if (config.url === '/log/search') {
+    // /logs/search API는 토큰 없이 보내기
+    if (config.url === '/logs/search') {
       return config;
     }
     

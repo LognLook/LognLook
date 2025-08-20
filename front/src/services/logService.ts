@@ -50,7 +50,7 @@ class LogService {
       if (params.startTime) apiParams.start_time = params.startTime;
       if (params.endTime) apiParams.end_time = params.endTime;
       
-      const response = await api.get('/log/search', { params: apiParams });
+      const response = await api.get('/logs/search', { params: apiParams });
       
       // API 응답이 string인 경우 (로그 데이터 자체)
       if (typeof response.data === 'string') {
@@ -115,7 +115,7 @@ class LogService {
   
   async getRecentLogs(projectId: number, count: number = 1, size: number = 100): Promise<LogEntry[]> {
     try {
-      const response = await api.get('/log/recent', { 
+      const response = await api.get('/logs/recent', { 
         params: { 
           project_id: projectId, 
           count: count,
@@ -156,7 +156,7 @@ class LogService {
   
   async getLogStats(projectId: number, timeRange: string = '7d'): Promise<LogStats> {
     try {
-      const response = await api.get('/log/mainboard', { 
+      const response = await api.get('/logs/mainboard', { 
         params: { 
           project_id: projectId, 
           log_time: timeRange 
@@ -224,7 +224,7 @@ class LogService {
       params.append('project_id', actualProjectId.toString());
       params.append('log_ids', logId);
       
-      const response = await api.get('/log/detail', { 
+      const response = await api.get('/logs/detail', { 
         params: params
       });
       
