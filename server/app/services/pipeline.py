@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage
 
 from app.core.llm.base import LLMFactory
 from app.core.enums.language import Language
-from app.infra.database.opensearch import ElasticsearchClient
+from app.infra.database.opensearch import OpenSearchClient
 from app.core.llm.prompts import LOG_COMMENT_TEMPLATE, AIMessage
 from app.models.project import Project
 
@@ -17,7 +17,7 @@ from app.core.utils import log_utils as LogUtils
 class PipelineService:
     def __init__(self, db: Session):
         self.db = db
-        self.es = ElasticsearchClient()
+        self.client = OpenSearchClient()
 
     def process_log(self, log_data: dict, api_key: str):
         """
@@ -49,7 +49,7 @@ class PipelineService:
         # elasticsearch에 저장
         body = log_data
         index = project.index
-        self.es.save_document(index=index, document=body)
+        self.client.save_document(index=index, document=body)
 
         return log_data
 

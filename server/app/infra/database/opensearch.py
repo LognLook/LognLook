@@ -19,7 +19,7 @@ class OpenSearchClient:
         # OpenSearch 클라이언트 초기화
         self.client = OpenSearch(
             hosts=[settings.OPENSEARCH_HOST],
-            http_auth=(self.username, self.password),
+            # http_auth=(self.username, self.password),
             use_ssl=False,
         )
         self.embedding_model = LLMFactory.create_embedding_model()
