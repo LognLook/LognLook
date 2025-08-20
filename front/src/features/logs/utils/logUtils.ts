@@ -1,4 +1,4 @@
-import { LogEntry, LogLevel, TimePeriod, ChartLogData, LogGraphData } from '../types/logTypes';
+import { LogEntry, LogLevel, TimePeriod, ChartLogData, LogGraphData } from "../../../types/logs";
 
 // Extract log level from message
 export const extractLogLevel = (logEntry: LogEntry): LogLevel => {

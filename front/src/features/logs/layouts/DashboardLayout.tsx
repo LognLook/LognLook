@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../hooks/useAuth';
 import SearchBar from '../components/SearchBar';
 import dashboardIcon from '../../../assets/icons/dashboard.png';
 import troubleIcon from '../../../assets/icons/trouble.png';
 import searchIcon from '../../../assets/icons/search.png';
 import settingIcon from '../../../assets/icons/setting.png';
+import UserDropdown from '../../auth/components/UserDropdown';
 import logoIcon from '../../../assets/icons/logo.png';
 import dashboardOn from '../../../assets/icons/dashboard_on.png';
 import dashboardOff from '../../../assets/icons/dashboard_off.png';
@@ -21,12 +23,20 @@ interface DashboardLayoutProps {
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const { user: currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isDashboardActive = location.pathname === '/';
+  const isDashboardActive = location.pathname === '/home';
   const isTroubleActive = location.pathname.startsWith('/troubles');
   const isSearchActive = location.pathname.startsWith('/search');
+  const isProjectSettingsActive = location.pathname === '/project-settings';
+
+  // 로그아웃 처리
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   // 검색 실행 함수
   const handleSearch = () => {
@@ -88,7 +98,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <li>
                     <button
                       className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center bg-transparent border-none hover:bg-transparent hover:border-none'} ${isDashboardActive && isSidebarOpen ? 'bg-[#E6F7F1] border border-[#6E9990] font-bold text-[#000000]' : ''}`}
-                      onClick={() => isSidebarOpen ? navigate('/') : (setIsSidebarOpen(true), setTimeout(() => navigate('/'), 0))}
+                      onClick={() => isSidebarOpen ? navigate('/home') : (setIsSidebarOpen(true), setTimeout(() => navigate('/home'), 0))}
                       onMouseEnter={e => { if (!isSidebarOpen) { const img = e.currentTarget.querySelector('img'); if (img) img.src = dashboardOn; } }}
                       onMouseLeave={e => { if (!isSidebarOpen) { const img = e.currentTarget.querySelector('img'); if (img) img.src = isDashboardActive ? dashboardOn : dashboardOff; } }}
                     >
@@ -125,8 +135,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     </button>
                   </li>
                   <li>
-                    <button className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center bg-transparent border-none hover:bg-transparent hover:border-none'}`}
-                      onClick={() => !isSidebarOpen ? setIsSidebarOpen(true) : undefined}
+                    <button 
+                      className={`w-full text-left py-1.5 px-1 h-[44px] rounded-[1.25rem] text-[#000000] text-[13px] font-pretendard flex items-center ${!isSidebarOpen && 'justify-center bg-transparent border-none hover:bg-transparent hover:border-none'} ${isProjectSettingsActive && isSidebarOpen ? 'bg-[#E6F7F1] border border-[#6E9990] font-bold text-[#000000]' : ''}`}
+                      onClick={() => isSidebarOpen ? navigate('/project-settings') : (setIsSidebarOpen(true), setTimeout(() => navigate('/project-settings'), 0))}
                       onMouseEnter={e => { if (!isSidebarOpen) { const img = e.currentTarget.querySelector('img'); if (img) img.src = settingOff; } }}
                       onMouseLeave={e => { if (!isSidebarOpen) { const img = e.currentTarget.querySelector('img'); if (img) img.src = settingOff; } }}
                     >
@@ -157,15 +168,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               />
             ) : (
               <h2 className="text-[clamp(20px,1.5vw,24px)] font-semibold font-pretendard text-[#1E435F]">
-                {isTroubleActive ? 'Trouble Shooting' : 'Search'}
+                {isTroubleActive ? 'Trouble Shooting' : isProjectSettingsActive ? 'Project Settings' : 'Search'}
               </h2>
             )}
           </div>
-          <div className="flex items-center gap-3 mr-[82px] lg:mr-[58px]">
-            <div className="w-[40px] h-[40px] rounded-full bg-[#496660] flex items-center justify-center text-white font-medium">
-              SY
-            </div>
-            <span className="text-[14px] font-medium text-gray-700">Seyoung</span>
+          <div className="mr-[82px] lg:mr-[58px]">
+            {currentUser && (
+              <UserDropdown 
+                user={currentUser} 
+                onLogout={handleLogout}
+              />
+            )}
           </div>
         </div>
 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { LogLevel, TimePeriod } from '../../types/logTypes';
+import { LogLevel, TimePeriod } from "../../../../types/logs";
 import { TimePeriodSelector } from './TimePeriodSelector';
 import { LogLevelFilter } from './LogLevelFilter';
 import { LogChart } from './LogChart';
-import logApi from '../../api/logApi';
+import { logService } from '../../../../services/logService';
+import EmptyState from '../EmptyState';
 
 interface LogGraphProps {
   projectId: number;
@@ -35,12 +36,12 @@ const LogGraph: React.FC<LogGraphProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // timePeriod prop이 변경되면 내부 상태도 업데이트
+  // Update internal state when timePeriod prop changes
   useEffect(() => {
     setSelectedPeriod(initialTimePeriod);
   }, [initialTimePeriod]);
 
-  // 현재 시간 기준 범위 계산 함수
+  // Calculate time range text based on current time
   const getTimeRangeText = (period: TimePeriod): string => {
     const now = new Date();
     let startTime: Date;
@@ -60,40 +61,141 @@ const LogGraph: React.FC<LogGraphProps> = ({
     }
   };
 
-  // Fetch graph data
+  // Fetch graph data with fallback periods
   useEffect(() => {
     const loadGraphData = async () => {
       try {
         setIsLoading(true);
-        // API 호출 시 selectedPeriod를 logTime 매개변수로 전달
-        const response = await logApi.fetchLogGraphData(projectId, selectedPeriod);
         
-        // API 응답 데이터는 이미 올바른 형식이므로 직접 사용
-        setGraphData(response.data);
+        // Get stats for selected period only (no fallback)
+        const stats = await logService.getLogStats(projectId, selectedPeriod);
+        const foundPeriod = selectedPeriod;
+        
+        // Convert API response data to graph format (always process, even if no logs)
+        if (stats) {
+          // Group log data by time to create graph data
+          const timeGroups = new Map<string, { INFO: number; WARN: number; ERROR: number }>();
+          
+          // Debug: Log the actual data we're receiving
+          console.log('LogGraph - stats.recentTrends sample:', stats.recentTrends.slice(0, 3));
+          
+          // Generate graph data using recentTrends
+          stats.recentTrends.forEach((trend) => {
+            // Debug each trend
+            console.log('LogGraph - Processing trend:', trend);
+            
+            // Convert ISO string to Date object
+            const date = new Date(trend.date);
+            console.log('LogGraph - Original trend.date:', trend.date);
+            console.log('LogGraph - Parsed date:', date);
+            console.log('LogGraph - Date toString:', date.toString());
+            
+            if (isNaN(date.getTime())) {
+              console.warn('Invalid date format:', trend.date);
+              return;
+            }
+            
+            // Use the original timestamp directly instead of grouping by hour
+            const timeKey = trend.date; // Use original timestamp
+            
+            if (!timeGroups.has(timeKey)) {
+              timeGroups.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0 });
+            }
+            
+            const timeGroup = timeGroups.get(timeKey)!;
+            const level = trend.level.toUpperCase() as LogLevel;
+            
+            if (level in timeGroup) {
+              timeGroup[level] += trend.count;
+            }
+          });
+          
+                     // Sort by time and generate graph data (sort by ISO string)
+           const sortedData = Array.from(timeGroups.entries())
+             .sort(([timeA], [timeB]) => timeA.localeCompare(timeB))
+             .map(([time, counts]) => {
+               // Parse the timestamp properly
+               const date = new Date(time);
+               
+               console.log('LogGraph - Mapping time:', time);
+               console.log('LogGraph - Parsed date object:', date);
+               console.log('LogGraph - Date getTime():', date.getTime());
+               console.log('LogGraph - Date toString():', date.toString());
+               console.log('LogGraph - Date toISOString():', date.toISOString());
+               
+               let timeLabel: string;
+               
+               // Ensure we have a valid date before formatting
+               if (isNaN(date.getTime())) {
+                 console.error('Invalid date for time:', time);
+                 timeLabel = 'Invalid Date';
+               } else {
+                 // Format based on selected period for consistency - use local timezone
+                 switch (foundPeriod) {
+                   case 'day':
+                     // For day view: show hour only (e.g., "14:00", "15:00")
+                     timeLabel = date.toLocaleString('en-US', { 
+                       hour: '2-digit', 
+                       minute: '2-digit', 
+                       hour12: false
+                       // Remove timeZone to use local timezone
+                     });
+                     break;
+                   case 'week':
+                     // For week view: show day and hour (e.g., "Mon 14:00", "Tue 09:00")
+                     timeLabel = date.toLocaleString('en-US', { 
+                       weekday: 'short',
+                       hour: '2-digit',
+                       minute: '2-digit',
+                       hour12: false
+                       // Remove timeZone to use local timezone
+                     });
+                     break;
+                   case 'month':
+                     // For month view: show date (e.g., "Aug 20", "Aug 21")
+                     timeLabel = date.toLocaleString('en-US', { 
+                       month: 'short', 
+                       day: 'numeric'
+                       // Remove timeZone to use local timezone
+                     });
+                     break;
+                   default:
+                     // Default: show time only
+                     timeLabel = date.toLocaleString('en-US', { 
+                       hour: '2-digit', 
+                       minute: '2-digit', 
+                       hour12: false
+                       // Remove timeZone to use local timezone
+                     });
+                 }
+               }
+               
+               console.log('LogGraph - Final timeLabel:', timeLabel);
+               
+               return {
+                 time: timeLabel,
+                 ...counts
+               };
+             });
+          
+          setGraphData(sortedData);
+        } else {
+          setGraphData([]);
+        }
+        
         setError(null);
-        
-        // 디버깅을 위한 로그 추가
-        console.log(`Graph data for ${selectedPeriod}:`, {
-          dataLength: response.data.length,
-          firstPoint: response.data[0],
-          lastPoint: response.data[response.data.length - 1],
-          today: new Date().toLocaleDateString()
-        });
-      } catch (err) {
-        console.error('Error in loadGraphData:', err);
-        setError('Failed to load log graph data');
+      } catch (error) {
+        console.error('Failed to load graph data:', error);
+        setError('Failed to load graph data');
+        setGraphData([]);
       } finally {
         setIsLoading(false);
       }
     };
-
+    
     loadGraphData();
-  }, [projectId, selectedPeriod]);
+  }, [projectId, selectedPeriod, onTimePeriodChange]);
 
-  // Add effect to monitor graphData changes
-  useEffect(() => {
-    console.log('Current graphData:', graphData);
-  }, [graphData]);
 
   // Monitor sidebar state
   useEffect(() => {
@@ -127,7 +229,7 @@ const LogGraph: React.FC<LogGraphProps> = ({
     return isSidebarOpen ? 'w-[50.97vw]' : 'w-[63.61vw]';
   };
 
-  // TimePeriod 변경 핸들러
+  // TimePeriod change handler
   const handlePeriodChange = (period: TimePeriod) => {
     setSelectedPeriod(period);
     if (onTimePeriodChange) {
@@ -208,11 +310,24 @@ const LogGraph: React.FC<LogGraphProps> = ({
         </div>
         
         <div className="flex pt-3 pb-2">
-          <LogChart
-            data={graphData}
-            visibleLevels={visibleLevels}
-            selectedPeriod={selectedPeriod}
-          />
+          {graphData.length > 0 ? (
+            <LogChart
+              data={graphData}
+              visibleLevels={visibleLevels}
+              selectedPeriod={selectedPeriod}
+            />
+          ) : (
+            <EmptyState
+              title="No Log Data"
+              description="No log data available for the selected time period. Check if your project is properly configured."
+              icon={
+                <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              }
+              className="h-[200px]"
+            />
+          )}
         </div>
       </div>
     </div>

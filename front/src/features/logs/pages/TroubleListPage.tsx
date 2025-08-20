@@ -1,33 +1,38 @@
 import React, { useEffect, useState } from 'react';
-import { fetchTroubleList, TroubleListItem, fetchTroubleById, TroubleWithLogs } from '../api/troubleApi';
-import { fetchLogDetail, ApiLogDetailEntry } from '../api/detailLogApi';
+import { getProjectTroubles, TroubleListItem, fetchTroubleById, TroubleWithLogs, deleteTrouble } from '../api/troubleApi';
 import LogDetailModal from '../components/LogDetailModal';
 import { DisplayLogItem } from '../../../types/logs';
+import { useProjects } from '../../../hooks/useProjects';
+import { logService } from '../../../services/logService';
 import timeIcon from '../../../assets/icons/time.png';
 
 interface TroubleListPageProps {
-  projectId: number;
   userId: number;
   isSidebarOpen: boolean;
 }
 
-const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId, isSidebarOpen }) => {
+const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebarOpen }) => {
+  const { selectedProject } = useProjects();
   const [troubles, setTroubles] = useState<TroubleListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTrouble, setSelectedTrouble] = useState<TroubleWithLogs | null>(null);
   const [modalLogs, setModalLogs] = useState<DisplayLogItem[]>([]);
-  const [detailData, setDetailData] = useState<ApiLogDetailEntry[]>([]);
+  const [detailData, setDetailData] = useState<any[]>([]);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [actualLogCounts, setActualLogCounts] = useState<Record<number, number>>({});
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ isOpen: boolean; troubleId: number | null; troubleName: string }>({ isOpen: false, troubleId: null, troubleName: '' });
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // 사이드바 상태에 따른 너비 계산
+  // Calculate width based on sidebar state
   const getWidthClass = () => {
     return isSidebarOpen ? 'w-[74.93vw]' : 'w-[87.64vw]';
   };
 
   // 실제 로그 개수 가져오기
   const fetchActualLogCounts = async (troubles: TroubleListItem[]) => {
+    if (!selectedProject) return;
+    
     const logCounts: Record<number, number> = {};
     
     for (const trouble of troubles) {
@@ -36,7 +41,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
         logCounts[trouble.id] = troubleDetails.logs.length;
       } catch (error) {
         console.error(`Failed to fetch logs for trouble ${trouble.id}:`, error);
-        // 에러 시 기본값 사용
+        // Use default value on error
         logCounts[trouble.id] = trouble.logs_count;
       }
     }
@@ -46,50 +51,56 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
 
   useEffect(() => {
     const load = async () => {
+      if (!selectedProject) return;
+      
       setLoading(true);
       try {
-        const res = await fetchTroubleList(projectId, userId);
+        const res = await getProjectTroubles(selectedProject.id, 1, 50);
         setTroubles(res.items);
         
-        // 실제 로그 개수 가져오기
+        // Fetch actual log counts
         await fetchActualLogCounts(res.items);
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [projectId, userId]);
+  }, [selectedProject, userId]);
 
   const handleTroubleClick = async (troubleId: number) => {
+    if (!selectedProject) return;
+    
     try {
       setIsDetailLoading(true);
       
-      // 1. Trouble 상세 정보 가져오기
+      // 1. Get trouble details
       const troubleDetails = await fetchTroubleById(troubleId, userId);
       setSelectedTrouble(troubleDetails);
       
-      // 2. 관련 로그 상세 정보 먼저 가져오기
-      let logDetails: ApiLogDetailEntry[] = [];
+      // 2. Fetch related log details first
+      let logDetails: any[] = [];
       if (troubleDetails.logs.length > 0) {
-        logDetails = await fetchLogDetail({
-          projectId: projectId,
-          logIds: troubleDetails.logs
-        });
+        // Get detailed information for each log ID
+        const logDetailPromises = troubleDetails.logs.map(logId => 
+          logService.getLogDetail(selectedProject.id, logId)
+        );
+        const logDetailResults = await Promise.all(logDetailPromises);
+        logDetails = logDetailResults.flat();
         setDetailData(logDetails);
       }
       
-      // 3. 로그 상세 정보를 바탕으로 DisplayLogItem 생성
+      // 3. Create DisplayLogItem based on log details
       const displayLogs: DisplayLogItem[] = troubleDetails.logs.map((logId, index) => {
-        // 해당 로그 ID와 일치하는 상세 정보 찾기
-        const logDetail = logDetails.find(detail => detail._id === logId);
+        // Find detailed information matching the log ID
+        const logDetail = logDetails.find(detail => detail._id === logId || detail.id === logId);
         
         return {
           id: logId,
-          title: logDetail?._source?.message || logDetail?._source?.event?.original || `Log ${index + 1}`,
-          timestamp: logDetail?._source?.message_timestamp || logDetail?._source?.['@timestamp'] || new Date().toISOString(),
-          level: (logDetail?._source?.log_level as 'INFO' | 'WARN' | 'ERROR') || 'INFO',
-          category: logDetail?._source?.keyword || 'system',
-          comment: logId // 로그 ID를 comment에 저장
+          title: logDetail?._source?.message || logDetail?.message || logDetail?._source?.event?.original || `Log ${index + 1}`,
+          timestamp: logDetail?._source?.message_timestamp || logDetail?._source?.['@timestamp'] || logDetail?.message_timestamp || new Date().toISOString(),
+          level: (logDetail?._source?.log_level || logDetail?.log_level as 'INFO' | 'WARN' | 'ERROR') || 'INFO',
+          category: logDetail?._source?.keyword || logDetail?.keyword || 'system',
+          comment: logId
         };
       });
       setModalLogs(displayLogs);
@@ -109,6 +120,75 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
     setDetailData([]);
   };
 
+  // Refresh list when new trouble is created
+  const handleTroubleCreated = async (troubleId: number) => {
+    // Wait briefly then refresh list (give server time to process data)
+    setTimeout(async () => {
+      if (!selectedProject) return;
+      
+      try {
+        const res = await getProjectTroubles(selectedProject.id, 1, 50);
+        setTroubles(res.items);
+        
+        // Also refresh actual log counts
+        await fetchActualLogCounts(res.items);
+      } catch (error) {
+        console.error('Failed to refresh trouble list:', error);
+      }
+    }, 2000);
+  };
+
+  // Open delete confirmation modal
+  const handleDeleteClick = (e: React.MouseEvent, troubleId: number, troubleName: string) => {
+    e.stopPropagation();
+    setDeleteConfirmModal({ isOpen: true, troubleId, troubleName });
+  };
+
+  // Execute trouble deletion
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirmModal.troubleId) return;
+    
+    setIsDeleting(true);
+    try {
+      const result = await deleteTrouble(deleteConfirmModal.troubleId);
+      
+      if (result.success) {
+        // Remove deleted trouble from list
+        setTroubles(prev => prev.filter(trouble => trouble.id !== deleteConfirmModal.troubleId));
+        
+        // TODO: Replace with proper toast notification
+        alert('Trouble deleted successfully!');
+      } else {
+        console.error('Delete failed:', result.message);
+        // TODO: Replace with proper toast notification
+        alert(`Failed to delete trouble: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      // TODO: Replace with proper toast notification
+      alert('An error occurred while deleting the trouble.');
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmModal({ isOpen: false, troubleId: null, troubleName: '' });
+    }
+  };
+
+  // Close delete confirmation modal
+  const handleDeleteCancel = () => {
+    setDeleteConfirmModal({ isOpen: false, troubleId: null, troubleName: '' });
+  };
+
+  // If no project is selected
+  if (!selectedProject) {
+    return (
+      <div className={`flex flex-col ${getWidthClass()}`}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-[#1E435F] text-lg font-pretendard">Please select a project to view troubles.</div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className={`flex flex-col ${getWidthClass()}`}>
@@ -121,20 +201,30 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
 
   return (
     <div className={`${getWidthClass()} flex flex-col gap-6 pt-8`}>
-      {/* 트러블슈팅 카드 그리드 */}
+      {/* Troubleshooting card grid */}
       <div className="w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-4">
           {troubles.map(trouble => (
             <div 
               key={trouble.id} 
-              className="flex-none border-transparent border rounded-[8px] bg-white hover:bg-[#F1FFFC] hover:border-[#6E9990] px-3 py-3 cursor-pointer transition-all duration-200 relative"
+              className="flex-none border-transparent border rounded-[8px] bg-white hover:bg-[#F1FFFC] hover:border-[#6E9990] px-3 py-3 cursor-pointer transition-all duration-200 relative group"
               style={{ 
                 minWidth: '220px',
                 minHeight: '140px'
               }}
               onClick={() => handleTroubleClick(trouble.id)}
             >
-              {/* 상단: 제목과 공유 상태 */}
+              {/* Delete button */}
+              <button
+                onClick={(e) => handleDeleteClick(e, trouble.id, trouble.report_name)}
+                className="absolute top-3 right-3 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center z-30"
+                title="Delete trouble"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              {/* Top: Title and sharing status */}
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h3 className="text-[clamp(14px,1vw,16px)] font-semibold font-pretendard text-black flex-1 overflow-hidden whitespace-nowrap text-ellipsis" 
                     title={trouble.report_name}>
@@ -149,7 +239,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
                 </span>
               </div>
 
-              {/* 생성 시간 */}
+              {/* Created time */}
               <div className="mb-3">
                 <div className="flex items-center gap-2 text-[clamp(12px,0.9vw,13px)] font-normal font-pretendard text-black">
                   <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
@@ -159,7 +249,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
                 </div>
               </div>
 
-              {/* 로그 개수 */}
+              {/* Log count */}
               <div className="mb-3">
                 <div className="flex items-center gap-2 text-[clamp(12px,0.9vw,13px)] font-normal font-pretendard text-black">
                   <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
@@ -186,7 +276,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
                 </div>
               </div>
 
-              {/* 하단 오른쪽: 작성자 프로필 */}
+              {/* Bottom right: Author profile */}
               <div className="absolute bottom-3 right-3">
                 <div className="w-6 h-6 rounded-full bg-[#496660] flex items-center justify-center text-white font-medium text-[clamp(9px,0.65vw,10px)]">
                   SY
@@ -197,14 +287,14 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
         </div>
       </div>
 
-      {/* 빈 상태 */}
+      {/* Empty state */}
       {troubles.length === 0 && (
         <div className="flex flex-col items-center justify-center h-64">
           <div className="text-black text-lg font-pretendard mb-2">
-            트러블슈팅 리포트가 없습니다
+            No troubleshooting reports found
           </div>
           <div className="text-black text-sm font-pretendard">
-            로그에서 문제를 발견하면 AI 트러블슈팅을 시작해보세요
+            Start AI troubleshooting when you discover issues in logs
           </div>
         </div>
       )}
@@ -217,7 +307,54 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ projectId, userId
           detailData={detailData}
           isDetailLoading={isDetailLoading}
           selectedTrouble={selectedTrouble}
+          onTroubleCreated={handleTroubleCreated}
+          projectId={selectedProject?.id}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-red-600">
+                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Delete Trouble</h3>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "<span className="font-medium">{deleteConfirmModal.troubleName}</span>"? 
+              This action cannot be undone.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handleDeleteCancel}
+                disabled={isDeleting}
+                className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

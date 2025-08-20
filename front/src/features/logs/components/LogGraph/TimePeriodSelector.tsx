@@ -1,5 +1,5 @@
 import React from 'react';
-import { TimePeriod } from '../../types/logTypes';
+import { TimePeriod } from "../../../../types/logs";
 
 interface TimePeriodSelectorProps {
   selectedPeriod: TimePeriod;

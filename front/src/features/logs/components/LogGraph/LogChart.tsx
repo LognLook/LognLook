@@ -1,6 +1,6 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { LogLevel, TimePeriod, CHART_COLORS } from '../../types/logTypes';
+import { LogLevel, TimePeriod, CHART_COLORS } from "../../../../types/logs";
 import { getAxisLabel } from '../../utils/logUtils';
 
 interface ChartLogData {
@@ -23,7 +23,7 @@ export const LogChart: React.FC<LogChartProps> = ({
 }) => {
   // Calculate maximum Y value for consistent y-axis
   const getYAxisDomain = () => {
-    if (!data.length) return [0, 10];
+    if (!data.length) return [0, 5]; // Smaller max for empty data
     
     const maxValues = data.map(item => {
       let max = 0;
@@ -36,8 +36,15 @@ export const LogChart: React.FC<LogChartProps> = ({
       return max;
     });
     
-    const finalMax = Math.ceil(Math.max(...maxValues) * 1.1);
-    return [0, finalMax];
+    const maxValue = Math.max(...maxValues);
+    
+    // If all values are 0, set a small max to show the 0 baseline at bottom
+    if (maxValue === 0) {
+      return [0, 5];
+    }
+    
+    const finalMax = Math.ceil(maxValue * 1.1);
+    return [0, Math.max(finalMax, 1)]; // Ensure minimum of 1 for visibility
   };
 
   // X축 틱 간격 계산
