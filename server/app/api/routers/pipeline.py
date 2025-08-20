@@ -9,7 +9,7 @@ router = APIRouter()
 logger = logging.getLogger("logstash")
 
 
-@router.post("/log")
+@router.post("/pipeline")
 def collect_log(
     data: dict,
     service: PipelineService = Depends(get_pipeline_service),

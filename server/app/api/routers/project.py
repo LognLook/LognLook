@@ -15,7 +15,7 @@ from app.services.project import ProjectService
 router = APIRouter()
 
 
-@router.post("/project", response_model=Project)
+@router.post("/projects", response_model=Project)
 def create_projects(
     project_dto: ProjectCreate,
     service: ProjectService = Depends(get_project_service),
@@ -24,7 +24,7 @@ def create_projects(
     return service.create_project(project_dto=project_dto, username=username)
 
 
-@router.post("/project/invite")
+@router.post("/projects/invite")
 def join_project_by_invite(
     invite_dto: ProjectInvite,
     service: ProjectService = Depends(get_project_service),
@@ -33,7 +33,7 @@ def join_project_by_invite(
     return service.join_project_by_invite(invite_dto=invite_dto, username=username)
 
 
-@router.get("/project", response_model=list[Project])
+@router.get("/projects", response_model=list[Project])
 def get_project(
     service: ProjectService = Depends(get_project_service),
     username: str = Depends(get_current_username),
@@ -41,14 +41,14 @@ def get_project(
     return service.get_projects_by_user(username=username)
 
 
-@router.get("/project/{project_id}/keyword", response_model=ProjectKeywordsBase)
+@router.get("/projects/{project_id}/keywords", response_model=ProjectKeywordsBase)
 def get_project_keyword(
     project_id: int, service: ProjectService = Depends(get_project_service)
 ):
     return service.get_project_keywords(project_id=project_id)
 
 
-@router.patch("/project/{project_id}/keywords", response_model=ProjectKeywordsUpdate)
+@router.patch("/projects/{project_id}/keywords", response_model=ProjectKeywordsUpdate)
 def update_project_keyword(
     project_id: int,
     keywords_update: ProjectKeywordsUpdate,
@@ -61,7 +61,7 @@ def update_project_keyword(
     return updated_project
 
 
-@router.delete("/project/{project_id}")
+@router.delete("/projects/{project_id}")
 def delete_project(
     project_id: int,
     service: ProjectService = Depends(get_project_service),
@@ -70,7 +70,7 @@ def delete_project(
     return service.delete_project(project_id=project_id, username=username)
 
 
-@router.get("/project/{project_id}/invite-code")
+@router.get("/projects/{project_id}/invite-code")
 def get_project_invite_code(
     project_id: int,
     service: ProjectService = Depends(get_project_service),
@@ -79,7 +79,7 @@ def get_project_invite_code(
     return service.get_project_invite_code(project_id=project_id, username=username)
 
 
-@router.get("/project/{project_id}/members", response_model=list[ProjectMembers])
+@router.get("/projects/{project_id}/members", response_model=list[ProjectMembers])
 def get_project_members(
     project_id: int,
     service: ProjectService = Depends(get_project_service),
@@ -88,7 +88,7 @@ def get_project_members(
     return service.get_project_members(project_id=project_id, username=username)
 
 
-@router.patch("/project/{project_id}/role")
+@router.patch("/projects/{project_id}/role")
 def change_user_role(
     project_id: int,
     role_change: RoleChange,
