@@ -75,12 +75,8 @@ export const useAuthStore = create<AuthState>()(
           set({ 
             token: storedToken, 
             isAuthenticated: true,
-            // 사용자 정보가 없으면 기본값 설정
-            user: state.user || {
-              id: 1,
-              username: 'User',
-              email: 'user@example.com'
-            }
+            // 사용자 정보가 없으면 null로 설정
+            user: state.user || null
           });
           return true;
         }
@@ -131,14 +127,7 @@ export const useAuthStore = create<AuthState>()(
           if (storedToken) {
             state.token = storedToken;
             state.isAuthenticated = true;
-            // 사용자 정보가 없으면 기본값 설정
-            if (!state.user) {
-              state.user = {
-                id: 1,
-                username: 'User',
-                email: 'user@example.com'
-              };
-            }
+            // 사용자 정보가 없으면 null로 설정하고 실제 사용자 정보는 API에서 가져오도록 함
           } else if (!storedToken && state.token) {
             // localStorage에 토큰이 없으면 상태 초기화
             state.token = null;

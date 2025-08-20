@@ -104,9 +104,11 @@ const LogDistribution: React.FC<LogDistributionProps> = ({
               <p className="text-gray-500 text-sm">
                 No data available for selected period
                 <br />
-                <span className="text-xs text-gray-400">
-                  Debug: pieData={JSON.stringify(pieData)}
-                </span>
+                {process.env.NODE_ENV === 'development' && (
+                  <span className="text-xs text-gray-400">
+                    Debug: pieData={JSON.stringify(pieData)}
+                  </span>
+                )}
               </p>
             </div>
           )}

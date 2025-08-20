@@ -1,2 +1,7 @@
 .idea
 .DS_Store
+
+# Build outputs
+/front/dist/
+/front/dist-ssr/
+/front/build/

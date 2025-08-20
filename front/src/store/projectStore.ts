@@ -1,15 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-interface Project {
-  id: number;
-  name: string;
-  description: string;
-  api_key: string;
-  role?: string;
-  inviteCode?: string;
-  createdAt?: string;
-}
+import type { Project } from '../types/project';
 
 interface ProjectState {
   selectedProject: Project | null;

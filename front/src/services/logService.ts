@@ -215,8 +215,11 @@ class LogService {
   
   async getLogDetail(projectId: number, logId: string | string[]): Promise<any[]> {
     try {
-      // projectId가 0이거나 undefined인 경우 기본값 사용
-      const actualProjectId = projectId || 9; // 백엔드에서 테스트한 프로젝트 ID
+      // projectId가 0이거나 undefined인 경우 에러 처리
+      if (!projectId) {
+        throw new Error('Missing or invalid projectId in getLogDetail');
+      }
+      const actualProjectId = projectId;
       
       // logId가 배열이 아닌 경우 배열로 변환
       const logIds = Array.isArray(logId) ? logId : [logId];

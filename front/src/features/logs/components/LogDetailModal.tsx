@@ -144,9 +144,9 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
       
       setTroubleShootingTitle(troubleRes.report_name);
       
-      // 백엔드가 "진행 중입니다" 메시지를 반환하는 경우, 이는 AI 분석이 실패했거나 시간 초과되었음을 의미
-      // 실제로는 더 이상 진행되지 않으므로 사용자에게 명확히 알림
-      const isProcessing = troubleRes.content && troubleRes.content.includes('진행 중입니다');
+      // 백엔드 응답에서 status 필드 확인하여 처리 상태를 판단
+      // status가 'processing'이면 AI 분석이 실패했거나 시간 초과되었음을 의미
+      const isProcessing = troubleRes.status === 'processing' || (troubleRes.content && troubleRes.content.includes('진행 중입니다'));
       
       if (isProcessing) {
         console.log('⚠️ Server returned "진행 중입니다" - AI analysis failed or timed out');
