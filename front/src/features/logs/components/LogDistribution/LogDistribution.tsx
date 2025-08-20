@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LogLevel, CHART_COLORS, TimePeriod } from "../../../../types/logs";
 import { useLogDistribution } from './useLogDistribution';
 import { LogPieChart } from './LogPieChart';
+import EmptyState from '../EmptyState';
 
 interface ApiLogEntry {
   extracted_timestamp: string;
@@ -100,17 +101,27 @@ const LogDistribution: React.FC<LogDistributionProps> = ({
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-gray-500 text-sm">
-                No data available for selected period
-                <br />
-                {process.env.NODE_ENV === 'development' && (
-                  <span className="text-xs text-gray-400">
-                    Debug: pieData={JSON.stringify(pieData)}
-                  </span>
-                )}
-              </p>
-            </div>
+            <EmptyState
+              title="No Distribution Data"
+              description="No log distribution data available for the selected time period."
+              icon={
+                <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={1} 
+                    d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" 
+                  />
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={1} 
+                    d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" 
+                  />
+                </svg>
+              }
+              className="h-full"
+            />
           )}
         </div>
       </div>

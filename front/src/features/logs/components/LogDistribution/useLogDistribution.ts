@@ -48,19 +48,9 @@ export const useLogDistribution = ({
       try {
         console.log('useLogDistribution - Fetching log stats for projectId:', projectId, 'timePeriod:', timePeriod);
         
-        // Try to find data by testing different periods
-        const periods = ['day', 'week', 'month'];
-        let stats = null;
-        
-        for (const period of periods) {
-          console.log(`useLogDistribution - Trying period: ${period}`);
-          stats = await logService.getLogStats(projectId, period);
-          
-          if (stats && stats.totalLogs > 0) {
-            console.log(`useLogDistribution - Found data in period: ${period}, totalLogs: ${stats.totalLogs}`);
-            break;
-          }
-        }
+        // Get stats for selected period only (no fallback)
+        console.log(`useLogDistribution - Getting stats for period: ${timePeriod}`);
+        const stats = await logService.getLogStats(projectId, timePeriod);
         
         console.log('useLogDistribution - Final log stats:', stats);
         return stats;

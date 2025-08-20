@@ -67,46 +67,36 @@ const LogGraph: React.FC<LogGraphProps> = ({
       try {
         setIsLoading(true);
         
-        // Try to find data by testing different periods
-        const periods: TimePeriod[] = [selectedPeriod, 'day', 'week', 'month'];
-        let stats = null;
-        let foundPeriod = selectedPeriod;
+        // Get stats for selected period only (no fallback)
+        const stats = await logService.getLogStats(projectId, selectedPeriod);
+        const foundPeriod = selectedPeriod;
         
-        for (const period of periods) {
-          console.log(`LogGraph - Trying period: ${period}`);
-          stats = await logService.getLogStats(projectId, period);
-          
-          if (stats.totalLogs > 0) {
-            foundPeriod = period;
-            console.log(`LogGraph - Found data in period: ${period}, totalLogs: ${stats.totalLogs}`);
-            break;
-          }
-        }
-        
-        // Update selected period if we found data in a different period
-        if (foundPeriod !== selectedPeriod && stats && stats.totalLogs > 0) {
-          setSelectedPeriod(foundPeriod);
-          if (onTimePeriodChange) {
-            onTimePeriodChange(foundPeriod);
-          }
-        }
-        
-        // Convert API response data to graph format
-        if (stats && stats.totalLogs > 0) {
+        // Convert API response data to graph format (always process, even if no logs)
+        if (stats) {
           // Group log data by time to create graph data
           const timeGroups = new Map<string, { INFO: number; WARN: number; ERROR: number }>();
           
+          // Debug: Log the actual data we're receiving
+          console.log('LogGraph - stats.recentTrends sample:', stats.recentTrends.slice(0, 3));
+          
           // Generate graph data using recentTrends
           stats.recentTrends.forEach((trend) => {
+            // Debug each trend
+            console.log('LogGraph - Processing trend:', trend);
+            
             // Convert ISO string to Date object
             const date = new Date(trend.date);
+            console.log('LogGraph - Original trend.date:', trend.date);
+            console.log('LogGraph - Parsed date:', date);
+            console.log('LogGraph - Date toString:', date.toString());
+            
             if (isNaN(date.getTime())) {
               console.warn('Invalid date format:', trend.date);
               return;
             }
             
-            // Group by hour (create more accurate time key)
-            const timeKey = date.toISOString().slice(0, 13) + ':00:00';
+            // Use the original timestamp directly instead of grouping by hour
+            const timeKey = trend.date; // Use original timestamp
             
             if (!timeGroups.has(timeKey)) {
               timeGroups.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0 });
@@ -120,18 +110,73 @@ const LogGraph: React.FC<LogGraphProps> = ({
             }
           });
           
-          // Sort by time and generate graph data (sort by ISO string)
-          const sortedData = Array.from(timeGroups.entries())
-            .sort(([timeA], [timeB]) => timeA.localeCompare(timeB))
-            .map(([time, counts]) => ({
-              time: new Date(time).toLocaleString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              }),
-              ...counts
-            }));
+                     // Sort by time and generate graph data (sort by ISO string)
+           const sortedData = Array.from(timeGroups.entries())
+             .sort(([timeA], [timeB]) => timeA.localeCompare(timeB))
+             .map(([time, counts]) => {
+               // Parse the timestamp properly
+               const date = new Date(time);
+               
+               console.log('LogGraph - Mapping time:', time);
+               console.log('LogGraph - Parsed date object:', date);
+               console.log('LogGraph - Date getTime():', date.getTime());
+               console.log('LogGraph - Date toString():', date.toString());
+               console.log('LogGraph - Date toISOString():', date.toISOString());
+               
+               let timeLabel: string;
+               
+               // Ensure we have a valid date before formatting
+               if (isNaN(date.getTime())) {
+                 console.error('Invalid date for time:', time);
+                 timeLabel = 'Invalid Date';
+               } else {
+                 // Format based on selected period for consistency - use local timezone
+                 switch (foundPeriod) {
+                   case 'day':
+                     // For day view: show hour only (e.g., "14:00", "15:00")
+                     timeLabel = date.toLocaleString('en-US', { 
+                       hour: '2-digit', 
+                       minute: '2-digit', 
+                       hour12: false
+                       // Remove timeZone to use local timezone
+                     });
+                     break;
+                   case 'week':
+                     // For week view: show day and hour (e.g., "Mon 14:00", "Tue 09:00")
+                     timeLabel = date.toLocaleString('en-US', { 
+                       weekday: 'short',
+                       hour: '2-digit',
+                       minute: '2-digit',
+                       hour12: false
+                       // Remove timeZone to use local timezone
+                     });
+                     break;
+                   case 'month':
+                     // For month view: show date (e.g., "Aug 20", "Aug 21")
+                     timeLabel = date.toLocaleString('en-US', { 
+                       month: 'short', 
+                       day: 'numeric'
+                       // Remove timeZone to use local timezone
+                     });
+                     break;
+                   default:
+                     // Default: show time only
+                     timeLabel = date.toLocaleString('en-US', { 
+                       hour: '2-digit', 
+                       minute: '2-digit', 
+                       hour12: false
+                       // Remove timeZone to use local timezone
+                     });
+                 }
+               }
+               
+               console.log('LogGraph - Final timeLabel:', timeLabel);
+               
+               return {
+                 time: timeLabel,
+                 ...counts
+               };
+             });
           
           setGraphData(sortedData);
         } else {
