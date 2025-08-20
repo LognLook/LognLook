@@ -1,6 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, Tooltip } from 'recharts';
-import { LogLevel, CHART_COLORS } from '../../types/logTypes';
+import { LogLevel, CHART_COLORS } from "../../../../types/logs";
 
 interface LogPieChartProps {
   data: Array<{

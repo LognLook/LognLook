@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',  // /api 프리픽스 추가
+  baseURL: '/api',  // Vite 프록시 사용
   timeout: 30000, // 5초 -> 30초로 증가 (AI 처리 시간 고려)
+  withCredentials: false,  // CORS 임시 해결을 위해 credentials 비활성화
   headers: {
     'Content-Type': 'application/json',
   },
@@ -11,10 +12,17 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
+    // /logs/search API는 토큰 없이 보내기
+    if (config.url === '/logs/search') {
+      return config;
+    }
+    
     const token = localStorage.getItem('token');
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => {
@@ -27,12 +35,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
+      // Handle unauthorized access - 로그아웃만 처리하고 리다이렉트는 하지 않음
       localStorage.removeItem('token');
-      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
 
-export default api; 
+export default api;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogEntry, TimePeriod } from '../../types/logTypes';
+import { LogEntry, TimePeriod } from "../../../../types/logs";
 import { useLogDistribution } from './useLogDistribution';
 import { LogPieChart } from './LogPieChart';
 import { PieChartLegend } from './PieChartLegend';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogLevel, CHART_COLORS } from '../../types/logTypes';
+import { LogLevel, CHART_COLORS } from "../../../../types/logs";
 
 interface PieChartLegendProps {
   data: Array<{

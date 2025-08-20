@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -26,7 +26,6 @@
     "@types/postcss-load-config": "^3.0.1",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
-    "@types/react-router-dom": "^5.3.3",
     "@types/recharts": "^1.8.29",
     "@types/styled-components": "^5.1.34",
     "@vitejs/plugin-react": "^4.5.0",

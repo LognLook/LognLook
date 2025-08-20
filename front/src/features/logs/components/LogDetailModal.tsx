@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { DisplayLogItem } from '../../../types/logs';
 import { ApiLogDetailEntry } from '../api/detailLogApi';
 import { createTrouble, CreateTroubleRequest } from '../api/troubleApi';
 import { ExtendedApiLogDetailEntry } from '../../../types/ExtendedApiLogDetailEntry';
 import { CreateTroubleResponse } from '../api/troubleApi';
+import { troubleService } from '../../../services/troubleService'; // 올바른 import
 
 interface LogDetailModalProps {
   logs: DisplayLogItem[];
@@ -13,6 +14,8 @@ interface LogDetailModalProps {
   detailData?: ApiLogDetailEntry[];
   isDetailLoading?: boolean;
   selectedTrouble?: { trouble: CreateTroubleResponse; logs: string[] } | null;
+  onTroubleCreated?: (troubleId: number) => void;
+  projectId?: number; // 프로젝트 ID 추가
 }
 
 const LogDetailModal: React.FC<LogDetailModalProps> = ({ 
@@ -21,7 +24,9 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
   onClose, 
   detailData, 
   isDetailLoading = false,
-  selectedTrouble
+  selectedTrouble,
+  onTroubleCreated,
+  projectId
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
@@ -33,6 +38,9 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
   const [troubleSent, setTroubleSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [copyNotification, setCopyNotification] = useState('');
+  
+  // 현재 메시지 인덱스를 추적하기 위한 ref
+  const currentMessageIndexRef = useRef<number>(-1);
 
   // 복사 기능과 알림
   const handleCopy = async (text: string, label: string) => {
@@ -74,13 +82,20 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
 
   if (!isOpen) return null;
 
+  // 백엔드 분석: AI 분석은 동기적으로 처리되며, 실패 시 "진행 중입니다" 메시지로 대체됨
+  // 이후 상태가 변경되지 않으므로 polling이 필요하지 않음
+  // 대신 사용자에게 명확한 피드백을 제공
+
   const handleSendMessage = async () => {
     if (!chatMessage.trim() || troubleSent) return;
     setChatHistory(prev => [...prev, { type: 'user', message: chatMessage }]);
     setIsSending(true);
     
-    // 즉시 로딩 메시지 추가
-    setChatHistory(prev => [...prev, { type: 'assistant', message: 'LOADING_PLACEHOLDER' }]);
+    // Show simple loading indicator - backend processes synchronously
+    setChatHistory(prev => [...prev, { 
+      type: 'assistant', 
+      message: 'LOADING_PLACEHOLDER'
+    }]);
     
     try {
       // 체크된 로그들의 id 수집 (log.comment만 사용)
@@ -88,8 +103,23 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
       
       console.log('🔍 Troubleshooting Debug Info:');
       console.log('Selected logs count:', selectedLogs.size);
+      console.log('Selected log indices:', Array.from(selectedLogs));
+      console.log('All logs data:', logs);
       console.log('Related log IDs:', related_logs);
       console.log('User query:', chatMessage);
+      
+      // 각 선택된 로그의 상세 정보 출력
+      Array.from(selectedLogs).forEach(idx => {
+        const log = logs[idx];
+        console.log(`📋 Log at index ${idx}:`, {
+          id: log?.id,
+          comment: log?.comment,
+          title: log?.title,
+          timestamp: log?.timestamp,
+          level: log?.level,
+          category: log?.category
+        });
+      });
       
       if (related_logs.length === 0) {
         throw new Error('No valid log IDs found. Please select at least one log.');
@@ -97,32 +127,77 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
       
       const troubleReq: CreateTroubleRequest = {
         is_shared: false,
-        project_id: 1, // 필요시 prop으로 변경
+        project_id: projectId || 1, // 전달받은 프로젝트 ID 사용
         related_logs: related_logs,
         user_query: chatMessage
       };
       
       console.log('📤 Sending trouble request:', troubleReq);
       
-      // userId는 예시로 1 사용, 필요시 prop으로 변경
-      const troubleRes = await createTrouble(1, troubleReq);
-      
-      console.log('✅ Trouble response:', troubleRes);
+      console.log('🔄 Calling createTrouble API...');
+      const troubleRes = await createTrouble(troubleReq);
+      console.log('✅ createTrouble API call successful');
+      console.log('📋 Full trouble response:', troubleRes);
+      console.log('📝 Trouble content:', troubleRes.content);
+      console.log('📝 Trouble report_name:', troubleRes.report_name);
+      console.log('📝 Trouble ID:', troubleRes.id);
       
       setTroubleShootingTitle(troubleRes.report_name);
       
-      // 로딩 메시지를 실제 응답으로 교체
-      setChatHistory(prev => {
-        const newHistory = [...prev];
-        const lastIndex = newHistory.length - 1;
-        if (newHistory[lastIndex].message === 'LOADING_PLACEHOLDER') {
-          newHistory[lastIndex] = { type: 'assistant', message: troubleRes.content };
-        }
-        return newHistory;
-      });
+      // 백엔드 응답에서 status 필드 확인하여 처리 상태를 판단
+      // status가 'processing'이면 AI 분석이 실패했거나 시간 초과되었음을 의미
+      const isProcessing = troubleRes.status === 'processing' || (troubleRes.content && troubleRes.content.includes('진행 중입니다'));
       
-      setSelectedLogs(new Set());
-      setTroubleSent(true);
+      if (isProcessing) {
+        console.log('⚠️ Server returned "진행 중입니다" - AI analysis failed or timed out');
+        
+        // Show user-friendly message for AI analysis failure
+        setChatHistory(prev => {
+          const newHistory = [...prev];
+          const lastIndex = newHistory.length - 1;
+          if (newHistory[lastIndex].message === 'LOADING_PLACEHOLDER') {
+            newHistory[lastIndex] = { 
+              type: 'assistant', 
+              message: `⚠️ AI analysis encountered an issue\n\n📋 Report: ${troubleRes.report_name}\n🔍 Analyzed: ${related_logs.length} logs\n💬 Query: "${chatMessage}"\n\n🤖 Server AI analysis was not completed.\n\n💡 Solutions:\n• Try with fewer logs\n• Wait and try again\n• Contact administrator\n\n📋 ID: ${troubleRes.id}` 
+            };
+          }
+          return newHistory;
+        });
+        
+        setSelectedLogs(new Set());
+        setTroubleSent(true); // 실패해도 완료로 처리
+        setIsSending(false);   // 로딩 상태 종료
+        
+        // 부모 컴포넌트에 알림 (목록 새로고침용)
+        if (onTroubleCreated) {
+          onTroubleCreated(troubleRes.id);
+        }
+        
+      } else {
+        console.log('✅ Server response indicates successful completion');
+        
+        // Show successful completion result
+        setChatHistory(prev => {
+          const newHistory = [...prev];
+          const lastIndex = newHistory.length - 1;
+          if (newHistory[lastIndex].message === 'LOADING_PLACEHOLDER') {
+            newHistory[lastIndex] = { 
+              type: 'assistant', 
+              message: `✅ AI analysis completed!\n\n${troubleRes.content}` 
+            };
+          }
+          return newHistory;
+        });
+        
+        setSelectedLogs(new Set());
+        setTroubleSent(true);
+        setIsSending(false);
+        
+        // 부모 컴포넌트에 알림
+        if (onTroubleCreated) {
+          onTroubleCreated(troubleRes.id);
+        }
+      }
     } catch (error) {
       console.error('❌ Trouble creation failed:', error);
       
@@ -131,12 +206,15 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
         errorMessage = `Error: ${error.message}`;
       }
       
-      // 로딩 메시지를 에러 메시지로 교체
+      // Replace loading message with error message
       setChatHistory(prev => {
         const newHistory = [...prev];
         const lastIndex = newHistory.length - 1;
         if (newHistory[lastIndex].message === 'LOADING_PLACEHOLDER') {
-          newHistory[lastIndex] = { type: 'assistant', message: errorMessage };
+          newHistory[lastIndex] = { 
+            type: 'assistant', 
+            message: `❌ Troubleshooting creation failed\n\n🔍 Error: ${errorMessage}\n\n💡 Solutions:\n• Check network connection\n• Verify login status\n• Try again later\n• Contact administrator if problem persists` 
+          };
         }
         return newHistory;
       });
@@ -282,9 +360,18 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                           <div className="space-y-5">
                             {/* 상세 데이터 렌더링 */}
                             {detailData && Array.isArray(detailData) && detailData.length > 0 ? (
-                              // 현재 로그의 ID와 일치하는 상세 데이터만 필터링
-                              detailData
-                                .filter(item => item._id === log.comment) // log.comment에 저장된 ID와 매칭
+                              // 단일 로그 상세 정보 표시 - 첫 번째 데이터 항목 사용
+                              (() => {
+                                console.log('🔍 Rendering detail data for log index:', index, {
+                                  logId: log.id,
+                                  logComment: log.comment,
+                                  detailDataLength: detailData.length,
+                                  firstDetailItem: detailData[0]
+                                });
+                                
+                                // 단일 로그이므로 첫 번째 상세 데이터 항목 사용
+                                return [detailData[0]];
+                              })()
                                 .map((item: ExtendedApiLogDetailEntry, detailIndex: number) => (
                                 <div key={detailIndex} className="space-y-5">
                                   {/* Message Section - Main highlight card */}
@@ -292,7 +379,7 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                                     <div className="flex items-center gap-2 mb-3">
                                       <div className="w-6 h-6 bg-[#1E435F] rounded-lg flex items-center justify-center">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-[#B8FFF1]">
-                                          <path d="M8 12h8M8 8h8M8 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                          <path d="M8 12h8M8 8h8M8 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                         </svg>
                                       </div>
                                       <h3 className="text-[13px] font-semibold text-[#1E435F]">Log Message</h3>
@@ -429,11 +516,11 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                                                       if (ipValue) handleCopy(ipValue, 'IP Address');
                                                     }}
                                                   >
-                                                    {Array.isArray(item._source?.host?.ip) ? item._source.host.ip.join(', ') : item._source?.host?.ip}
+                                                    {Array.isArray(item._source?.host?.ip) ? item._source.host.ip.join(', ') : item._source.host.ip}
                                                   </span>
                                                   {/* Tooltip */}
                                                   <div className="absolute left-0 top-full mt-1 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
-                                                    {Array.isArray(item._source?.host?.ip) ? item._source.host.ip.join(', ') : item._source?.host?.ip}
+                                                    {Array.isArray(item._source?.host?.ip) ? item._source.host.ip.join(', ') : item._source.host.ip}
                                                   </div>
                                                 </div>
                                               </div>
@@ -445,15 +532,15 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                                                   <span 
                                                     className="text-[#1E435F] font-mono cursor-pointer hover:bg-gray-100 px-1 rounded block truncate"
                                                     onClick={() => {
-                                                      const macValue = Array.isArray(item._source?.host?.mac) ? item._source.host.mac.join(', ') : item._source?.host?.mac;
+                                                      const macValue = Array.isArray(item._source?.host?.mac) ? item._source.host.mac.join(', ') : item._source.host.mac;
                                                       if (macValue) handleCopy(macValue, 'MAC Address');
                                                     }}
                                                   >
-                                                    {Array.isArray(item._source?.host?.mac) ? item._source.host.mac.join(', ') : item._source?.host?.mac}
+                                                    {Array.isArray(item._source?.host?.mac) ? item._source.host.mac.join(', ') : item._source.host.mac}
                                                   </span>
                                                   {/* Tooltip */}
                                                   <div className="absolute left-0 top-full mt-1 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
-                                                    {Array.isArray(item._source?.host?.mac) ? item._source.host.mac.join(', ') : item._source?.host?.mac}
+                                                    {Array.isArray(item._source?.host?.mac) ? item._source.host.mac.join(', ') : item._source.host.mac}
                                                   </div>
                                                 </div>
                                               </div>
@@ -775,7 +862,6 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                               <div className="w-2 h-2 bg-[#1E435F] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                               <div className="w-2 h-2 bg-[#1E435F] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                             </div>
-                            <span className="text-[14px] font-pretendard text-[#6E9990]">AI가 분석 중입니다...</span>
                           </div>
                         </div>
                       ) : (
@@ -839,7 +925,7 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                     value={chatMessage}
                     onChange={(e) => setChatMessage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
-                    placeholder={isSending ? "AI가 분석 중입니다..." : selectedLogs.size > 0 ? "Ask about the selected logs..." : "Send a message"}
+                    placeholder={isSending ? "AI is analyzing..." : selectedLogs.size > 0 ? "Ask about the selected logs..." : "Send a message"}
                     className="w-full h-[11.72vh] p-4 border border-gray-300 hover:border-gray-400 focus:border-gray-500 rounded-[20px] focus:outline-none focus:ring-1 focus:ring-gray-500 text-[14px] font-pretendard resize-none bg-white transition-colors"
                     style={{ minHeight: '80px' }}
                     disabled={isSending}
