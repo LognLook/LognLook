@@ -55,7 +55,7 @@ def delete_trouble(
     return {"message": "Trouble deleted successfully"}
 
 
-@router.get("/troubles/{project_id}", response_model=TroubleListResponse)
+@router.get("/troubles/list/{project_id}", response_model=TroubleListResponse)
 def get_trouble_list(
     project_id: int,
     query_params: TroubleListQuery = Depends(),
