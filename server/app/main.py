@@ -27,10 +27,10 @@ app.add_middleware(
 
 # 라우트 등록
 app.include_router(user.router, prefix="/api", tags=["users"])
-app.include_router(project.router, prefix="/api", tags=["project"])
+app.include_router(project.router, prefix="/api", tags=["projects"])
 app.include_router(pipeline.router, prefix="/api", tags=["pipeline"])
-app.include_router(log.router, prefix="/api", tags=["log"])
-app.include_router(trouble.router, prefix="/api", tags=["trouble"])
+app.include_router(log.router, prefix="/api", tags=["logs"])
+app.include_router(trouble.router, prefix="/api", tags=["troubles"])
 
 
 @app.get("/")

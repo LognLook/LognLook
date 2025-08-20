@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 # 메인보드 로그 그래프 조회
-@router.get("/log/mainboard")
+@router.get("/logs/mainboard")
 def get_log(
     project_id: int,
     log_time: LogTimeFilter = LogTimeFilter.DAY,
@@ -21,7 +21,7 @@ def get_log(
     return service.get_logs(username, project_id, log_time, size)
 
 
-@router.get("/log/recent")
+@router.get("/logs/recent")
 def get_recent_logs(
     project_id: int,
     username: str = Depends(get_current_username),
@@ -37,7 +37,7 @@ def get_recent_logs(
     )
     
 
-@router.get("/log/search")
+@router.get("/logs/search")
 def get_logs_by_search(
     project_id: int,
     query: str,
@@ -59,7 +59,7 @@ def get_logs_by_search(
     )
 
 
-@router.get("/log/detail", response_model=List[dict])
+@router.get("/logs/detail", response_model=List[dict])
 def get_log_detail(
     project_id: int = Query(..., description="프로젝트 ID"),
     log_ids: Optional[List[str]] = Query(..., description="로그 ID 리스트"),

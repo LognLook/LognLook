@@ -5,7 +5,7 @@ from app.main import app
 client = TestClient(app)
 
 def test_delete_trouble_api():
-    """DELETE /api/trouble/{trouble_id} API 테스트"""
+    """DELETE /api/troubles/{trouble_id} API 테스트"""
     
     print("=== DELETE trouble API 테스트 시작 ===")
     
@@ -14,7 +14,7 @@ def test_delete_trouble_api():
     print(f"\n1. 존재하지 않는 trouble 삭제 시도 (ID: {trouble_id})")
     
     response = client.delete(
-        f"/api/trouble/{trouble_id}",
+        f"/api/troubles/{trouble_id}",
         headers={"Authorization": "Bearer test-token"}
     )
     
@@ -31,7 +31,7 @@ def test_delete_trouble_api():
     print(f"\n2. 실제 trouble 삭제 시도 (ID: 1)")
     
     response = client.delete(
-        "/api/trouble/1",
+        "/api/troubles/1",
         headers={"Authorization": "Bearer test-token"}
     )
     
