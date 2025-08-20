@@ -79,7 +79,7 @@ const SignUpPage: React.FC = () => {
         password
       });
       // 자동 리다이렉트 제거 (useAuth에서 처리)
-    } catch (err) {
+    } catch {
       setSignUpError('Sign up failed. Please try again.');
     }
   };

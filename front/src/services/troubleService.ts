@@ -75,7 +75,7 @@ class TroubleService {
       if (is_shared !== undefined) params.append('is_shared', is_shared.toString());
       if (created_by) params.append('created_by', created_by.toString());
       
-      const response = await api.get(`/troubles/${projectId}?${params.toString()}`);
+      const response = await api.get(`/troubles/list/${projectId}?${params.toString()}`);
       return response.data;
     } catch (error) {
       console.error('Failed to get project troubles:', error);

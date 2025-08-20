@@ -24,7 +24,7 @@ const LoginPage: React.FC = () => {
         password: password
       });
       // 자동 리다이렉트 제거 (useAuth에서 처리)
-    } catch (err) {
+    } catch {
       setLoginError('Login failed. Please check your credentials.');
     }
   };

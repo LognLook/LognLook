@@ -1,4 +1,4 @@
-import { troubleService, TroubleItem, TroubleDetail, CreateTroubleRequest, ProjectTroublesResponse } from '../../../services/troubleService';
+import { troubleService, CreateTroubleRequest, ProjectTroublesResponse } from '../../../services/troubleService';
 
 // Trouble 관련 API 함수들
 export interface TroubleListItem {
@@ -38,7 +38,7 @@ export interface CreateTroubleResponse {
 }
 
 // 프로젝트의 트러블 목록 조회
-export const fetchTroubleList = async (projectId: number, userId: number): Promise<{ items: TroubleListItem[] }> => {
+export const fetchTroubleList = async (projectId: number, _userId: number): Promise<{ items: TroubleListItem[] }> => {
   try {
     const response = await troubleService.getProjectTroubles(projectId);
     console.log('✅ Trouble List API Response:', response);
