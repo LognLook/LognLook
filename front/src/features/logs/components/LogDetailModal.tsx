@@ -360,9 +360,18 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
                           <div className="space-y-5">
                             {/* 상세 데이터 렌더링 */}
                             {detailData && Array.isArray(detailData) && detailData.length > 0 ? (
-                              // 현재 로그의 ID와 일치하는 상세 데이터만 필터링
-                              detailData
-                                .filter(item => item._id === log.comment) // log.comment에 저장된 ID와 매칭
+                              // 단일 로그 상세 정보 표시 - 첫 번째 데이터 항목 사용
+                              (() => {
+                                console.log('🔍 Rendering detail data for log index:', index, {
+                                  logId: log.id,
+                                  logComment: log.comment,
+                                  detailDataLength: detailData.length,
+                                  firstDetailItem: detailData[0]
+                                });
+                                
+                                // 단일 로그이므로 첫 번째 상세 데이터 항목 사용
+                                return [detailData[0]];
+                              })()
                                 .map((item: ExtendedApiLogDetailEntry, detailIndex: number) => (
                                 <div key={detailIndex} className="space-y-5">
                                   {/* Message Section - Main highlight card */}

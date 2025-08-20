@@ -138,39 +138,43 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
 
   // LogEntry를 DisplayLogItem으로 변환
   const convertToDisplayLog = (apiLog: LogEntry): DisplayLogItem => {
-    // LogEntry의 실제 데이터 구조 확인
-    console.log('🔍 Raw LogEntry data:', {
-      keys: Object.keys(apiLog),
-      hasTimestamp: '@timestamp' in apiLog,
-      hasMessage: 'message' in apiLog,
-      hasLevel: 'level' in apiLog,
-      hasCategory: 'category' in apiLog,
-      hasHost: 'host' in apiLog,
-      timestampValue: (apiLog as any)['@timestamp'],
-      messageValue: apiLog.message,
-      levelValue: (apiLog as any).level,
-      categoryValue: (apiLog as any).category,
-      hostValue: (apiLog as any).host
+    // 서버에서 extract_full_logs로 변환된 데이터 구조:
+    // id: ElasticSearch _id
+    // message_timestamp: 타임스탬프  
+    // log_level: 로그 레벨
+    // message: 로그 메시지
+    // host_name: 호스트명
+    // keyword: 키워드
+    
+    console.log('🔍 Converting LogEntry:', {
+      id: (apiLog as any).id,
+      message_timestamp: (apiLog as any).message_timestamp,
+      log_level: (apiLog as any).log_level,
+      message: apiLog.message,
+      host_name: (apiLog as any).host_name,
+      keyword: (apiLog as any).keyword,
+      fullLog: apiLog
     });
     
-    // LogEntry에서 고유 식별자 생성
-    // id 필드가 없으므로 timestamp와 message의 조합으로 고유값 생성
-    const uniqueId = `${(apiLog as any)['@timestamp']}_${apiLog.message?.substring(0, 20)}`.replace(/[^a-zA-Z0-9_-]/g, '_');
-    
-    console.log('Converting LogEntry to DisplayLogItem:', {
-      original: apiLog,
-      generatedId: uniqueId,
-      timestamp: (apiLog as any)['@timestamp'],
-      message: apiLog.message?.substring(0, 50)
-    });
+    const logLevel = (apiLog as any).log_level || 'INFO';
+    const levelMapping: Record<string, LogLevel> = {
+      'INFO': 'INFO',
+      'WARN': 'WARN', 
+      'WARNING': 'WARN',
+      'ERROR': 'ERROR',
+      'DEBUG': 'INFO',
+      'CRITICAL': 'ERROR'
+    };
     
     return {
-      title: apiLog.message || 'No message', // message를 title로 사용
-      timestamp: new Date((apiLog as any)['@timestamp']).toLocaleString(),
-      level: ((apiLog as any).level as LogLevel) || 'INFO',
-      category: (apiLog as any).category || 'Unknown',
-      comment: uniqueId, // 생성된 고유 ID를 comment에 저장
-      host: (apiLog as any).host?.name || 'Unknown' // host.name을 host로 사용
+      title: apiLog.message || 'No message',
+      timestamp: (apiLog as any).message_timestamp ? 
+        new Date((apiLog as any).message_timestamp).toLocaleString() : 
+        'Unknown time',
+      level: levelMapping[logLevel] || 'INFO',
+      category: (apiLog as any).keyword || 'Unknown',
+      comment: (apiLog as any).id || '', // 서버의 실제 _id 사용
+      host: (apiLog as any).host_name || 'Unknown Host'
     };
   };
 
@@ -183,18 +187,6 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
       const timeB = new Date(b.timestamp).getTime();
       return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
     });
-
-  // 강화된 디버깅: displayLogs 생성 과정
-  console.log('RecentLogs - DisplayLogs Debug:', {
-    allRecentLogsLength: allRecentLogs.length,
-    allRecentLogsSample: allRecentLogs.slice(0, 2),
-    convertedLogsLength: allRecentLogs.map(convertToDisplayLog).length,
-    convertedLogsSample: allRecentLogs.map(convertToDisplayLog).slice(0, 2),
-    visibleLevels,
-    filteredLogsLength: allRecentLogs.map(convertToDisplayLog).filter(log => visibleLevels[log.level as LogLevel]).length,
-    finalDisplayLogsLength: displayLogs.length,
-    finalDisplayLogsSample: displayLogs.slice(0, 2)
-  });
 
   const handleLogClick = async (index: number) => {
     if (!selectedProject) {

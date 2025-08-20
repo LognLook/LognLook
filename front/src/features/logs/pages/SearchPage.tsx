@@ -261,20 +261,21 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
       setDetailLoading(true);
       const detailData = await logService.getLogDetail(selectedProject.id, logId);
       
+      console.log('🔍 Raw detail data from server:', detailData);
+      
       // API 응답을 ExtendedApiLogDetailEntry[] 타입으로 변환
-      const convertedDetailData = detailData.map((log: any) => ({
-        _id: log._id || log.id || logId,
-        _source: {
-          message: log._source?.message || log.message || '',
-          event: log._source?.event || log.event || {},
-          message_timestamp: log._source?.message_timestamp || log.message_timestamp || '',
-          '@timestamp': log._source?.['@timestamp'] || log['@timestamp'] || '',
-          log_level: log._source?.log_level || log.log_level || 'INFO',
-          keyword: log._source?.keyword || log.keyword || '',
-          ...log._source, // 추가 필드들 포함
-          ...log // fallback으로 원본 데이터도 포함
-        }
-      }));
+      const convertedDetailData = detailData.map((log: any) => {
+        console.log('🔍 Converting individual log item:', log);
+        
+        return {
+          _id: log._id,
+          _index: log._index,
+          _score: log._score,
+          _source: log._source
+        };
+      });
+      
+      console.log('✅ Converted detail data:', convertedDetailData);
       
       if (convertedDetailData.length > 0) {
         setSelectedLogDetail(convertedDetailData);

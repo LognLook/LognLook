@@ -213,30 +213,46 @@ class LogService {
     }
   }
   
-  async getLogDetail(projectId: number, logId: string): Promise<any[]> {
+  async getLogDetail(projectId: number, logId: string | string[]): Promise<any[]> {
     try {
       // projectId가 0이거나 undefined인 경우 기본값 사용
       const actualProjectId = projectId || 9; // 백엔드에서 테스트한 프로젝트 ID
+      
+      // logId가 배열이 아닌 경우 배열로 변환
+      const logIds = Array.isArray(logId) ? logId : [logId];
+      
+      console.log('🔍 getLogDetail called with:', {
+        projectId: actualProjectId,
+        logIds: logIds,
+        originalLogId: logId
+      });
       
       // 서버에서 log_ids를 List[str] 형태의 쿼리 파라미터로 받으므로
       // log_ids[] 형태로 보내야 함
       const params = new URLSearchParams();
       params.append('project_id', actualProjectId.toString());
-      params.append('log_ids', logId);
+      logIds.forEach(id => {
+        params.append('log_ids', id);
+      });
+      
+      console.log('📤 API request params:', params.toString());
       
       const response = await api.get('/logs/detail', { 
         params: params
       });
       
+      console.log('📥 Raw API response:', response.data);
+      
       // API 응답이 배열인 경우 그대로 반환, 아니면 빈 배열 반환
       if (Array.isArray(response.data)) {
+        console.log('✅ API returned array with', response.data.length, 'items');
         return response.data;
       } else {
-        console.warn('Log detail API returned non-array response:', response.data);
+        console.warn('⚠️ Log detail API returned non-array response:', response.data);
         return [];
       }
     } catch (error) {
-      console.error('Log detail API call failed:', error);
+      console.error('❌ Log detail API call failed:', error);
       
       // Mock 데이터 반환 (개발 중에만)
       return [{
