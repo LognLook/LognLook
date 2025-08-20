@@ -1,5 +1,5 @@
 import React from "react";
-import { LogSection } from "../../../types/logs";
+import { LogSection } from "../../../../types/logs";
 import featureIcon from "../../../assets/icons/feature.png";
 import timeIcon from "../../../assets/icons/time.png";
 // Commented out imports that are needed for log parsing but not currently used

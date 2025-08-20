@@ -1,6 +1,6 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { LogLevel, TimePeriod, CHART_COLORS } from '../../types/logTypes';
+import { LogLevel, TimePeriod, CHART_COLORS } from "../../../../types/logs";
 import { getAxisLabel } from '../../utils/logUtils';
 
 interface ChartLogData {

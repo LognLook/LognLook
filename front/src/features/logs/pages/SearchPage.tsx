@@ -2,8 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { DisplayLogItem, CHART_COLORS, LogLevel } from '../../../types/logs';
 import LogDetailModal from '../components/LogDetailModal';
-import { searchLogs, SearchLogEntry, SearchLogParams } from '../api/searchLogApi';
-import { fetchLogDetail, ApiLogDetailEntry } from '../api/detailLogApi';
+import { logService, LogEntry, LogSearchParams } from '../../../services/logService';
+import { useProjects } from '../../../hooks/useProjects';
+
+// SearchLogParams 타입 정의 - logService의 LogSearchParams와 일치
+import { ExtendedApiLogDetailEntry } from '../../../types/ExtendedApiLogDetailEntry';
 
 interface SearchPageProps {
   isSidebarOpen: boolean;
@@ -11,6 +14,7 @@ interface SearchPageProps {
 
 const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
   const location = useLocation();
+  const { selectedProject } = useProjects();
   
   // 검색 폼 상태
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,7 +24,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
   const [endTime, setEndTime] = useState('');
 
   // 검색 결과 상태
-  const [searchResults, setSearchResults] = useState<SearchLogEntry[]>([]);
+  const [searchResults, setSearchResults] = useState<LogEntry[]>([]);
   const [displayedCount, setDisplayedCount] = useState(10); // 현재 표시된 결과 수
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -31,7 +35,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
   // 모달 상태
   const [selectedLog, setSelectedLog] = useState<DisplayLogItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedLogDetail, setSelectedLogDetail] = useState<ApiLogDetailEntry[] | null>(null);
+  const [selectedLogDetail, setSelectedLogDetail] = useState<ExtendedApiLogDetailEntry[] | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
   // 체크박스 선택 상태
@@ -62,7 +66,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
 
   // 더 많은 결과 로드
   const loadMoreResults = useCallback(async () => {
-    if (isLoadingMore || !hasSearched || displayedCount >= searchResults.length || hasReachedEnd) {
+    if (isLoadingMore || !hasSearched || displayedCount >= searchResults.length || hasReachedEnd || !selectedProject) {
       return;
     }
 
@@ -73,18 +77,17 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
       
       // If we need more data from the server
       if (newDisplayedCount >= searchResults.length && searchResults.length > 0) {
-        const searchParams: SearchLogParams = {
-          projectId: 1,
-          userId: 1,
+        const searchParams: LogSearchParams = {
           query: searchQuery.trim(),
           keyword: keyword.trim() || undefined,
-          logLevel: logLevel || undefined,
+          logLevel: logLevel || 'info', // 기본값으로 'info' 설정
           startTime: startTime || undefined,
           endTime: endTime || undefined,
-          k: searchResults.length + 50, // Request 50 more results
+          k: searchResults.length + 50, // 적절한 증가량으로 조정
         };
 
-        const results = await searchLogs(searchParams);
+        const response = await logService.searchLogs(selectedProject.id, searchParams);
+        const results = response.logs;
         
         // Check if we got new results
         if (results.length > searchResults.length) {
@@ -102,7 +105,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasSearched, displayedCount, searchResults.length, searchQuery, keyword, logLevel, startTime, endTime, hasReachedEnd]);
+  }, [isLoadingMore, hasSearched, displayedCount, searchResults.length, searchQuery, keyword, logLevel, startTime, endTime, hasReachedEnd, selectedProject]);
 
   // Intersection observer setup
   useEffect(() => {
@@ -128,6 +131,11 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
 
   // 검색 실행 (매개변수로 쿼리를 받을 수 있음)
   const performSearch = async (query?: string) => {
+    if (!selectedProject) {
+      setSearchError('No project selected');
+      return;
+    }
+
     const searchQueryToUse = query || searchQuery;
     
     if (!searchQueryToUse.trim()) {
@@ -142,32 +150,25 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
     setHasReachedEnd(false); // Reset end state for new search
 
     try {
-      const searchParams: SearchLogParams = {
-        projectId: 1,
-        userId: 1,
+      const searchParams: LogSearchParams = {
         query: searchQueryToUse.trim(),
         keyword: keyword.trim() || undefined,
-        logLevel: logLevel || undefined,
+        logLevel: logLevel || 'info', // 기본값으로 'info' 설정
         startTime: startTime || undefined,
         endTime: endTime || undefined,
-        k: 100, // Initially fetch more results for infinite scroll
+        k: 100, // 백엔드에서 안전하게 처리할 수 있는 값으로 조정
       };
-
-      console.log('Executing search with params:', searchParams);
       
-      const results = await searchLogs(searchParams);
-      console.log('Search results count:', results.length);
-      console.log('First search result:', results[0]); // 첫 번째 결과의 전체 구조 확인
+      const response = await logService.searchLogs(selectedProject.id, searchParams);
+      const results = response.logs;
       
       setSearchResults(results);
       setSelectedLogs(new Set()); // 검색 시 선택 초기화
       
       // If we got less than requested, we've reached the end
-      if (results.length < 100) {
+      if (results.length < searchParams.k) {
         setHasReachedEnd(true);
       }
-      
-      console.log('Search results:', results);
     } catch (error) {
       console.error('Search failed:', error);
       setSearchError('Search failed. Please try again.');
@@ -190,9 +191,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
   };
 
   // 검색 결과를 DisplayLogItem으로 변환
-  const convertToDisplayLog = (searchLog: SearchLogEntry): DisplayLogItem => {
-    console.log('Converting search log:', searchLog); // 변환 과정 디버깅
-    
+  const convertToDisplayLog = (searchLog: LogEntry): DisplayLogItem => {
     // log_level을 LogLevel 타입으로 매핑
     const levelMapping: Record<string, LogLevel> = {
       'INFO': 'INFO',
@@ -234,15 +233,24 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
       return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
     });
 
+  // 디버깅: 정렬된 결과 상태 로그
+  // console.log('📋 Display state:', {
+  //   totalSearchResults: searchResults.length,
+  //   displayedCount: displayedCount,
+  //   sortedResultsCount: sortedResults.length,
+  //   hasMoreResults: displayedCount < searchResults.length
+  // });
+
   // 로그 클릭 핸들러
   const handleLogClick = async (index: number) => {
+    if (!selectedProject) return;
+
     const clickedLog = sortedResults[index];
-    console.log('Clicked log:', clickedLog);
+    
     setSelectedLog(clickedLog);
     setIsModalOpen(true);
     
     const logId = clickedLog.comment || "";
-    console.log('Log ID from comment:', logId);
     
     if (!logId) {
       console.warn('No log ID found');
@@ -251,13 +259,25 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
     
     try {
       setDetailLoading(true);
-      const detailData = await fetchLogDetail({
-        projectId: 1,
-        logIds: [logId]
-      });
+      const detailData = await logService.getLogDetail(selectedProject.id, logId);
       
-      if (detailData && detailData.length > 0) {
-        setSelectedLogDetail(detailData);
+      // API 응답을 ExtendedApiLogDetailEntry[] 타입으로 변환
+      const convertedDetailData = detailData.map((log: any) => ({
+        _id: log._id || log.id || logId,
+        _source: {
+          message: log._source?.message || log.message || '',
+          event: log._source?.event || log.event || {},
+          message_timestamp: log._source?.message_timestamp || log.message_timestamp || '',
+          '@timestamp': log._source?.['@timestamp'] || log['@timestamp'] || '',
+          log_level: log._source?.log_level || log.log_level || 'INFO',
+          keyword: log._source?.keyword || log.keyword || '',
+          ...log._source, // 추가 필드들 포함
+          ...log // fallback으로 원본 데이터도 포함
+        }
+      }));
+      
+      if (convertedDetailData.length > 0) {
+        setSelectedLogDetail(convertedDetailData);
       } else {
         setSelectedLogDetail(null);
       }
@@ -311,6 +331,19 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
   // 더 보기 가능 여부
   const hasMoreResults = displayedCount < searchResults.length && !hasReachedEnd;
 
+  // 프로젝트가 선택되지 않은 경우
+  if (!selectedProject) {
+    return (
+      <div className={`${getWidthClass()} flex flex-col gap-6 pt-8`}>
+        <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="text-center text-gray-500">
+            Please select a project to search logs.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`${getWidthClass()} flex flex-col gap-6 pt-8`}>
       {/* 검색 폼 */}
@@ -335,7 +368,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
               <button
                 onClick={handleSearch}
                 disabled={isSearching || !searchQuery.trim()}
-                className="px-6 py-2 bg-[#1E435F] text-white rounded-md hover:bg-[#2a5a7a] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-[clamp(12px,0.83vw,14px)] font-medium"
+                className="px-6 py-2 bg-[#1E435F] text-white rounded-md hover:bg-[#1E435F] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-[clamp(12px,0.83vw,14px)] font-medium"
               >
                 {isSearching ? 'Searching...' : 'Search'}
               </button>
@@ -468,9 +501,14 @@ const SearchPage: React.FC<SearchPageProps> = ({ isSidebarOpen }) => {
         {/* 결과 헤더 */}
         {hasSearched && (
           <div className="p-4 border-b border-gray-200">
-            <h2 className="text-[clamp(16px,1.11vw,18px)] font-semibold font-pretendard text-[#000000]">
-              Search Results
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-[clamp(16px,1.11vw,18px)] font-semibold font-pretendard text-[#000000]">
+                Search Results
+              </h2>
+              <div className="text-sm text-gray-500">
+                {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
+              </div>
+            </div>
           </div>
         )}
 

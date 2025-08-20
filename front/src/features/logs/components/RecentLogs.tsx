@@ -1,29 +1,33 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { DisplayLogItem, CHART_COLORS, LogLevel } from "../../../types/logs";
 import LogDetailModal from "./LogDetailModal";
-import { fetchRecentLogs, ApiRecentLogEntry } from "../api/recentLogApi";
-import { fetchLogDetail, ApiLogDetailEntry } from "../api/detailLogApi";
+import { logService, LogEntry } from "../../../services/logService";
+import { ExtendedApiLogDetailEntry } from "../../../types/ExtendedApiLogDetailEntry";
+import { useProjects } from "../../../hooks/useProjects";
 
 interface RecentLogsProps {
   isSidebarOpen: boolean;
+  projectId?: number;
 }
 
 const RecentLogs: React.FC<RecentLogsProps> = ({ 
-  isSidebarOpen
+  isSidebarOpen,
+  projectId
 }) => {
+  const { selectedProject } = useProjects();
   const [selectedLogs, setSelectedLogs] = useState<Set<number>>(new Set());
   const [currentPeriod, setCurrentPeriod] = useState(1); // 1: 최근 3일, 2: 그 이전 3일, ...
   const [isLoading, setIsLoading] = useState(false);
   const [selectedLog, setSelectedLog] = useState<DisplayLogItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedLogDetail, setSelectedLogDetail] = useState<ApiLogDetailEntry[] | null>(null);
+  const [selectedLogDetail, setSelectedLogDetail] = useState<ExtendedApiLogDetailEntry[] | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [visibleLevels, setVisibleLevels] = useState<Record<LogLevel, boolean>>({
     INFO: true,
     WARN: true,
     ERROR: true
   });
-  const [allRecentLogs, setAllRecentLogs] = useState<ApiRecentLogEntry[]>([]);
+  const [allRecentLogs, setAllRecentLogs] = useState<LogEntry[]>([]);
   const [apiLoading, setApiLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [hasMoreLogs, setHasMoreLogs] = useState(true);
@@ -33,11 +37,27 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
 
   // API에서 특정 기간의 recent logs 가져오기
   const loadRecentLogsForPeriod = async (period: number) => {
+    if (!selectedProject?.id) {
+      console.log('RecentLogs - No projectId in loadRecentLogsForPeriod');
+      return [];
+    }
+    
     try {
-      const data = await fetchRecentLogs({ 
-        projectId: 1, 
-        userId: 1, 
-        count: period // count는 3일 단위 기간을 나타냄
+      const limit = period * 50; // period에 따라 limit 조정
+      console.log(`RecentLogs - Calling logService.getRecentLogs with:`, {
+        projectId: selectedProject.id, 
+        period: period,
+        limit: limit,
+        count: period,
+        size: 50
+      });
+      
+      const data = await logService.getRecentLogs(selectedProject.id, period, 50);
+      console.log(`RecentLogs - logService.getRecentLogs returned:`, {
+        dataLength: data?.length || 0,
+        dataType: typeof data,
+        dataIsArray: Array.isArray(data),
+        dataSample: Array.isArray(data) ? data.slice(0, 2) : data
       });
       return data;
     } catch (error) {
@@ -50,9 +70,11 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
   useEffect(() => {
     const loadInitialLogs = async () => {
       try {
+        console.log('RecentLogs - Loading initial logs for projectId:', selectedProject?.id);
         setApiLoading(true);
         setApiError(null);
         const data = await loadRecentLogsForPeriod(1); // 최근 3일
+        console.log('RecentLogs - Initial logs loaded:', data.length);
         setAllRecentLogs(data);
         setHasMoreLogs(data.length > 0); // 데이터가 있으면 더 로드할 수 있다고 가정
       } catch (error) {
@@ -63,8 +85,17 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
       }
     };
 
-    loadInitialLogs();
-  }, []);
+    if (selectedProject?.id) {
+      loadInitialLogs();
+      
+      // 1분마다 자동 새로고침
+      const interval = setInterval(loadInitialLogs, 60000);
+      
+      return () => clearInterval(interval);
+    } else {
+      console.log('RecentLogs - No projectId provided, skipping load');
+    }
+  }, [selectedProject?.id]); // projectId 의존성 추가
 
   // 다음 기간의 로그 로드 (무한 스크롤)
   const loadMoreLogs = async () => {
@@ -73,11 +104,16 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
     try {
       setIsLoading(true);
       const nextPeriod = currentPeriod + 1;
+      console.log(`RecentLogs - Loading more logs for period: ${nextPeriod}`);
+      
       const newData = await loadRecentLogsForPeriod(nextPeriod);
+      console.log(`RecentLogs - Loaded ${newData.length} more logs for period ${nextPeriod}`);
       
       if (newData.length === 0) {
+        console.log('RecentLogs - No more logs available, stopping infinite scroll');
         setHasMoreLogs(false);
       } else {
+        console.log(`RecentLogs - Adding ${newData.length} logs to existing ${allRecentLogs.length} logs`);
         setAllRecentLogs(prev => [...prev, ...newData]);
         setCurrentPeriod(nextPeriod);
       }
@@ -100,15 +136,41 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
     if (node) observer.current.observe(node);
   }, [isLoading, apiLoading, hasMoreLogs]);
 
-  // ApiRecentLogEntry를 DisplayLogItem으로 변환
-  const convertToDisplayLog = (apiLog: ApiRecentLogEntry): DisplayLogItem => {
+  // LogEntry를 DisplayLogItem으로 변환
+  const convertToDisplayLog = (apiLog: LogEntry): DisplayLogItem => {
+    // LogEntry의 실제 데이터 구조 확인
+    console.log('🔍 Raw LogEntry data:', {
+      keys: Object.keys(apiLog),
+      hasTimestamp: '@timestamp' in apiLog,
+      hasMessage: 'message' in apiLog,
+      hasLevel: 'level' in apiLog,
+      hasCategory: 'category' in apiLog,
+      hasHost: 'host' in apiLog,
+      timestampValue: (apiLog as any)['@timestamp'],
+      messageValue: apiLog.message,
+      levelValue: (apiLog as any).level,
+      categoryValue: (apiLog as any).category,
+      hostValue: (apiLog as any).host
+    });
+    
+    // LogEntry에서 고유 식별자 생성
+    // id 필드가 없으므로 timestamp와 message의 조합으로 고유값 생성
+    const uniqueId = `${(apiLog as any)['@timestamp']}_${apiLog.message?.substring(0, 20)}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+    
+    console.log('Converting LogEntry to DisplayLogItem:', {
+      original: apiLog,
+      generatedId: uniqueId,
+      timestamp: (apiLog as any)['@timestamp'],
+      message: apiLog.message?.substring(0, 50)
+    });
+    
     return {
-      title: apiLog.message, // message를 title로 사용
-      timestamp: new Date(apiLog.message_timestamp).toLocaleString(),
-      level: apiLog.log_level,
-      category: apiLog.keyword,
-      comment: apiLog.id, // ID를 숨겨서 저장 (화면에는 표시안됨)
-      host: apiLog.host_name // host_name을 host로 사용
+      title: apiLog.message || 'No message', // message를 title로 사용
+      timestamp: new Date((apiLog as any)['@timestamp']).toLocaleString(),
+      level: ((apiLog as any).level as LogLevel) || 'INFO',
+      category: (apiLog as any).category || 'Unknown',
+      comment: uniqueId, // 생성된 고유 ID를 comment에 저장
+      host: (apiLog as any).host?.name || 'Unknown' // host.name을 host로 사용
     };
   };
 
@@ -122,7 +184,24 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
       return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
     });
 
+  // 강화된 디버깅: displayLogs 생성 과정
+  console.log('RecentLogs - DisplayLogs Debug:', {
+    allRecentLogsLength: allRecentLogs.length,
+    allRecentLogsSample: allRecentLogs.slice(0, 2),
+    convertedLogsLength: allRecentLogs.map(convertToDisplayLog).length,
+    convertedLogsSample: allRecentLogs.map(convertToDisplayLog).slice(0, 2),
+    visibleLevels,
+    filteredLogsLength: allRecentLogs.map(convertToDisplayLog).filter(log => visibleLevels[log.level as LogLevel]).length,
+    finalDisplayLogsLength: displayLogs.length,
+    finalDisplayLogsSample: displayLogs.slice(0, 2)
+  });
+
   const handleLogClick = async (index: number) => {
+    if (!selectedProject) {
+      console.warn('No project selected');
+      return;
+    }
+
     const clickedLog = displayLogs[index];
     console.log('Clicked log:', clickedLog);
     setSelectedLog(clickedLog);
@@ -140,11 +219,8 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
     
     try {
       setDetailLoading(true);
-      console.log('Calling fetchLogDetail with:', { projectId: 1, logIds: [logId] });
-      const detailData = await fetchLogDetail({
-        projectId: 1,
-        logIds: [logId]
-      });
+      console.log('Calling fetchLogDetail with:', { projectId: selectedProject.id, logIds: [logId] });
+      const detailData = await logService.getLogDetail(selectedProject.id, logId);
       
       console.log('Detail data received:', detailData);
       if (detailData && detailData.length > 0) {
@@ -202,18 +278,21 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
       if (selectedLogIds.length > 0) {
         try {
           setDetailLoading(true);
-          console.log('Calling fetchLogDetail for trouble shooting with:', { projectId: 1, logIds: selectedLogIds });
-          const detailData = await fetchLogDetail({
-            projectId: 1,
-            logIds: selectedLogIds
-          });
-          
-          console.log('Trouble shooting detail data received:', detailData);
-          if (detailData && detailData.length > 0) {
-            setSelectedLogDetail(detailData);
-            console.log('Trouble shooting detail data set to state');
+          console.log('Calling fetchLogDetail for trouble shooting with:', { projectId: selectedProject?.id, logIds: selectedLogIds });
+          // 여러 로그의 상세 정보를 가져오는 경우, 첫 번째 로그만 사용
+          if (selectedProject?.id) {
+            const detailData = await logService.getLogDetail(selectedProject.id, selectedLogIds[0]);
+            
+            console.log('Trouble shooting detail data received:', detailData);
+            if (detailData && detailData.length > 0) {
+              setSelectedLogDetail(detailData);
+              console.log('Trouble shooting detail data set to state');
+            } else {
+              console.warn('No detail data received for trouble shooting');
+              setSelectedLogDetail(null);
+            }
           } else {
-            console.warn('No detail data received for trouble shooting');
+            console.warn('No project selected for trouble shooting');
             setSelectedLogDetail(null);
           }
         } catch (error) {
@@ -287,6 +366,7 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
           Recent Logs
         </h2>
         <div className="flex items-center gap-3">
+
           <div className="flex items-center gap-2">
             {Object.entries(visibleLevels).map(([level, isVisible]) => (
               <div key={level} className="flex items-center gap-2">
@@ -352,7 +432,7 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
           {/* Logs List */}
           <div className="divide-y divide-gray-100">
             {displayLogs.length === 0 ? (
-              <div className="text-gray-500 text-center py-4 text-xs">API 연결 완료, 데이터가 없습니다.</div>
+              <div className="text-gray-500 text-center py-4 text-xs">API connected, no data available.</div>
             ) : (
               displayLogs.map((log, index) => (
                 <div 
@@ -398,7 +478,7 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
             {isLoading && (
               <div className="text-center py-4">
                 <div className="inline-block animate-spin rounded-full h-3 w-3 border-2 border-gray-300 border-t-blue-600"></div>
-                <span className="text-gray-600 ml-2">다음 기간 로그 로딩 중...</span>
+                <span className="text-gray-600 ml-2">Loading more logs...</span>
               </div>
             )}
             {!hasMoreLogs && allRecentLogs.length > 0 && (
@@ -418,6 +498,7 @@ const RecentLogs: React.FC<RecentLogsProps> = ({
           onClose={handleCloseModal}
           detailData={selectedLogDetail || undefined}
           isDetailLoading={detailLoading}
+          projectId={selectedProject?.id}
         />
       )}
     </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { LogEntry, LogLevel, TimePeriod } from '../../types/logTypes';
+import { LogEntry, LogLevel, TimePeriod } from "../../../../types/logs";
 import { useQuery } from '@tanstack/react-query';
-import logApi from '../../api/logApi';
+import { logService } from '../../../../services/logService';
+import { apiClient } from '../../../../services/api';
 
 // API 응답 타입 정의
 interface ApiLogEntry {
@@ -12,14 +13,14 @@ interface ApiLogEntry {
 }
 
 interface UseLogDistributionProps {
-  propLogs?: LogEntry[] | ApiLogEntry[];
+  propLogs?: LogEntry[];
   timePeriod?: TimePeriod;
   projectId?: number;
 }
 
 interface UseLogDistributionResult {
-  logs: LogEntry[] | ApiLogEntry[];
-  filteredLogs: LogEntry[] | ApiLogEntry[];
+  logs: LogEntry[];
+  filteredLogs: LogEntry[];
   chartSize: { width: number; height: number };
   isSidebarOpen: boolean;
   pieData: Array<{
@@ -27,6 +28,8 @@ interface UseLogDistributionResult {
     value: number;
   }>;
   containerRef: React.RefObject<HTMLDivElement>;
+  isLoading: boolean;
+  error: Error | null;
 }
 
 export const useLogDistribution = ({ 
@@ -38,20 +41,76 @@ export const useLogDistribution = ({
   const [chartSize, setChartSize] = useState({ width: 180, height: 180 });
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // LogGraph와 동일한 API 사용
-  const { data: apiLogs } = useQuery<ApiLogEntry[]>({
+  // mainboard API 직접 호출 (그래프와 동일한 데이터 소스)
+  const { data: apiLogs, isLoading, error } = useQuery<LogEntry[]>({
     queryKey: ['distribution-logs', projectId, timePeriod],
     queryFn: async () => {
       console.log(`useLogDistribution - Fetching logs for project ${projectId}, period ${timePeriod}`);
-      const response = await logApi.fetchLogs(projectId, timePeriod);
-      console.log(`useLogDistribution - API returned ${response.length} logs`);
-      return response as ApiLogEntry[];
+      try {
+        // mainboard API 직접 호출
+        const response = await apiClient.get<any[]>(`/log/mainboard`, { 
+          project_id: projectId, 
+          log_time: timePeriod === 'day' ? 'day' : timePeriod === 'week' ? 'week' : 'month' 
+        });
+        console.log(`useLogDistribution - mainboard API returned:`, response);
+        
+        // 응답이 배열인지 확인하고 반환
+        if (Array.isArray(response)) {
+          console.log(`useLogDistribution - API returned ${response.length} logs`);
+          return response as LogEntry[];
+        } else if (response && typeof response === 'object') {
+          // 응답이 객체인 경우 데이터 필드 확인
+          console.log('useLogDistribution - API returned object, checking for data field:', response);
+          if ('data' in response && Array.isArray(response.data)) {
+            console.log(`useLogDistribution - Found data field with ${response.data.length} logs`);
+            return response.data as LogEntry[];
+          }
+        }
+        
+        console.log('useLogDistribution - API returned unexpected format:', response);
+        return [];
+      } catch (error) {
+        console.error('useLogDistribution - API call failed:', error);
+        return [];
+      }
     },
     retry: false,
+    staleTime: 0, // 항상 최신 데이터
+    refetchInterval: 60000, // 1분마다 자동 새로고침
+    refetchIntervalInBackground: true, // 백그라운드에서도 새로고침
   });
 
-  // prop으로 전달된 로그나 API 로그 사용
-  const logs = propLogs || apiLogs || [];
+  // prop으로 전달된 로그나 API 로그 사용 (강화된 처리)
+  let logs = propLogs || apiLogs || [];
+  
+  // 디버깅: 강제로 데이터 설정 (테스트용)
+  if (logs.length === 0 && apiLogs && Array.isArray(apiLogs) && apiLogs.length > 0) {
+    console.log('useLogDistribution - Force setting logs from apiLogs:', apiLogs.length);
+    logs = apiLogs;
+  }
+  
+  // 추가 디버깅: API 응답 상세 분석
+  if (apiLogs) {
+    console.log('useLogDistribution - API Response Analysis:', {
+      apiLogsType: typeof apiLogs,
+      apiLogsIsArray: Array.isArray(apiLogs),
+      apiLogsLength: Array.isArray(apiLogs) ? apiLogs.length : 'N/A',
+      apiLogsKeys: typeof apiLogs === 'object' ? Object.keys(apiLogs) : 'N/A',
+      apiLogsSample: Array.isArray(apiLogs) ? apiLogs.slice(0, 2) : apiLogs
+    });
+  }
+  
+  // 강화된 디버깅: 로그 데이터 상태 확인
+  console.log('useLogDistribution - Enhanced Debug logs state:', {
+    propLogs: propLogs?.length || 0,
+    apiLogs: apiLogs?.length || 0,
+    finalLogs: logs?.length || 0,
+    apiLogsType: typeof apiLogs,
+    apiLogsIsArray: Array.isArray(apiLogs),
+    apiLogsData: apiLogs,
+    propLogsType: typeof propLogs,
+    propLogsIsArray: Array.isArray(propLogs)
+  });
 
   // 시간 범위에 따라 로그 필터링
   const filteredLogs = useMemo(() => {
@@ -130,7 +189,7 @@ export const useLogDistribution = ({
       }));
     }
     
-    return filtered as (LogEntry | ApiLogEntry)[];
+    return filtered as LogEntry[];
     */
   }, [logs, timePeriod]);
 
@@ -219,5 +278,7 @@ export const useLogDistribution = ({
     isSidebarOpen,
     pieData,
     containerRef: containerRef as React.RefObject<HTMLDivElement>,
+    isLoading,
+    error,
   };
 }; 

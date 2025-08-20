@@ -1,10 +1,25 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 interface WelcomeCardProps {
   className?: string;
 }
 
 const WelcomeCard: React.FC<WelcomeCardProps> = ({ className = "" }) => {
+  const [userName, setUserName] = useState('User');
+
+  useEffect(() => {
+    // localStorage에서 사용자 정보 가져오기
+    const storedUser = localStorage.getItem('user');
+    const mockUser = localStorage.getItem('mockUser');
+    
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setUserName(user.username || user.name || 'User');
+    } else if (mockUser) {
+      const user = JSON.parse(mockUser);
+      setUserName(user.name || 'User');
+    }
+  }, []);
   return (
     <div
       className={`
@@ -17,7 +32,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({ className = "" }) => {
   `}
     >
       <h2 className="whitespace-nowrap text-[24px] font-bold font-pretendard text-[#B8FFF1]">
-        Welcome Seyoung!
+        Welcome {userName}!
       </h2>
       <p className="text-[14px] font-normal font-pretendard text-[#B8FFF1] leading-snug mt-1">
         Check out what's going on.

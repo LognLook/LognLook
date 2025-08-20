@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { LogLevel, TimePeriod } from '../../types/logTypes';
+import { LogLevel, TimePeriod } from "../../../../types/logs";
 import { TimePeriodSelector } from './TimePeriodSelector';
 import { LogLevelFilter } from './LogLevelFilter';
 import { LogChart } from './LogChart';
-import logApi from '../../api/logApi';
+import { logService } from '../../../../services/logService';
+import EmptyState from '../EmptyState';
 
 interface LogGraphProps {
   projectId: number;
@@ -65,28 +66,68 @@ const LogGraph: React.FC<LogGraphProps> = ({
     const loadGraphData = async () => {
       try {
         setIsLoading(true);
-        // API 호출 시 selectedPeriod를 logTime 매개변수로 전달
-        const response = await logApi.fetchLogGraphData(projectId, selectedPeriod);
+        console.log(`LogGraph - Loading graph data for projectId: ${projectId}, period: ${selectedPeriod}`);
         
-        // API 응답 데이터는 이미 올바른 형식이므로 직접 사용
-        setGraphData(response.data);
-        setError(null);
-        
-        // 디버깅을 위한 로그 추가
-        console.log(`Graph data for ${selectedPeriod}:`, {
-          dataLength: response.data.length,
-          firstPoint: response.data[0],
-          lastPoint: response.data[response.data.length - 1],
-          today: new Date().toLocaleDateString()
+        // logService를 사용하여 데이터 가져오기
+        const stats = await logService.getLogStats(projectId, selectedPeriod);
+        console.log(`LogGraph - Log stats received:`, {
+          totalLogs: stats.totalLogs,
+          levelDistribution: stats.levelDistribution,
+          recentTrendsCount: stats.recentTrends.length
         });
-      } catch (err) {
-        console.error('Error in loadGraphData:', err);
-        setError('Failed to load log graph data');
+        
+        // API 응답 데이터를 그래프 형식으로 변환
+        if (stats.totalLogs > 0) {
+          // 로그 데이터를 시간별로 그룹화하여 그래프 데이터 생성
+          const timeGroups = new Map<string, { INFO: number; WARN: number; ERROR: number }>();
+          
+          // recentTrends를 사용하여 그래프 데이터 생성
+          stats.recentTrends.forEach((trend) => {
+            const date = new Date(trend.date);
+            const timeKey = date.toLocaleDateString() + ' ' + date.getHours() + ':00';
+            
+            if (!timeGroups.has(timeKey)) {
+              timeGroups.set(timeKey, { INFO: 0, WARN: 0, ERROR: 0 });
+            }
+            
+            const timeGroup = timeGroups.get(timeKey)!;
+            const level = trend.level.toUpperCase() as LogLevel;
+            
+            if (level in timeGroup) {
+              timeGroup[level] += trend.count;
+            }
+          });
+          
+          // 시간순으로 정렬하여 그래프 데이터 생성
+          const sortedData = Array.from(timeGroups.entries())
+            .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+            .map(([time, counts]) => ({
+              time,
+              ...counts
+            }));
+          
+          console.log(`LogGraph - Processed graph data:`, {
+            timeGroupsCount: timeGroups.size,
+            sortedDataCount: sortedData.length,
+            sampleData: sortedData.slice(0, 3)
+          });
+          
+          setGraphData(sortedData);
+        } else {
+          console.log('LogGraph - No log data available');
+          setGraphData([]);
+        }
+        
+        setError(null);
+      } catch (error) {
+        console.error('LogGraph - Failed to load graph data:', error);
+        setError('Failed to load graph data');
+        setGraphData([]);
       } finally {
         setIsLoading(false);
       }
     };
-
+    
     loadGraphData();
   }, [projectId, selectedPeriod]);
 
@@ -208,11 +249,24 @@ const LogGraph: React.FC<LogGraphProps> = ({
         </div>
         
         <div className="flex pt-3 pb-2">
-          <LogChart
-            data={graphData}
-            visibleLevels={visibleLevels}
-            selectedPeriod={selectedPeriod}
-          />
+          {graphData.length > 0 ? (
+            <LogChart
+              data={graphData}
+              visibleLevels={visibleLevels}
+              selectedPeriod={selectedPeriod}
+            />
+          ) : (
+            <EmptyState
+              title="No Log Data"
+              description="No log data available for the selected time period. Check if your project is properly configured."
+              icon={
+                <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              }
+              className="h-[200px]"
+            />
+          )}
         </div>
       </div>
     </div>
