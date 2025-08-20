@@ -26,12 +26,12 @@ class TroubleAPITest:
         }
         
         print("=== Trouble 생성 API 테스트 ===")
-        print(f"요청 URL: {self.base_url}/api/trouble")
+        print(f"요청 URL: {self.base_url}/api/troubles")
         print(f"요청 데이터: {json.dumps(test_data, indent=2, ensure_ascii=False)}")
         
         try:
             response = requests.post(
-                f"{self.base_url}/api/trouble",
+                f"{self.base_url}/api/troubles",
                 json=test_data,
                 headers=self.headers,
                 timeout=30
@@ -114,7 +114,7 @@ class TroubleAPITest:
             
             try:
                 response = requests.post(
-                    f"{self.base_url}/api/trouble",
+                    f"{self.base_url}/api/troubles",
                     json=scenario["data"],
                     headers=self.headers,
                     timeout=10
@@ -144,7 +144,7 @@ def test_with_curl_command():
     }
     
     curl_command = f"""
-curl -X POST "http://localhost:8000/api/trouble" \\
+curl -X POST "http://localhost:8000/api/troubles" \\
      -H "Content-Type: application/json" \\
      -H "Accept: application/json" \\
      -d '{json.dumps(test_data, ensure_ascii=False)}'

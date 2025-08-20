@@ -5,7 +5,7 @@ from app.main import app
 client = TestClient(app)
 
 def test_update_trouble_api():
-    """PUT /api/trouble/{trouble_id} API 테스트"""
+    """PUT /api/troubles/{trouble_id} API 테스트"""
     
     print("=== UPDATE trouble API 테스트 시작 ===")
     
@@ -18,7 +18,7 @@ def test_update_trouble_api():
     }
     
     response = client.put(
-        "/api/trouble/1",
+        "/api/troubles/1",
         json=invalid_data,
         headers={"Authorization": "Bearer test-token"}
     )
@@ -40,7 +40,7 @@ def test_update_trouble_api():
     }
     
     response = client.put(
-        "/api/trouble/999",  # 존재하지 않는 ID
+        "/api/troubles/999",  # 존재하지 않는 ID
         json=valid_data,
         headers={"Authorization": "Bearer test-token"}
     )
@@ -57,7 +57,7 @@ def test_update_trouble_api():
     print("\n3. 유효한 데이터로 trouble 수정 테스트")
     
     response = client.put(
-        "/api/trouble/1",  # 실제 존재하는 trouble ID
+        "/api/troubles/1",  # 실제 존재하는 trouble ID
         json=valid_data,
         headers={"Authorization": "Bearer test-token"}
     )
@@ -93,7 +93,7 @@ def test_update_trouble_validation():
         "content": "새로운 분석 결과입니다. 로그 분석 결과 API 응답 시간이 평소보다 3배 느려진 것을 확인했습니다."
     }
     
-    response = client.put("/api/trouble/1", json=data, headers={"Authorization": "Bearer test-token"})
+    response = client.put("/api/troubles/1", json=data, headers={"Authorization": "Bearer test-token"})
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}")
     
@@ -104,7 +104,7 @@ def test_update_trouble_validation():
         "is_shared": True
     }
     
-    response = client.put("/api/trouble/1", json=data, headers={"Authorization": "Bearer test-token"})
+    response = client.put("/api/troubles/1", json=data, headers={"Authorization": "Bearer test-token"})
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}")
 
