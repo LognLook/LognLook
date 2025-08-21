@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <img width="120" height="120" alt="logo_20x20" src="https://github.com/user-attachments/assets/2a2f40cf-49d6-429b-b487-50e0b6cf803c" />
+  <img width="120" height="120" alt="logo_20x20" src="https://github.com/user-attachments/assets/c44c71f5-cfba-4623-9dd1-df761dd2dca6" />
 </h1>
 
 <h4 align="center">
@@ -24,7 +24,7 @@
 
 | <img src="https://github.com/JJadeYoon.png" width="100px;"/><br /><sub><b>윤종석</b></sub> | <img src="https://github.com/633jinn.png" width="100px;"/><br /><sub><b>강희진</b></sub><br /> | <img src="https://github.com/30isdead.png" width="100px;"/><br /><sub><b>박세영</b></sub><br /> | <img src="https://github.com/github-ID-4.png" width="100px;"/><br /><sub><b>이름</b></sub><br /> |
 | :---: | :---: | :---: | :---: |
-| AI・DATA | BE・Infra | FE・UX | 디자인・UX |
+| BE・DATA | BE・Infra | FE・UX | 디자인・UX |
 
 </div>
 
@@ -48,10 +48,18 @@
 
 ### 1. AI 기반 로그 검색 및 분석
 * **자연어 로그 설명**: 복잡한 로그 메시지를 AI가 이해하기 쉬운 자연어로 변환하여, 로그에 익숙하지 않은 개발자도 빠르게 원인을 파악할 수 있습니다. 예를 들어, `"ERROR com.makeLog.makeLog.LogInitializer - User does not exist"`와 같은 로그를 `"로그인 시도 중 사용자를 찾을 수 없음"`과 같이 직관적으로 설명합니다.
+<img width="1441" height="810" alt="LogDetail" src="https://github.com/user-attachments/assets/1e388fb9-921b-41a7-8631-ce32720adbc7" />
+
 * **자연어 로그 검색**: 전통적인 키워드 검색(BM25)과 의미 기반의 벡터 검색을 결합한 **하이브리드 검색**을 제공합니다. 이를 통해 `"어제 발생한 로그인 관련 에러"`와 같은 자연어 질의로도 원하는 로그를 정확하게 찾을 수 있습니다.
+<img width="1455" height="819" alt="Search" src="https://github.com/user-attachments/assets/b3d2f7ff-87f7-4b1e-9d37-85fa604377a0" />
+
 * **AI 트러블슈팅**: 에러 발생 시 AI가 자동으로 원인을 분석하고 해결 방법을 제안합니다. 이전 해결 사례를 저장하고 팀원들과 쉽게 공유할 수 있어, 문제 해결에 소요되는 시간을 최소화합니다.
+<img width="1458" height="821" alt="Trouble Shooting" src="https://github.com/user-attachments/assets/0ad2e81a-d4f9-437e-8e93-b9796dfd98e1" />
+
 
 ### 2. 직관적인 대시보드
+<img width="1456" height="818" alt="Main" src="https://github.com/user-attachments/assets/a8be40aa-da10-4a7b-b0b5-d4eaa5465b6c" />
+
 * **실시간 모니터링**: 실시간으로 수집되는 로그를 시각화하여 시스템의 전반적인 상태를 한눈에 파악할 수 있습니다.
 * **필터링 및 통계**: 로그 레벨(INFO, WARN, ERROR)별 필터링과 기간별 통계 그래프를 통해 필요한 정보를 효율적으로 분석합니다.
 * **키워드 기반 분류**: 사용자가 설정한 키워드에 따라 로그를 자동 분류하여, 특정 기능이나 모듈별로 로그를 체계적으로 관리할 수 있습니다.
@@ -84,8 +92,7 @@
 3.  **분석**: **LangChain** 기반의 AI 모듈이 로그 데이터를 해석하고, 하이브리드 검색을 통해 정확한 결과를 도출합니다.
 4.  **UI 제공**: **React** 웹 대시보드를 통해 로그 데이터의 검색, 해석, 통계 및 실시간 모니터링이 가능합니다.
 
-<img width="2488" height="2176" alt="image" src="https://github.com/user-attachments/assets/cc1a635a-99a6-45cc-b45a-30d8c4dbd5b9" />
-
+<img width="2488" height="2176" alt="image" src="https://github.com/user-attachments/assets/9fe3067a-7c50-4ad4-8190-752a0cf8b78e" />
 
 <br>
 
@@ -120,13 +127,12 @@
 <br>
 <br>
 <br>
-
-<h6 align="center">
-  <br>
-  Copyright © 2025 LognLook. All rights reserved.
-  <br>
-  <br>
-  LognLook은 MIT 라이선스를 따릅니다.
-  <br>
-  <a href="https://opensource.org/licenses/MIT">자세히 보기</a>
+<h6 align="center"> 
+<br> 
+Copyright © 2025 LognLook. All rights reserved. 
+<br> 
+<br> 
+LognLook은 Apache 2.0 라이선스를 따릅니다. 
+<br> 
+<a href="https://www.apache.org/licenses/LICENSE-2.0">자세히 보기</a> 
 </h6>
