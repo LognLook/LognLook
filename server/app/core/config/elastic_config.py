@@ -1,7 +1,7 @@
 from app.core.config.settings import get_settings
 
-def get_elastic_mappings() -> dict:
-    """동적 Elasticsearch 매핑 생성 (임베딩 차원수 반영)"""
+def get_opensearch_mappings() -> dict:
+    """동적 OpenSearch 매핑 생성 (임베딩 차원수 반영)"""
     settings = get_settings()
     
     return {
@@ -178,10 +178,8 @@ def get_elastic_mappings() -> dict:
             "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
         },
         "vector": {
-            "type": "dense_vector",
-            "dims": settings.EMBEDDING_VECTOR_DIMS,
-            "index": True,
-            "similarity": "cosine",
+            "type": "knn_vector",
+            "dimension": settings.EMBEDDING_VECTOR_DIMS,
         }
     }
 }

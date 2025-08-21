@@ -8,7 +8,7 @@ from langchain_core.messages import HumanMessage
 from app.core.llm.base import LLMFactory
 from app.core.llm.prompts import TROUBLESHOOTING_TEMPLATE, TroubleContent
 from app.repositories.project import get_project_by_id
-from app.repositories.elasticsearch import get_logs_by_ids
+from app.repositories.opensearch import get_logs_by_ids
 from app.repositories import trouble as trouble_repo
 from app.repositories import user as user_repo
 from app.schemas.trouble import (

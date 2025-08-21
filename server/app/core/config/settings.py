@@ -34,10 +34,10 @@ class Settings(BaseSettings):
     # HuggingFace 설정
     HUGGINGFACE_API_TOKEN: str = ""
     
-    # Elasticsearch 설정
-    ELASTIC_HOST: str
-    ELASTIC_USERNAME: str
-    ELASTIC_PASSWORD: str
+    # OpenSearch 설정
+    OPENSEARCH_HOST: str
+    OPENSEARCH_USERNAME: str
+    OPENSEARCH_PASSWORD: str
     
     # 데이터베이스 설정
     MYSQL_USER: str

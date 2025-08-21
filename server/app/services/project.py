@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 import logging
-from app.repositories import elasticsearch as ElasticsearchRepository
+from app.repositories import opensearch as OpenSearchRepository
 from app.repositories import project as ProjectRepository
 from app.repositories import user as UserRepository
 from app.schemas.project import (
@@ -34,7 +34,7 @@ class ProjectService:
         db_project = ProjectRepository.create_project(
             db=self.db, project=project_dto, user=db_user.id
         )
-        ElasticsearchRepository.create_project_index(index_name=db_project.index)
+        OpenSearchRepository.create_project_index(index_name=db_project.index)
 
         return db_project
 
@@ -123,7 +123,7 @@ class ProjectService:
 
                 # Elasticsearch 인덱스도 삭제
                 try:
-                    ElasticsearchRepository.delete_project_index(
+                    OpenSearchRepository.delete_project_index(
                         index_name=db_project.index
                     )
                 except Exception as e:
