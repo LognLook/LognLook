@@ -1,157 +1,173 @@
-# Git Convention
+<h1 align="leading">
+  <br>
+  LognLook 프로젝트에 기여하는 방법
+</h1>
 
-## 브랜치 네이밍
+<br>
 
-### 기본 브랜치
+LognLook 프로젝트에 관심을 가져주셔서 감사합니다! 여러분의 기여는 LognLook을 더 나은 AI 로그 분석 도구로 만드는 데 큰 도움이 됩니다. 🚀
 
-- `main`: 프로덕션 코드의 기본 브랜치
-- `dev`: 개발용 기본 브랜치
+LognLook에 기여하는 방법은 다양합니다. 부담 없이 시작해 보세요!
 
-### 작업 브랜치
+* **코드 개선**: 버그 수정, 새로운 기능 추가 등 직접 코드를 개선할 수 있습니다. 💻
+* **문서화**: 문서의 오타를 수정하거나, 내용을 더 명확하게 보완할 수 있습니다. ✍️
+* **피드백 및 아이디어**: 버그 리포트, 기능 제안, 프로젝트에 대한 토론 등 다양한 방법으로 의견을 나눌 수 있습니다. 🤔
 
-모든 작업 브랜치는 다음 형식을 따라야 합니다:
+---
 
-```
-<타입>/<영역>/<설명>
-```
+## 1. Git 컨벤션
 
-- **타입**:
-    - `feat`: 새로운 기능 개발
-    - `bug`: 버그 수정
-    - `hotfix`: 긴급한 프로덕션 버그 수정
-    - `refactor`: 코드 리팩토링
-    - `docs`: 문서 수정
-    - `chore`: 빌드 프로세스 또는 도구 변경
-    - `test`: 테스트 관련 변경
-- **영역**:
-    - `fe`: 프론트엔드 관련
-    - `be`: 백엔드 관련
-    - `common`: 공통 코드 관련
-- **설명**: 작업에 대한 간결한 설명 (kebab-case 사용)
+일관된 코드 관리와 효율적인 협업을 위해 다음 Git 컨벤션을 준수해 주세요.
 
-예시:
+### 브랜치 네이밍
 
-- `feat/fe/user-authentication`
-- `bug/be/fix-database-connection`
-- `refac/common/api-utils`
+모든 작업은 **기본 브랜치**(`main`, `dev`)에서 직접 작업하지 않고, **작업 브랜치**를 생성하여 진행합니다.
 
-## 커밋 메시지
+* **기본 브랜치**
+    * `main`: 프로덕션 코드의 기본 브랜치
+    * `dev`: 개발용 기본 브랜치
+* **작업 브랜치**
+    모든 작업 브랜치는 다음 형식을 따라야 합니다:
+    `{타입}/{영역}/{설명}`
+    * **타입**: `feat` (기능), `bug` (버그), `hotfix` (긴급 수정), `refactor` (리팩토링), `docs` (문서), `chore` (도구/설정), `test` (테스트)
+    * **영역**: `fe` (프론트엔드), `be` (백엔드), `common` (공통 코드)
+    * **설명**: 작업 내용을 요약 (kebab-case 사용)
 
-커밋 메시지 작성 시 제목은 영어로, 본문 필요시 한글로 작성한다.
+**예시:** `feat/fe/user-authentication`
 
-```
-<타입>[영역]: <제목>
+### 커밋 메시지
 
-[본문]
-```
+커밋 메시지는 Git 히스토리를 명확하게 유지합니다.
 
-제목 예시: Implement ~, Add ~, Modify ~
+`{타입}[{영역}]: <제목>`
 
-### 제목
+* **제목**: 50자 이내, 영어로 작성, 명령문 형태
+* **본문 (선택)**: 제목과 빈 줄로 구분, 한글로 '무엇을, 왜' 변경했는지 설명
 
-- 50자 이내로 작성
-- 마침표로 끝내지 않음
-- 명령문 형태로 작성 (과거형 사용하지 않음)
+### 풀 리퀘스트 (PR)
 
-### 본문 (선택사항)
+PR 제목과 설명은 다음 형식을 따릅니다.
 
-- 제목과 본문 사이에 빈 줄 추가
-- 어떻게 보다는 무엇을, 왜에 대해 설명
-- 각 줄은 72자 이내로 작성
+* **제목**: `[{영역}] <타입>: <간결한 설명>` (예: `[FE] feat: 사용자 인증 UI 구현`)
+* **설명**: `변경 사항`, `관련 이슈`, `테스트 방법`, `체크리스트` 등을 명시합니다.
 
-## 풀 리퀘스트
+---
 
-### 제목
+## 2. 개발 환경 설정하기
 
-풀 리퀘스트 제목은 다음 형식을 따라야 합니다:
+### 백엔드 (Python/FastAPI)
 
-```
-[영역] <타입>: <간결한 설명>
+* **언어**: Python 3.11.x
+* **의존성 관리**: Poetry
+* **설치**:
+    ```bash
+    # Poetry 설치
+    curl -sSL [https://install.python-poetry.org](https://install.python-poetry.org) | python3 -
 
-```
+    cd server
+    poetry install
+    # 환경 변수(.env) 직접 생성 필요
+    poetry run uvicorn app.main:app --reload
+    ```
 
-예시:
+### 프론트엔드 (React)
 
-- `[FE] feat: 사용자 인증 UI 구현`
-- `[BE] fix: 데이터베이스 연결 오류 수정`
-- `[Common] refactor: API 유틸리티 리팩토링`
+* **언어**: TypeScript
+* **환경**: Node.js (권장: 18+), npm
+* **설치**:
+    ```bash
+    cd front
+    npm install
+    npm run dev
+    # 브라우저에서 http://localhost:5173 접속
+    ```
 
-### 설명
+### 로그 수집 (선택사항)
 
-풀 리퀘스트 설명에는 다음 정보를 포함해야 합니다:
+LognLook은 다양한 로그 수집 도구와 연동할 수 있습니다. 여기서는 **Logstash를 예시**로 설정 방법을 안내합니다.
 
-```
-## 변경 사항
-- 변경사항 1
-- 변경사항 2
+#### Logstash 설정 예시
 
-## 관련 이슈
-- #123
-- #456
+1. Logstash의 `/config` 디렉토리에 `.conf` 파일을 생성합니다.
+2. [예제 설정 파일](logstash/example.conf)을 참고하여 설정을 추가합니다:
+   - **input**: Beats에서 포트 5044로 데이터를 수신
+   - **output**: LognLook API 엔드포인트 `/api/pipeline`로 데이터 전송
+   - **api-key**: 프로젝트 생성 또는 참가 후 프로젝트 설정에서 확인 가능한 API 키 사용
 
-## 스크린샷 (UI 변경의 경우)
-[스크린샷 추가]
+> **중요**: 예제 파일의 `YOUR_PROJECT_API_KEY`를 실제 프로젝트 API 키로 교체해야 합니다.
 
-## 테스트 방법
-1. A로 이동
-2. B를 클릭
-3. C가 표시되는지 확인
+### 필요한 도구들 🛠️
 
-## 체크리스트
-- [ ] 테스트 코드가 추가되었습니다
-- [ ] 문서가 업데이트되었습니다
-- [ ] 브랜치가 최신 develop과 동기화되었습니다
+* **백엔드**: Python 3.11.x, Poetry, MySQL, Elasticsearch
+* **프론트엔드**: Node.js 18+, npm 9+
+* **로그 수집**: Logstash (선택사항)
+* **추가**: Docker, Git
 
-```
+### 테스트 실행 방법 🧪
 
-## 코드 리뷰
+* **백엔드**: `cd server` 후 `poetry run pytest`
+* **프론트엔드**: `cd front` 후 `npm test`
+> **참고**: 데이터베이스(MySQL) 및 Elasticsearch는 별도 설치 또는 Docker를 이용한 구동이 필요합니다.
 
-### 리뷰어 할당
+---
 
-- 프론트엔드 코드 변경: 최소 1명의 프론트엔드 개발자
-- 백엔드 코드 변경: 최소 1명의 백엔드 개발자
-- 공통 코드 변경: 프론트엔드와 백엔드 개발자 각 1명씩
+## 3. 기여 유형별 안내
 
-### 리뷰 가이드라인
+LognLook은 "fork and pull" 모델을 사용합니다. 기여자는 자신의 포크에 변경사항을 푸시하고, 이를 원본 저장소에 병합하기 위한 풀 리퀘스트를 생성합니다.
 
-- 24시간 이내에 리뷰 완료
-- 긍정적인 피드백과 건설적인 비판 균형 유지
-- 코드 스타일보다 기능적 문제에 집중
-- 모든 댓글은 명확하고 구체적이어야 함
+### 🐞 버그 리포트
 
-### 승인 기준
+예상치 못한 동작을 발견했다면 [버그 리포트 템플릿](https://github.com/LognLook/LognLook/issues/new?assignees=&labels=bug&projects=&template=bug_report.md)을 사용해 이슈를 생성해 주세요. 수정 사항을 포함한 PR도 환영합니다.
 
-- 모든 필수 리뷰어의 승인 필요
-    - 승인하면 LGTM ✨ 이라고 코멘트 남겨주기~
-- 모든 CI 테스트 통과
-- 코드 품질 기준 충족
+### ✅ 기능 제안
 
-## 병합 전략
+새로운 기능에 대한 아이디어가 있다면 [기능 제안 템플릿](https://github.com/LognLook/LognLook/issues/new?assignees=&labels=feature&projects=&template=feature_request.md)을 사용해 의견을 제시해 주세요.
 
-### 병합 방법
+### 📕 문서화 개선
 
-- `dev` 브랜치로 병합: Squash and Merge
-- `main` 브랜치로 병합: Merge Commit
+문서의 오타나 개선할 점이 있다면 [문서화 이슈 템플릿](https://github.com/LognLook/LognLook/issues/new?assignees=&labels=documentation&projects=&template=documentation-improvement.md)을 사용해 알려주세요.
 
-### 병합 프로세스
+### Pull Request (PR) 제출하기
 
-1. 최신 `dev` 브랜치와 리베이스
-2. 모든 충돌 해결
-3. CI 테스트 통과 확인
-4. 코드 리뷰 승인 획득
-5. 병합
+1.  [이곳](https://github.com/LognLook/LognLook/fork)을 클릭해 저장소를 포크하세요.
+2.  `main` 브랜치에서 작업할 브랜치를 생성하고, 작업을 진행하세요.
+3.  커밋 메시지 컨벤션을 준수하며 변경 사항을 커밋하세요.
+4.  새로운 기능/버그 수정에 대한 **테스트 코드를 반드시 포함**하세요.
+5.  GitHub에서 `LognLook:main` 브랜치로 PR을 생성하세요.
 
-## 레포지토리 구조
+> 끝! 여러분의 기여에 감사드립니다! 😎
 
-```
-/
-├── frontend/           # 프론트엔드 코드
-├── backend/            # 백엔드 코드
-├── docs/               # 프로젝트 문서
-├── .github/            # GitHub 관련 설정
-│   ├── workflows/      # GitHub Actions 워크플로우
-│   └── PULL_REQUEST_TEMPLATE.md  # PR 템플릿
-├── .gitignore
-└── README.md
+---
 
-```
+## 4. 코드 리뷰 및 병합
+
+PR이 생성되면, LognLook 코어 개발자가 코드를 검토할 것입니다.
+
+### 리뷰 정책 🧐
+
+* 모든 PR은 최소 1명의 코어 개발자 승인이 필요합니다.
+* 테스트 커버리지는 80% 이상을 유지해야 합니다.
+* 모든 CI/CD 체크가 통과되어야 합니다.
+
+### 병합 전략
+
+* **`dev` 브랜치**: 여러 커밋을 하나로 합치는 **Squash and Merge** 방식을 사용합니다.
+* **`main` 브랜치**: **Merge Commit** 방식을 사용합니다.
+
+---
+
+## 5. 기타 정보
+
+### 다국어 지원 🌐
+
+LognLook은 한국어와 영어를 지원합니다. 이슈와 PR은 두 언어 중 편한 언어로 작성해 주세요. 문서는 가능한 한 두 언어로 모두 작성하는 것을 권장합니다.
+
+### 질문이나 도움이 필요하시면 ❓
+
+* [GitHub Issues](https://github.com/LognLook/LognLook/issues/new/choose)
+* [GitHub Discussions](https://github.com/LognLook/LognLook/discussions)
+* [이메일](mailto:1224tpdud@gmail.com)
+
+---
+
+다시 한번 LognLook에 관심을 가져주셔서 감사합니다! 🚀
