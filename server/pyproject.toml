@@ -2,8 +2,9 @@
 name = "server"
 version = "0.1.0"
 description = ""
+license = {text = "Apache-2.0"}
 authors = [
-    {name = "Your Name",email = "you@example.com"}
+    {name = "LognLook",email = "yess9904@naver.com"}
 ]
 # readme = "README.md"
 requires-python = ">=3.11,<3.12"
@@ -35,7 +36,6 @@ dependencies = [
     "uvloop (==0.21.0)",
     "watchfiles (==1.0.4)",
     "websockets (==15.0.1)",
-    "mysql (>=0.0.3,<0.0.4)",
     "pandas (>=2.2.3,<3.0.0)",
     "numpy (>=2.2.4,<3.0.0)",
     "openai (>=1.72.0,<2.0.0)",

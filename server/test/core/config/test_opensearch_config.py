@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch
-from app.core.config.elastic_config import get_opensearch_mappings
+from app.core.config.opensearch_config import get_opensearch_mappings
 from app.core.config.settings import Settings
 
 

@@ -73,13 +73,13 @@
 
 ## 기술 스택
 
-| 분류 | 기술 스택 | 설명 |
-| :---: | :---: | :--- |
-| **Server Framework** | ![fastapi](https://img.shields.io/badge/fastapi-009688?style=for-the-badge&logo=fastapi&logoColor=white) | 가볍고 빠른 API 서버를 구축합니다. |
-| **AI Framework** | ![LangChain](https://img.shields.io/badge/LangChain-5E5E5E?style=for-the-badge&logo=langchain&logoColor=white) | 대규모 언어 모델(LLM) 기반의 자연어 처리와 분석 기능을 구현합니다. |
-| **Web Framework** | ![react](https://img.shields.io/badge/react-61DAFB?style=for-the-badge&logo=react&logoColor=black) | 직관적이고 사용자 친화적인 웹 대시보드를 개발합니다. |
-| **Database** | ![mysql](https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white) ![elasticsearch](https://img.shields.io/badge/elasticsearch-005571?style=for-the-badge&logo=elasticsearch&logoColor=white) | 사용자 및 프로젝트 메타데이터는 MySQL에, 대규모 로그 데이터는 Elasticsearch에 저장하여 고속 검색을 지원합니다. |
-| **Data Collection** | ![filebeat](https://img.shields.io/badge/filebeat-000000?style=for-the-badge&logo=elastic&logoColor=white) ![logstash](https://img.shields.io/badge/logstash-005571?style=for-the-badge&logo=logstash&logoColor=white) | Filebeat로 로그를 수집하고, Logstash로 데이터를 변환하여 정규화된 파이프라인을 구축합니다. |
+| 분류 |                                                                                                          기술 스택                                                                                                           | 설명                                                                   |
+| :---: |:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------|
+| **Server Framework** |                                                         ![fastapi](https://img.shields.io/badge/fastapi-009688?style=for-the-badge&logo=fastapi&logoColor=white)                                                         | 가볍고 빠른 API 서버를 구축합니다.                                                |
+| **AI Framework** |                                                      ![LangChain](https://img.shields.io/badge/LangChain-5E5E5E?style=for-the-badge&logo=langchain&logoColor=white)                                                      | 대규모 언어 모델(LLM) 기반의 자연어 처리와 분석 기능을 구현합니다.                             |
+| **Web Framework** |                                                            ![react](https://img.shields.io/badge/react-61DAFB?style=for-the-badge&logo=react&logoColor=black)                                                            | 직관적이고 사용자 친화적인 웹 대시보드를 개발합니다.                                        |
+| **Database** | ![mysql](https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white) ![opensearch](https://img.shields.io/badge/OpenSearch-005EB8.svg?style=for-the-badge&logo=opensearch&logoColor=white) | 사용자 및 프로젝트 메타데이터는 MySQL에, 대규모 로그 데이터는 OpenSearch에 저장하여 고속 검색을 지원합니다. |
+| **Data Collection** |  ![filebeat](https://img.shields.io/badge/filebeat-000000?style=for-the-badge&logo=elastic&logoColor=white) ![logstash](https://img.shields.io/badge/logstash-005571?style=for-the-badge&logo=logstash&logoColor=white)  | Filebeat로 로그를 수집하고, Logstash로 데이터를 변환하여 정규화된 파이프라인을 구축합니다.           |
 
 ### **기타**
 | ![python](https://img.shields.io/badge/python-3776AB?style=for-the-badge&logo=python&logoColor=white) | ![typescript](https://img.shields.io/badge/typescript-3178C6?style=for-the-badge&logo=typescript&logoColor=white) | ![docker](https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white) | ![github actions](https://img.shields.io/badge/github%20actions-2671E5?style=for-the-badge&logo=githubactions&logoColor=white) |
@@ -93,7 +93,7 @@
 본 프로젝트의 시스템은 **로그 수집, 데이터 저장 및 처리, AI 분석, 사용자 인터페이스 제공**의 흐름으로 구성됩니다.
 
 1.  **로그 수집**: 개발 환경의 로그는 **Filebeat**를 통해 수집되어 **Logstash**를 거치며 표준화된 형태로 가공됩니다.
-2.  **데이터 저장 및 처리**: 가공된 로그는 **FastAPI** 서버를 통해 **Elasticsearch**에 저장됩니다. 사용자 및 프로젝트 메타데이터는 **MySQL**에 별도로 저장됩니다.
+2.  **데이터 저장 및 처리**: 가공된 로그는 **FastAPI** 서버를 통해 **OpenSearch**에 저장됩니다. 사용자 및 프로젝트 메타데이터는 **MySQL**에 별도로 저장됩니다.
 3.  **분석**: **LangChain** 기반의 AI 모듈이 로그 데이터를 해석하고, 하이브리드 검색을 통해 정확한 결과를 도출합니다.
 4.  **UI 제공**: **React** 웹 대시보드를 통해 로그 데이터의 검색, 해석, 통계 및 실시간 모니터링이 가능합니다.
 
