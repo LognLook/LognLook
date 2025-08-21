@@ -82,10 +82,25 @@ PR 제목과 설명은 다음 형식을 따릅니다.
     # 브라우저에서 http://localhost:5173 접속
     ```
 
+### 로그 수집 (선택사항)
+
+LognLook은 다양한 로그 수집 도구와 연동할 수 있습니다. 여기서는 **Logstash를 예시**로 설정 방법을 안내합니다.
+
+#### Logstash 설정 예시
+
+1. Logstash의 `/config` 디렉토리에 `.conf` 파일을 생성합니다.
+2. [예제 설정 파일](logstash/example.conf)을 참고하여 설정을 추가합니다:
+   - **input**: Beats에서 포트 5044로 데이터를 수신
+   - **output**: LognLook API 엔드포인트 `/api/pipeline`로 데이터 전송
+   - **api-key**: 프로젝트 생성 또는 참가 후 프로젝트 설정에서 확인 가능한 API 키 사용
+
+> **중요**: 예제 파일의 `YOUR_PROJECT_API_KEY`를 실제 프로젝트 API 키로 교체해야 합니다.
+
 ### 필요한 도구들 🛠️
 
 * **백엔드**: Python 3.11.x, Poetry, MySQL, Elasticsearch
 * **프론트엔드**: Node.js 18+, npm 9+
+* **로그 수집**: Logstash (선택사항)
 * **추가**: Docker, Git
 
 ### 테스트 실행 방법 🧪
