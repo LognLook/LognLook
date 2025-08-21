@@ -17,7 +17,7 @@ dependencies = [
     "dnspython (==2.7.0)",
     "email-validator (==2.2.0)",
     "fastapi (==0.115.12)",
-    "h11 (==0.14.0)",
+    "h11 (==0.16.0)",
     "httptools (==0.6.4)",
     "idna (==3.10)",
     "pip (==25.0.1)",
