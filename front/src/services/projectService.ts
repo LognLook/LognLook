@@ -50,6 +50,17 @@ export interface ProjectKeywordResponse {
   keywords: string[];
 }
 
+export interface ProjectMember {
+  id: number;
+  name: string;
+  role: 'master' | 'member';
+}
+
+export interface ChangeUserRoleRequest {
+  user_id: number;
+  new_role: 'master' | 'member';
+}
+
 // Removed unused ProjectLogFilter types and endpoints
 
 class ProjectService {
@@ -121,6 +132,14 @@ class ProjectService {
       keywords
     });
     return response.keywords;
+  }
+  
+  async getProjectMembers(projectId: number): Promise<ProjectMember[]> {
+    return apiClient.get<ProjectMember[]>(`/projects/${projectId}/members`);
+  }
+  
+  async changeUserRole(projectId: number, request: ChangeUserRoleRequest): Promise<string> {
+    return apiClient.patch<string>(`/projects/${projectId}/role`, request);
   }
   
   async regenerateApiKey(projectId: number): Promise<{ api_key: string }> {

@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { LogLevel, CHART_COLORS, TimePeriod } from "../../../../types/logs";
+import { LogLevel, CHART_COLORS, TimePeriod, LogEntry } from "../../../../types/logs";
 import { useLogDistribution } from './useLogDistribution';
 import { LogPieChart } from './LogPieChart';
-import EmptyState from '../EmptyState';
 
-interface ApiLogEntry {
-  extracted_timestamp: string;
-  message_timestamp: string;
-  log_level: LogLevel;
-}
 
 interface LogDistributionProps {
-  logs?: ApiLogEntry[]; // optional - API에서 자동으로 가져옴
+  logs?: LogEntry[]; // optional - API에서 자동으로 가져옴
   timePeriod?: TimePeriod;
   projectId?: number;
 }
@@ -72,7 +66,7 @@ const LogDistribution: React.FC<LogDistributionProps> = ({
       <h2 className="text-[clamp(17px,1.18vw,20px)] font-semibold font-pretendard text-[#000000]">
         Log Distribution
       </h2>
-      <div className={`bg-white pt-6 pb-8 rounded-lg ${getDistributionWidthClass()} h-[32vh]`}>
+      <div className={`${(pieData && Array.isArray(pieData) && pieData.length > 0) ? 'bg-white' : 'bg-white/30 border border-gray-200/50 backdrop-blur-sm'} pt-6 pb-8 rounded-lg ${getDistributionWidthClass()} h-[32vh]`}>
         <div ref={containerRef} className="h-full flex flex-col items-center">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
@@ -101,27 +95,12 @@ const LogDistribution: React.FC<LogDistributionProps> = ({
               </div>
             </>
           ) : (
-            <EmptyState
-              title="No Distribution Data"
-              description="No log distribution data available for the selected time period."
-              icon={
-                <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={1} 
-                    d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" 
-                  />
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={1} 
-                    d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" 
-                  />
-                </svg>
-              }
-              className="h-full"
-            />
+                          <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <p className="text-[14px] text-[#6C757D] font-pretendard font-medium">No distribution data</p>
+                  <p className="text-[12px] text-[#9CA3AF] font-pretendard mt-1">Logs will appear here when available</p>
+                </div>
+              </div>
           )}
         </div>
       </div>

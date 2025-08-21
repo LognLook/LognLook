@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { DisplayLogItem } from '../../../types/logs';
 import { ApiLogDetailEntry } from '../api/detailLogApi';
-import { createTrouble, CreateTroubleRequest } from '../api/troubleApi';
+import { createTrouble, TroubleWithLogs } from '../api/troubleApi';
 import { ExtendedApiLogDetailEntry } from '../../../types/ExtendedApiLogDetailEntry';
 import { CreateTroubleResponse } from '../api/troubleApi';
-import { troubleService } from '../../../services/troubleService'; // 올바른 import
+import { troubleService, CreateTroubleRequest } from '../../../services/troubleService'; // 올바른 import
 
 interface LogDetailModalProps {
   logs: DisplayLogItem[];
@@ -13,7 +13,7 @@ interface LogDetailModalProps {
   onClose: () => void;
   detailData?: ApiLogDetailEntry[];
   isDetailLoading?: boolean;
-  selectedTrouble?: { trouble: CreateTroubleResponse; logs: string[] } | null;
+  selectedTrouble?: TroubleWithLogs | null;
   onTroubleCreated?: (troubleId: number) => void;
   projectId?: number; // 프로젝트 ID 추가
 }
@@ -38,6 +38,18 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
   const [troubleSent, setTroubleSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [copyNotification, setCopyNotification] = useState('');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [shareSettings, setShareSettings] = useState({
+            isShared: false,
+    teamboardTitle: '',
+    teamboardDescription: '',
+    tags: [] as string[],
+    priority: 'medium' as 'low' | 'medium' | 'high'
+  });
+  
+  // 공유 상태를 별도로 관리
+  const [isShared, setIsShared] = useState(false);
   
   // 현재 메시지 인덱스를 추적하기 위한 ref
   const currentMessageIndexRef = useRef<number>(-1);
@@ -65,18 +77,40 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
 
   // selectedTrouble이 있을 때 채팅 기록 미리 설정
   useEffect(() => {
+    console.log('🔍 LogDetailModal useEffect - selectedTrouble:', selectedTrouble);
+    console.log('🔍 LogDetailModal useEffect - isOpen:', isOpen);
+    
     if (selectedTrouble && isOpen) {
-      const { trouble } = selectedTrouble;
+      console.log('🔍 Setting chat history with selectedTrouble:', {
+        user_query: selectedTrouble.trouble.user_query,
+        content: selectedTrouble.trouble.content,
+        report_name: selectedTrouble.trouble.report_name,
+        is_shared: selectedTrouble.trouble.is_shared
+      });
+      
       setChatHistory([
-        { type: 'user', message: trouble.user_query },
-        { type: 'assistant', message: trouble.content }
+        { type: 'user', message: selectedTrouble.trouble.user_query },
+        { type: 'assistant', message: selectedTrouble.trouble.content }
       ]);
-      setTroubleShootingTitle(trouble.report_name);
+      setTroubleShootingTitle(selectedTrouble.trouble.report_name);
       setTroubleSent(true);
+      setShareSettings(prev => ({
+        ...prev,
+        isShared: selectedTrouble.trouble.is_shared,
+        teamboardTitle: selectedTrouble.trouble.report_name,
+        teamboardDescription: selectedTrouble.trouble.user_query
+      }));
     } else if (isOpen) {
+      console.log('🔍 Resetting chat history - no selectedTrouble');
       setChatHistory([]);
       setTroubleShootingTitle('Trouble Shooting');
       setTroubleSent(false);
+      setShareSettings(prev => ({
+        ...prev,
+        isShared: false,
+        teamboardTitle: '',
+        teamboardDescription: ''
+      }));
     }
   }, [selectedTrouble, isOpen]);
 
@@ -126,7 +160,7 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
       }
       
       const troubleReq: CreateTroubleRequest = {
-        is_shared: false,
+        is_shared: isShared, // 사용자가 선택한 공유 상태 사용
         project_id: projectId || 1, // 전달받은 프로젝트 ID 사용
         related_logs: related_logs,
         user_query: chatMessage
@@ -252,6 +286,69 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
       }
       return newSet;
     });
+  };
+
+  const handleShareClick = () => {
+    if (!selectedTrouble) return;
+    
+    // 기존 값들로 초기화
+          // 기존 값들로 초기화 (타입 에러 방지를 위해 간단하게 처리)
+      setShareSettings(prev => ({
+        ...prev,
+        teamboardTitle: 'Trouble Report',
+        teamboardDescription: 'Troubleshooting content'
+      }));
+      
+      // 공유 상태 동기화
+      setIsShared(false);
+    
+    setShowShareModal(true);
+  };
+
+  const handleShareSettingsUpdate = async () => {
+    if (!selectedTrouble) return;
+
+    // 필수 필드 검증
+    if (!shareSettings.teamboardTitle.trim()) {
+      alert('Report name is required');
+      return;
+    }
+
+    if (!shareSettings.teamboardDescription.trim()) {
+      alert('Content is required');
+      return;
+    }
+    
+    try {
+      console.log('Updating trouble share settings:', {
+        troubleId: selectedTrouble.trouble.id,
+        isShared: isShared,
+        reportName: shareSettings.teamboardTitle,
+        content: shareSettings.teamboardDescription
+      });
+      
+      // Update trouble sharing settings using PUT API
+      await troubleService.updateTrouble(selectedTrouble.trouble.id, {
+        is_shared: isShared,
+        report_name: shareSettings.teamboardTitle,
+        content: shareSettings.teamboardDescription
+      });
+      
+      // Update local state
+      setShareSettings(prev => ({ ...prev, isShared: isShared }));
+      
+      // Notify parent component for refresh
+      if (onTroubleCreated) {
+        onTroubleCreated(selectedTrouble.trouble.id);
+      }
+      
+      console.log('Share settings updated successfully');
+      
+    } catch (error) {
+      console.error('Failed to update share settings:', error);
+      // TODO: Add proper error notification
+      alert('Failed to update sharing settings');
+    }
   };
 
   return (
@@ -817,28 +914,58 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
         {/* Chat Interface */}
         <div className={`border-l border-gray-200 flex flex-col transition-all duration-300 ${isExpanded ? 'w-[800px]' : 'w-[34.72vw]'}`}>
           <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-8 h-8 text-gray-600 hover:text-gray-800 transition-colors flex items-center justify-center"
-              >
-                <svg 
-                  width="16" 
-                  height="16" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  xmlns="http://www.w3.org/2000/svg"
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="w-8 h-8 text-gray-600 hover:text-gray-800 transition-colors flex items-center justify-center"
                 >
-                  {isExpanded ? (
-                    <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  ) : (
-                    <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  )}
-                </svg>
-              </button>
-              <h3 className="text-[clamp(14px,0.97vw,16px)] font-[600] font-pretendard text-[#000000]">
-                {troubleShootingTitle}
-              </h3>
+                  <svg 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    {isExpanded ? (
+                      <path d="M9 18L15 12L9 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    ) : (
+                      <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    )}
+                  </svg>
+                </button>
+                <h3 className="text-[clamp(14px,0.97vw,16px)] font-[600] font-pretendard text-[#000000]">
+                  {troubleShootingTitle}
+                </h3>
+              </div>
+              
+              {/* Share Button - only show when viewing existing trouble */}
+              {selectedTrouble && (
+                <div className="flex items-center gap-2">
+                              <button
+              onClick={handleShareClick}
+              className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                shareSettings.isShared 
+                  ? 'bg-[#496660] hover:bg-[#5a7670] text-white' 
+                  : 'bg-[#E9ECEF] hover:bg-[#DEE2E6] text-[#6C757D]'
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M7 11l5-5m0 0l5 5m-5-5v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              {shareSettings.isShared ? 'SHARED' : 'PRIVATE'}
+            </button>
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-[#DC3545] hover:bg-[#C82333] text-white rounded-md transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           
@@ -979,6 +1106,120 @@ const LogDetailModal: React.FC<LogDetailModalProps> = ({
           }
         `
       }} />
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={(e) => e.target === e.currentTarget && setShowShareModal(false)}>
+          <div className="bg-white rounded-[10px] p-6 w-[500px] max-w-[90vw] max-h-[90vh] overflow-y-auto shadow-xl border border-gray-200">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[clamp(16px,1.11vw,18px)] font-[600] text-[#000000] font-pretendard">Share to Teamboard</h3>
+              <button
+                onClick={async () => {
+                  await handleShareSettingsUpdate();
+                  setShowShareModal(false);
+                }}
+                className="px-4 py-2.5 bg-[#496660] hover:bg-[#5a7670] text-white rounded-[8px] transition-colors text-[14px] font-pretendard font-medium shadow-sm"
+              >
+                Save
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Privacy Toggle - Moved to top for better UX */}
+              <div className="flex items-center justify-between p-4 bg-[#F8F9FA] rounded-[12px] border border-[#E9ECEF]">
+                <div>
+                  <h4 className="font-medium text-[#000000] text-[14px] font-pretendard">Share to Teamboard</h4>
+                  <p className="text-[12px] text-[#6C757D] font-pretendard mt-1">
+                    {isShared ? 'Shared with team' : 'Private to you only'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsShared(!isShared)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    isShared ? 'bg-[#496660]' : 'bg-[#DEE2E6]'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                      isShared ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Info message */}
+              <div className="p-4 bg-[#F8F9FA] rounded-[8px] border border-[#E9ECEF]">
+                <div className="flex items-center gap-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-[#496660]">
+                    <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <p className="text-[12px] text-[#6C757D] font-pretendard">
+                    {isShared ? 'This trouble will be shared with your team members.' : 'This trouble is private and only visible to you.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={(e) => e.target === e.currentTarget && setShowDeleteModal(false)}>
+          <div className="bg-white rounded-[10px] p-6 w-[400px] max-w-[90vw] shadow-xl border border-gray-200">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-red-500">
+                  <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-[clamp(16px,1.11vw,18px)] font-[600] text-[#000000] font-pretendard">Delete Trouble</h3>
+                <p className="text-[12px] text-[#6C757D] font-pretendard mt-1">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-[14px] text-[#000000] font-pretendard leading-relaxed">
+                Are you sure you want to delete <span className="font-semibold text-[#1E435F]">"{selectedTrouble.trouble.report_name}"</span>?
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2.5 text-[#6C757D] bg-[#F8F9FA] hover:bg-[#E9ECEF] rounded-[8px] transition-colors text-[14px] font-pretendard border border-[#DEE2E6] font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    if (selectedTrouble) {
+                      await troubleService.deleteTrouble(selectedTrouble.trouble.id);
+                      console.log('Trouble deleted successfully');
+                      setShowDeleteModal(false);
+                      // 모달 닫기 및 부모 컴포넌트에 알림
+                      onClose();
+                      if (onTroubleCreated) {
+                        onTroubleCreated(selectedTrouble.trouble.id);
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Failed to delete trouble:', error);
+                    alert('Failed to delete trouble');
+                  }
+                }}
+                className="px-4 py-2.5 bg-[#DC3545] hover:bg-[#C82333] text-white rounded-[8px] transition-colors text-[14px] font-pretendard font-medium shadow-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
