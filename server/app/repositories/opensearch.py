@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from app.infra.database.opensearch import OpenSearchClient
-from app.core.config.elastic_config import get_opensearch_mappings
+from app.core.config.opensearch_config import get_opensearch_mappings
 from typing import List, Dict, Any
 from app.core.enums.log_filter import LogLevelFilter
 
