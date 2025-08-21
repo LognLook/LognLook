@@ -163,21 +163,18 @@ class LogService {
       
       switch (timeRange) {
         case 'day':
-        case '1d':
-          // Day view: 5-minute intervals
+          // Day view: 1-hour intervals for better readability
           timeKey = current.toISOString();
-          current = new Date(current.getTime() + 5 * 60 * 1000); // Add 5 minutes
+          current = new Date(current.getTime() + 60 * 60 * 1000); // Add 1 hour
           break;
         case 'week':
-        case '7d':
-          // Week view: daily intervals (at noon for consistency)
-          timeKey = current.toISOString().slice(0, 10) + 'T12:00:00.000Z';
+          // Week view: use actual times, not fixed noon
+          timeKey = current.toISOString();
           current = new Date(current.getTime() + 24 * 60 * 60 * 1000); // Add 1 day
           break;
         case 'month':
-        case '30d':
-          // Month view: daily intervals (at noon)
-          timeKey = current.toISOString().slice(0, 10) + 'T12:00:00.000Z';
+          // Month view: use actual times, not fixed noon
+          timeKey = current.toISOString();
           current = new Date(current.getTime() + 24 * 60 * 60 * 1000); // Add 1 day
           break;
         default:
@@ -191,15 +188,8 @@ class LogService {
     return timeGrid;
   }
 
-  async getLogStats(projectId: number, timeRange: string = '7d'): Promise<LogStats> {
+  async getLogStats(projectId: number, timeRange: string = 'day'): Promise<LogStats> {
     try {
-      console.log('getLogStats - Calling API with params:', { projectId, timeRange });
-      
-      // 토큰 확인
-      const token = localStorage.getItem('token');
-      console.log('getLogStats - Token available:', !!token);
-      console.log('getLogStats - Token preview:', token ? token.substring(0, 20) + '...' : 'No token');
-      
       const response = await api.get('/logs/mainboard', { 
         params: { 
           project_id: projectId, 
@@ -207,44 +197,8 @@ class LogService {
         }
       });
       
-      console.log('getLogStats - Raw API response:', response);
-      console.log('getLogStats - Response data:', response.data);
-      
       const logs = response.data || [];
-      console.log('getLogStats - Extracted logs:', logs);
-      console.log('getLogStats - Logs length:', logs.length);
-      
-      // Always generate time grid and stats, even if no data
-      console.log('getLogStats - Processing logs for selected period only');
-      
-      // Filter logs by time period first
-      const now = new Date();
-      let startTime: Date;
-      
-      switch (timeRange) {
-        case 'day':
-        case '1d':
-          startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          break;
-        case 'week':
-        case '7d':
-          startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case 'month':
-        case '30d':
-          startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      }
-      
-      const filteredLogs = logs.filter((log: any) => {
-        if (log.message_timestamp) {
-          const logTime = new Date(log.message_timestamp);
-          return logTime >= startTime && logTime <= now;
-        }
-        return false;
-      });
+      const filteredLogs = logs;
       
       // Calculate log level distribution
       const levelDistribution: Record<string, number> = {};
@@ -253,8 +207,29 @@ class LogService {
         levelDistribution[level] = (levelDistribution[level] || 0) + 1;
       });
       
-      // Generate complete time grid
-      const timeGrid = this.generateTimeGrid(startTime, now, timeRange);
+      // Generate time grid based on user's local timezone
+      let startTime: Date;
+      let endTime: Date;
+      
+      // Use user's current local time as end time
+      endTime = new Date(); // This is user's local time
+      
+      // Calculate start time based on selected period (user's local time)
+      switch (timeRange) {
+        case 'day':
+          startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
+          break;
+        case 'week':
+          startTime = new Date(endTime.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+          break;
+        case 'month':
+          startTime = new Date(endTime.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+          break;
+        default:
+          startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // Default to 24 hours
+      }
+      
+      const timeGrid = this.generateTimeGrid(startTime, endTime, timeRange);
       
       // Initialize time groups with all time slots set to 0
       const timeGroups: Record<string, Record<string, number>> = {};
@@ -265,38 +240,49 @@ class LogService {
       // Fill in actual log data
       filteredLogs.forEach((log: any) => {
         if (log.message_timestamp) {
-          const date = new Date(log.message_timestamp);
-          let timeKey: string;
+          // Parse log timestamp (server sends UTC time without Z suffix)
+          const logTimestamp = log.message_timestamp.endsWith('Z') ? 
+            log.message_timestamp : log.message_timestamp + 'Z';
+          const logDate = new Date(logTimestamp);
           
-          // Group time based on selected period (same logic as grid generation)
-          switch (timeRange) {
-            case 'day':
-            case '1d':
-              // Day view: round to nearest 5-minute interval
-              const minutes = Math.floor(date.getMinutes() / 5) * 5;
-              const roundedDate = new Date(date);
-              roundedDate.setMinutes(minutes, 0, 0);
-              timeKey = roundedDate.toISOString();
-              break;
-            case 'week':
-            case '7d':
-              // Week view: group by day
-              timeKey = date.toISOString().slice(0, 10) + 'T12:00:00.000Z';
-              break;
-            case 'month':
-            case '30d':
-              // Month view: group by day
-              timeKey = date.toISOString().slice(0, 10) + 'T12:00:00.000Z';
-              break;
-            default:
-              timeKey = date.toISOString().slice(0, 13) + ':00:00.000Z';
+          if (isNaN(logDate.getTime())) {
+            return;
           }
           
-          const level = log.log_level || 'UNKNOWN';
+          // Check if log is within our time range (user's local time)
+          if (logDate < startTime || logDate > endTime) {
+            return;
+          }
           
-          // Only increment if this time slot exists in our grid
-          if (timeGroups[timeKey] && level in timeGroups[timeKey]) {
-            timeGroups[timeKey][level]++;
+          // Find the closest time slot in our grid
+          let closestTimeKey: string | null = null;
+          let minTimeDiff = Infinity;
+          
+          for (const timeKey of timeGrid) {
+            const gridDate = new Date(timeKey);
+            const timeDiff = Math.abs(gridDate.getTime() - logDate.getTime());
+            
+            if (timeDiff < minTimeDiff) {
+              minTimeDiff = timeDiff;
+              closestTimeKey = timeKey;
+            }
+          }
+          
+          if (closestTimeKey && timeGroups[closestTimeKey]) {
+            let level = (log.log_level || 'INFO').toUpperCase(); // Default to INFO instead of UNKNOWN
+            
+            // Map inconsistent level names
+            if (level === 'WARNING') {
+              level = 'WARN';
+            }
+            
+            // Ensure the level exists in our timeGroups structure
+            if (!(level in timeGroups[closestTimeKey])) {
+              // Add missing level with 0 count
+              timeGroups[closestTimeKey][level] = 0;
+            }
+            
+            timeGroups[closestTimeKey][level]++;
           }
         }
       });
@@ -305,32 +291,24 @@ class LogService {
       const recentTrends: Array<{date: string, count: number, level: string}> = [];
       Object.entries(timeGroups).forEach(([timeKey, levelCounts]) => {
         Object.entries(levelCounts).forEach(([level, count]) => {
-          // Include all entries, even those with count 0
-          recentTrends.push({ date: timeKey, count, level });
+          // Only include entries with count > 0 to avoid empty data
+          if (count > 0) {
+            recentTrends.push({ date: timeKey, count, level });
+          }
         });
       });
       
       // Sort by time
       recentTrends.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
-      console.log('getLogStats - Recent trends:', recentTrends);
-      
       const result = {
         totalLogs: filteredLogs.length,
         levelDistribution,
         recentTrends
       };
-      
-      console.log('getLogStats - Final result:', result);
       return result;
     } catch (error: any) {
       console.error('Log stats API call failed:', error);
-      console.error('Log stats API call error details:', {
-        message: error?.message || 'Unknown error',
-        status: error?.response?.status,
-        statusText: error?.response?.statusText,
-        data: error?.response?.data
-      });
       return {
         totalLogs: 0,
         levelDistribution: {},

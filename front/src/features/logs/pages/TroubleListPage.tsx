@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { getProjectTroubles, TroubleListItem, fetchTroubleById, TroubleWithLogs, deleteTrouble } from '../api/troubleApi';
+import { troubleService } from '../../../services/troubleService';
 import LogDetailModal from '../components/LogDetailModal';
 import { DisplayLogItem } from '../../../types/logs';
 import { useProjects } from '../../../hooks/useProjects';
 import { logService } from '../../../services/logService';
+import { useLocation } from 'react-router-dom';
 import timeIcon from '../../../assets/icons/time.png';
 
 interface TroubleListPageProps {
@@ -13,6 +15,7 @@ interface TroubleListPageProps {
 
 const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebarOpen }) => {
   const { selectedProject } = useProjects();
+  const location = useLocation();
   const [troubles, setTroubles] = useState<TroubleListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -27,6 +30,20 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
   // Calculate width based on sidebar state
   const getWidthClass = () => {
     return isSidebarOpen ? 'w-[74.93vw]' : 'w-[87.64vw]';
+  };
+
+  // Helper function to get user initials from username
+  const getUserInitials = (username: string | undefined): string => {
+    if (!username || typeof username !== 'string') {
+      return 'U';
+    }
+    
+    return username
+      .split(' ')
+      .map(name => name[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   // 실제 로그 개수 가져오기
@@ -67,6 +84,20 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
     load();
   }, [selectedProject, userId]);
 
+  // 홈페이지에서 팀보드를 통해 전달받은 상태 처리
+  useEffect(() => {
+    if (location.state?.openTroubleModal && location.state?.selectedTroubleId) {
+      const troubleId = location.state.selectedTroubleId;
+      // 해당 트러블을 찾아서 모달 열기
+      const trouble = troubles.find(t => t.id === troubleId);
+      if (trouble) {
+        handleTroubleClick(troubleId);
+        // 상태 초기화
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [location.state, troubles]);
+
   const handleTroubleClick = async (troubleId: number) => {
     if (!selectedProject) return;
     
@@ -75,6 +106,9 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
       
       // 1. Get trouble details
       const troubleDetails = await fetchTroubleById(troubleId, userId);
+      console.log('🔍 TroubleListPage - troubleDetails received:', troubleDetails);
+      console.log('🔍 TroubleListPage - troubleDetails.trouble:', troubleDetails.trouble);
+      console.log('🔍 TroubleListPage - troubleDetails.trouble.content:', troubleDetails.trouble?.content);
       setSelectedTrouble(troubleDetails);
       
       // 2. Fetch related log details first
@@ -173,6 +207,29 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
     }
   };
 
+  // Handle share toggle
+  const handleShareToggle = async (e: React.MouseEvent, troubleId: number, currentShareStatus: boolean) => {
+    e.stopPropagation();
+    
+    try {
+      const result = await troubleService.toggleTroubleShare(troubleId);
+      
+      // Update trouble list with new share status
+      setTroubles(prev => prev.map(trouble => 
+        trouble.id === troubleId 
+          ? { ...trouble, is_shared: result.is_shared }
+          : trouble
+      ));
+      
+      // TODO: Replace with proper toast notification
+      alert(result.message);
+    } catch (error) {
+      console.error('Share toggle error:', error);
+      // TODO: Replace with proper toast notification
+      alert('An error occurred while toggling share status.');
+    }
+  };
+
   // Close delete confirmation modal
   const handleDeleteCancel = () => {
     setDeleteConfirmModal({ isOpen: false, troubleId: null, troubleName: '' });
@@ -214,29 +271,24 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
               }}
               onClick={() => handleTroubleClick(trouble.id)}
             >
-              {/* Delete button */}
-              <button
-                onClick={(e) => handleDeleteClick(e, trouble.id, trouble.report_name)}
-                className="absolute top-3 right-3 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center z-30"
-                title="Delete trouble"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
+
               {/* Top: Title and sharing status */}
               <div className="flex items-center justify-between gap-2 mb-3">
                 <h3 className="text-[clamp(14px,1vw,16px)] font-semibold font-pretendard text-black flex-1 overflow-hidden whitespace-nowrap text-ellipsis" 
                     title={trouble.report_name}>
                   {trouble.report_name}
                 </h3>
-                <span className={`px-2 py-1 rounded-[4px] text-[clamp(10px,0.8vw,12px)] font-semibold font-pretendard flex-shrink-0 ${
-                  trouble.is_shared 
-                    ? 'bg-[#B8FFF1] text-black' 
-                    : 'bg-gray-100 text-black'
-                }`}>
-                  {trouble.is_shared ? 'Shared' : 'Private'}
-                </span>
+                <button
+                  onClick={(e) => handleShareToggle(e, trouble.id, trouble.is_shared)}
+                  className={`px-2 py-1 rounded-[4px] text-[clamp(10px,0.8vw,12px)] font-semibold font-pretendard flex-shrink-0 cursor-pointer transition-colors ${
+                    trouble.is_shared 
+                      ? 'bg-[#496660] text-white hover:bg-[#5a7670]' 
+                      : 'bg-[#E9ECEF] text-[#6C757D] hover:bg-[#DEE2E6]'
+                  }`}
+                  title={trouble.is_shared ? 'Click to unshare' : 'Click to share'}
+                >
+                  {trouble.is_shared ? 'SHARED' : 'PRIVATE'}
+                </button>
               </div>
 
               {/* Created time */}
@@ -279,7 +331,7 @@ const TroubleShootingPage: React.FC<TroubleListPageProps> = ({ userId, isSidebar
               {/* Bottom right: Author profile */}
               <div className="absolute bottom-3 right-3">
                 <div className="w-6 h-6 rounded-full bg-[#496660] flex items-center justify-center text-white font-medium text-[clamp(9px,0.65vw,10px)]">
-                  SY
+                  {getUserInitials(trouble.creator_username)}
                 </div>
               </div>
             </div>
