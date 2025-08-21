@@ -36,7 +36,6 @@ dependencies = [
     "uvloop (==0.21.0)",
     "watchfiles (==1.0.4)",
     "websockets (==15.0.1)",
-    "mysql (>=0.0.3,<0.0.4)",
     "pandas (>=2.2.3,<3.0.0)",
     "numpy (>=2.2.4,<3.0.0)",
     "openai (>=1.72.0,<2.0.0)",
