@@ -5,7 +5,7 @@
 import pytest
 from unittest.mock import patch, Mock
 from app.core.llm.base import LLMFactory
-from app.core.config.elastic_config import get_elastic_mappings
+from app.core.config.elastic_config import get_opensearch_mappings
 from app.core.config.settings import get_settings
 from app.core.enums.LLMProvider import LLMProvider
 
@@ -37,9 +37,9 @@ class TestBasicFunctionality:
         assert settings.TROUBLESHOOTING_MODEL_NAME == "gpt-4o"
         assert settings.EMBEDDING_VECTOR_DIMS == 1536
     
-    def test_elastic_mappings_generation(self):
-        """Elasticsearch 매핑 생성 테스트"""
-        mappings = get_elastic_mappings()
+    def test_opensearch_mappings_generation(self):
+        """OpenSearch 매핑 생성 테스트"""
+        mappings = get_opensearch_mappings()
         
         # 기본 구조 확인
         assert isinstance(mappings, dict)
@@ -47,10 +47,8 @@ class TestBasicFunctionality:
         
         # 벡터 필드 확인
         vector_field = mappings["properties"]["vector"]
-        assert vector_field["type"] == "dense_vector"
-        assert vector_field["dims"] == 1536  # 기본값
-        assert vector_field["index"] is True
-        assert vector_field["similarity"] == "cosine"
+        assert vector_field["type"] == "knn_vector"
+        assert vector_field["dimension"] == 1536  # 기본값
     
     @patch.dict('os.environ', {
         'LLM_PROVIDER': 'openai',
@@ -124,8 +122,8 @@ class TestBasicFunctionality:
         
         # 매핑에 반영되는지 확인
         with patch('app.core.config.elastic_config.get_settings', return_value=settings):
-            mappings = get_elastic_mappings()
-            assert mappings["properties"]["vector"]["dims"] == 384
+            mappings = get_opensearch_mappings()
+            assert mappings["properties"]["vector"]["dimension"] == 384
 
 
 class TestErrorHandling:

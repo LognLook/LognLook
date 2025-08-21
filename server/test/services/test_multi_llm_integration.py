@@ -78,7 +78,7 @@ class TestPipelineServiceMultiLLM:
         mock_embed.return_value = [0.1, 0.2, 0.3]
         
         # Mock Elasticsearch 설정
-        self.pipeline_service.es = Mock()
+        self.pipeline_service.client = Mock()
         
         # 테스트 데이터
         log_data = {"message": "Database connection failed", "timestamp": "2024-01-01T10:00:00"}
@@ -93,7 +93,7 @@ class TestPipelineServiceMultiLLM:
         assert result["vector"] == [0.1, 0.2, 0.3]
         mock_gen_ai.assert_called_once()
         mock_embed.assert_called_once_with("데이터베이스 연결 오류")
-        self.pipeline_service.es.save_document.assert_called_once()
+        self.pipeline_service.client.save_document.assert_called_once()
 
 
 class TestTroubleServiceMultiLLM:

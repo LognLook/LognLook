@@ -1,4 +1,4 @@
-from elasticsearch import Elasticsearch
+from opensearchpy import OpenSearch
 
 from typing import List, Dict, Any
 from collections import defaultdict
@@ -9,17 +9,18 @@ from app.core.llm.base import LLMFactory
 
 settings = get_settings()
 
-class ElasticsearchClient:
-    """Elasticsearch 클라이언트 클래스"""
+class OpenSearchClient:
+    """OpenSearch 클라이언트 클래스"""
     
     def __init__(self):
-        self.host = settings.ELASTIC_HOST
-        self.username = settings.ELASTIC_USERNAME
-        self.password = settings.ELASTIC_PASSWORD
-        # Elasticsearch 클라이언트 초기화
-        self.es = Elasticsearch(
-            settings.ELASTIC_HOST,
-            basic_auth=(self.username, self.password),
+        self.host = settings.OPENSEARCH_HOST
+        self.username = settings.OPENSEARCH_USERNAME
+        self.password = settings.OPENSEARCH_PASSWORD
+        # OpenSearch 클라이언트 초기화
+        self.client = OpenSearch(
+            hosts=[settings.OPENSEARCH_HOST],
+            # http_auth=(self.username, self.password),
+            use_ssl=False,
         )
         self.embedding_model = LLMFactory.create_embedding_model()
         
@@ -31,13 +32,13 @@ class ElasticsearchClient:
         """ Elasticsearch 검색 실행 공통 함수 """
         if "size" not in body:
             body["size"] = size
-        return self.es.search(index=index, body=body)["hits"]["hits"]
+        return self.client.search(index=index, body=body)["hits"]["hits"]
     
     def save_document(self, index: str, document: Dict[str, Any]) -> None:
-        """ 문서를 Elasticsearch에 저장 """
-        if not self.es.indices.exists(index=index):
-            self.es.indices.create(index=index)
-        self.es.index(index=index, body=document)
+        """ 문서를 OpenSearch에 저장 """
+        if not self.client.indices.exists(index=index):
+            self.client.indices.create(index=index)
+        self.client.index(index=index, body=document)
 
     def generate_filter(self, term_filter: List[Dict] = None, range_filter: Dict[str, Any] = None) -> dict:
         """필터 조건을 생성하는 함수"""
@@ -64,15 +65,15 @@ class ElasticsearchClient:
     
     def create_index(self, index: str, mappings: Dict[str, Any]) -> None:
         """ 인덱스를 생성하는 함수 """
-        if not self.es.indices.exists(index=index):
-            self.es.indices.create(index=index, mappings=mappings)
+        if not self.client.indices.exists(index=index):
+            self.client.indices.create(index=index, body={"mappings": mappings})
         else:
             raise ValueError(f"Index {index} already exists")
 
     def delete_index(self, index: str) -> None:
         """ 인덱스를 삭제하는 함수 """
-        if self.es.indices.exists(index=index):
-            self.es.indices.delete(index=index)
+        if self.client.indices.exists(index=index):
+            self.client.indices.delete(index=index)
         else:
             raise ValueError(f"Index {index} does not exist")
 
@@ -97,7 +98,7 @@ class ElasticsearchClient:
         return self._execute_search(index, query_body)[:k]
 
     def search_by_vector(self, index: str, query: str, vector_field: str = "vector", filters: Dict[str, Any] = None, k: int = 50, num_candidates: int = 200) -> List[Dict[str, Any]]:
-        """ 벡터 검색 (KNN) """
+        """ 벡터 검색 (OpenSearch kNN) """
         query_vector = self._generate_embeddings(query)
         query_body = {
             "knn": {
