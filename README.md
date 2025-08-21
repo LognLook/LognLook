@@ -8,7 +8,7 @@
 </h4>
 
 <h4 align="center">
-  <a href="https://youtu.be/jVAlqwMY1co?feature=shared" target="_blank">📼 시연 영상</a>
+  <a href="https://youtu.be/UxH8B7sVF60?si=D0GpGIvmSOnymddZ" target="_blank">📼 시연 영상</a>
 </h4>
 
 <p align="center">
@@ -22,9 +22,14 @@
 
 <div align="center">
 
-| <img src="https://github.com/JJadeYoon.png" width="100px;"/><br /><sub><b>윤종석</b></sub> | <img src="https://github.com/633jinn.png" width="100px;"/><br /><sub><b>강희진</b></sub><br /> | <img src="https://github.com/30isdead.png" width="100px;"/><br /><sub><b>박세영</b></sub><br /> | <img src="https://github.com/github-ID-4.png" width="100px;"/><br /><sub><b>이름</b></sub><br /> |
+| <img src="https://github.com/JJadeYoon.png" width="100px"/><br/>**윤종석** | <img src="https://github.com/633jinn.png" width="100px"/><br/>**강희진** | <img src="https://github.com/30isdead.png" width="100px"/><br/>**박세영** | <img src="https://github.com/user-attachments/assets/19779c45-69b7-465a-8409-310f1302354b" width="100px"/><br/>**김선정** |
 | :---: | :---: | :---: | :---: |
-| BE・DATA | BE・Infra | FE・UX | 디자인・UX |
+| `BE・DATA` | `BE・Infra` | `FE・UX` | `디자인・UX` |
+
+</div>
+
+</div>
+
 
 </div>
 
@@ -92,7 +97,10 @@
 3.  **분석**: **LangChain** 기반의 AI 모듈이 로그 데이터를 해석하고, 하이브리드 검색을 통해 정확한 결과를 도출합니다.
 4.  **UI 제공**: **React** 웹 대시보드를 통해 로그 데이터의 검색, 해석, 통계 및 실시간 모니터링이 가능합니다.
 
-<img width="2488" height="2176" alt="image" src="https://github.com/user-attachments/assets/9fe3067a-7c50-4ad4-8190-752a0cf8b78e" />
+<img width="601" height="413" alt="Architecture_LognLook" src="https://github.com/user-attachments/assets/541a41cb-06cb-4cfd-8bd9-a146ffe890a9" />
+
+
+
 
 <br>
 
