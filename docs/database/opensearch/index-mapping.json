@@ -1,4 +1,10 @@
 {
+    "_meta": {
+        "description": "LognLook OpenSearch index mapping for log data",
+        "version": "1.0.0",
+        "created_at": "2025-01-21",
+        "license": "Apache-2.0"
+    },
     "properties": {
         "@timestamp": {
             "type": "date"
@@ -275,6 +281,26 @@
                     "ignore_above": 256
                 }
             }
+        },
+        "level": {
+            "type": "keyword",
+            "doc_values": true
+        },
+        "service": {
+            "type": "keyword",
+            "doc_values": true
+        },
+        "environment": {
+            "type": "keyword",
+            "doc_values": true
+        },
+        "project_id": {
+            "type": "integer",
+            "doc_values": true
+        },
+        "parsed_data": {
+            "type": "object",
+            "enabled": true
         },
         "comment": {
             "type": "text",
