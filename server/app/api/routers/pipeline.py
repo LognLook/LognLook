@@ -10,14 +10,14 @@ logger = logging.getLogger("logstash")
 
 
 @router.post("/pipeline")
-def collect_log(
+async def collect_log(
     data: dict,
     service: PipelineService = Depends(get_pipeline_service),
     api_key: str = Header(..., description="elasticsearch index 연결용 API 키"),
 ):
     try:
         # Log the incoming data
-        result = service.process_log(data, api_key)
+        result = await service.process_log(data, api_key)
         logger.info("Successfully processed log data")
         return result
     except Exception as e:

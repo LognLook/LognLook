@@ -19,7 +19,7 @@ class PipelineService:
         self.db = db
         self.client = OpenSearchClient()
 
-    def process_log(self, log_data: dict, api_key: str):
+    async def process_log(self, log_data: dict, api_key: str):
         """
         로그 메세지를 처리하는 메소드
         1. 로그 메세지를 분류 모델을 사용하여 키워드로 변환
@@ -33,12 +33,12 @@ class PipelineService:
 
         category_list = project.setting.log_keywords
         language = project.language
-        ai_msg = self._gen_ai_msg(log_message, category_list, language)
+        ai_msg = await self._gen_ai_msg(log_message, category_list, language)
         # ai_msg = AIMessage(
         #     comment="유저가 비밀번호를 잘못 입력했습니다.",
         #     category="유저 입력 에러"
         # )
-        vector = self._embed_comment(ai_msg.comment)
+        vector = await self._embed_comment(ai_msg.comment)
         log_data["comment"] = ai_msg.comment
         log_data["keyword"] = ai_msg.keyword
         log_data["vector"] = vector
@@ -53,7 +53,7 @@ class PipelineService:
 
         return log_data
 
-    def _gen_ai_msg(self, log_msg: str, category_list: list, language: Language):
+    async def _gen_ai_msg(self, log_msg: str, category_list: list, language: Language):
         """
         로그 메세지에 대한 코멘트를 생성하는 함수
         """
@@ -75,12 +75,12 @@ class PipelineService:
                 language=language.value,
             )
         chain = comment_model.with_structured_output(AIMessage)
-        return chain.invoke([HumanMessage(content=formatted_prompt)])
+        return await chain.ainvoke([HumanMessage(content=formatted_prompt)])
 
-    def _embed_comment(self, comment: str):
+    async def _embed_comment(self, comment: str):
         """
         코멘트를 임베딩하는 함수
         """
         embedding_model = LLMFactory.create_embedding_model()
-        vector = embedding_model.embed_query(comment)
+        vector = await embedding_model.aembed_query(comment)
         return vector
