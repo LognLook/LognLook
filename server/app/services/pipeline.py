@@ -11,6 +11,8 @@ from app.core.llm.prompts import LOG_COMMENT_TEMPLATE, AIMessage
 from app.models.project import Project
 
 from app.core.utils import log_utils as LogUtils
+import asyncio
+from collections import defaultdict
 
 
 
@@ -84,3 +86,72 @@ class PipelineService:
         embedding_model = LLMFactory.create_embedding_model()
         vector = await embedding_model.aembed_query(comment)
         return vector
+
+    async def process_logs_batch(self, logs_batch: list):
+        """
+        배치로 로그 처리
+        """
+        # 1. API 키별로 그룹화하여 DB 쿼리 최소화
+        logs_by_api_key = defaultdict(list)
+        for log_item in logs_batch:
+            logs_by_api_key[log_item["api_key"]].append(log_item)
+        
+        # 2. 각 API 키별로 병렬 처리
+        tasks = []
+        for api_key, logs_group in logs_by_api_key.items():
+            task = self._process_logs_group(logs_group, api_key)
+            tasks.append(task)
+        
+        # 병렬로 모든 그룹 처리
+        await asyncio.gather(*tasks)
+
+    async def _process_logs_group(self, logs_group: list, api_key: str):
+        """
+        같은 API 키를 가진 로그 그룹을 처리
+        """
+        # 프로젝트 정보 한 번만 조회
+        project = self.db.query(Project).filter(Project.api_key == api_key).first()
+        if not project:
+            return  # 프로젝트가 없으면 스킵
+        
+        category_list = project.setting.log_keywords
+        language = project.language
+        index = project.index
+        
+        # AI 작업들을 병렬로 처리
+        ai_tasks = []
+        for log_item in logs_group:
+            log_data = log_item["data"]
+            log_message = log_data.get("message", "")
+            
+            # AI 코멘트 생성과 임베딩을 병렬로 처리
+            ai_task = self._process_single_log_ai(log_data, log_message, category_list, language)
+            ai_tasks.append(ai_task)
+        
+        # 모든 AI 작업을 병렬로 실행
+        processed_logs = await asyncio.gather(*ai_tasks)
+        
+        # OpenSearch에 벌크로 저장
+        self.client.bulk_save_documents(index, processed_logs)
+
+    async def _process_single_log_ai(self, log_data: dict, log_message: str, category_list: list, language):
+        """
+        단일 로그의 AI 처리 (병렬 실행용)
+        """
+        # AI 코멘트 생성과 임베딩을 동시에 시작
+        ai_msg_task = self._gen_ai_msg(log_message, category_list, language)
+        
+        # AI 메시지 완료 대기
+        ai_msg = await ai_msg_task
+        
+        # 임베딩 생성
+        vector = await self._embed_comment(ai_msg.comment)
+        
+        # 결과 데이터 구성
+        log_data["comment"] = ai_msg.comment
+        log_data["keyword"] = ai_msg.keyword
+        log_data["vector"] = vector
+        log_data["message_timestamp"] = LogUtils.extract_timestamp_from_message(log_message)
+        log_data["log_level"] = LogUtils.extract_log_level(log_message)
+        
+        return log_data
