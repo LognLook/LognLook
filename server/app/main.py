@@ -10,13 +10,26 @@
 # limitations under the License.
 
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from fastapi.responses import RedirectResponse
 from app.infra.database.session import engine, Base
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers import user, project, pipeline, log, trouble
+from app.api.routers.pipeline import start_batch_processor, stop_batch_processor
 
 Base.metadata.create_all(bind=engine)
-app = FastAPI()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await start_batch_processor()
+    try:
+        yield
+    finally:
+        await stop_batch_processor()
+
+
+app = FastAPI(lifespan=lifespan)
 
 # CORS 설정
 origins = [

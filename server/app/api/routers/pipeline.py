@@ -36,39 +36,48 @@ async def _batch_processor():
     """
     global batch_processor_running
     batch_processor_running = True
-    
+
     while batch_processor_running:
         try:
             await asyncio.sleep(BATCH_TIMEOUT)
-            
+
             if not log_batch_queue:
                 continue
-                
+
             # 배치 크기만큼 또는 큐의 모든 항목을 가져옴
             batch = []
             while log_batch_queue and len(batch) < BATCH_SIZE:
                 batch.append(log_batch_queue.popleft())
-            
+
             if batch:
                 # 배치 처리용 서비스 인스턴스 생성
                 from app.infra.database.session import get_db
+
                 db_session = next(get_db())
                 try:
                     service = PipelineService(db_session)
                     await _process_log_batch(service, batch)
                 finally:
                     db_session.close()
-                
+
         except Exception as e:
             logger.error("Error in batch processor: %s", e)
 
 
-@router.on_event("startup")
-async def startup_event():
+async def start_batch_processor():
     """
-    앱 시작 시 배치 프로세서 시작
+    lifespan에서 호출될 배치 프로세서 시작 함수
     """
     asyncio.create_task(_batch_processor())
+    logger.info("Batch processor started")
+
+
+async def stop_batch_processor():
+    """
+    lifespan에서 호출될 배치 프로세서 정지 함수
+    """
+    global batch_processor_running
+    batch_processor_running = False
 
 
 @router.post("/pipeline")
@@ -78,17 +87,15 @@ async def collect_log(
 ):
     try:
         # 배치 큐에 로그 추가
-        log_batch_queue.append({
-            "data": data,
-            "api_key": api_key,
-            "timestamp": datetime.now()
-        })
-        
+        log_batch_queue.append(
+            {"data": data, "api_key": api_key, "timestamp": datetime.now()}
+        )
+
         logger.info("Log added to batch queue")
         return {
             "status": "queued",
             "message": "Log queued for batch processing",
-            "queue_size": len(log_batch_queue)
+            "queue_size": len(log_batch_queue),
         }
     except Exception as e:
         logger.error("Error adding log to batch queue: %s", e)
