@@ -11,25 +11,25 @@ router = APIRouter()
 
 # 메인보드 로그 그래프 조회
 @router.get("/logs/mainboard")
-def get_log(
+async def get_log(
     project_id: int,
     log_time: LogTimeFilter = LogTimeFilter.DAY,
     size: int = Query(100, description="검색 결과 최대 개수"),
     service: LogService = Depends(get_log_service),
     username: str = Depends(get_current_username),
 ):
-    return service.get_logs(username, project_id, log_time, size)
+    return await service.get_logs(username, project_id, log_time, size)
 
 
 @router.get("/logs/recent")
-def get_recent_logs(
+async def get_recent_logs(
     project_id: int,
     username: str = Depends(get_current_username),
     count: int = Query(..., description="무한 스크롤 조회 횟수, 1부터 시작"),
     size: int = Query(100, description="검색 결과 최대 개수"),
     service: LogService = Depends(get_log_service),
 ):
-    return service.get_recent_logs(
+    return await service.get_recent_logs(
         username=username,
         project_id=project_id,
         count=count,
@@ -38,7 +38,7 @@ def get_recent_logs(
     
 
 @router.get("/logs/search")
-def get_logs_by_search(
+async def get_logs_by_search(
     project_id: int,
     query: str,
     keyword: str = None,
@@ -48,7 +48,7 @@ def get_logs_by_search(
     k: int = 50,
     service: LogService = Depends(get_log_service)
 ):
-    return service.get_retrieve_logs(
+    return await service.get_retrieve_logs(
         project_id=project_id,
         query=query,
         keyword=keyword,
@@ -60,9 +60,9 @@ def get_logs_by_search(
 
 
 @router.get("/logs/detail", response_model=List[dict])
-def get_log_detail(
+async def get_log_detail(
     project_id: int = Query(..., description="프로젝트 ID"),
     log_ids: Optional[List[str]] = Query(..., description="로그 ID 리스트"),
     service: LogService = Depends(get_log_service),
 ):
-    return service.get_log_detail(project_id, log_ids)
+    return await service.get_log_detail(project_id, log_ids)

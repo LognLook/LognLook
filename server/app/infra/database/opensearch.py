@@ -40,6 +40,23 @@ class OpenSearchClient:
             self.client.indices.create(index=index)
         self.client.index(index=index, body=document)
 
+    def bulk_save_documents(self, index: str, documents: List[Dict[str, Any]]) -> None:
+        """ 여러 문서를 벌크로 OpenSearch에 저장 """
+        if not self.client.indices.exists(index=index):
+            self.client.indices.create(index=index)
+        
+        if not documents:
+            return
+        
+        # 벌크 요청 구성
+        bulk_body = []
+        for doc in documents:
+            bulk_body.append({"index": {"_index": index}})
+            bulk_body.append(doc)
+        
+        # 벌크 실행
+        self.client.bulk(body=bulk_body)
+
     def generate_filter(self, term_filter: List[Dict] = None, range_filter: Dict[str, Any] = None) -> dict:
         """필터 조건을 생성하는 함수"""
         filter_conditions = {
